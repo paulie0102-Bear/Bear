@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PokeMaster: Icon Swap v31.1</title>
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/luxury-ball.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        :root { --primary: #2d5a27; --gold: #d4af37; --bg: #e0eed0; --mega: #ff00ff; --hp-green: #4caf50; --task-blue: #3498db; }
+        body { font-family: 'Courier New', sans-serif; background: #222; padding: 10px; margin: 0; display: flex; flex-direction: column; align-items: center; color: #333; overflow-x: hidden; }
+        .game-screen { width: 100%; max-width: 400px; background: var(--bg); border: 6px solid #444; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.5); position: relative; }
+        .battle-stage { height: 240px; position: relative; background: linear-gradient(#b8eaea, #e0eed0); border-bottom: 4px solid #333; overflow: hidden; }
+        .buddy-container { position: absolute; bottom: -10px; left: -10px; width: 180px; z-index: 5; transition: 0.3s; }
+        #buddyImg { width: 100%; filter: drop-shadow(4px 4px 6px rgba(0,0,0,0.3)); }
+        .enemy-container { position: absolute; top: 20px; right: 20px; width: 110px; text-align: center; z-index: 4; }
+        #pokeImg { width: 100%; transition: 0.3s; }
+        .shiny-effect { filter: drop-shadow(0 0 10px gold) sepia(0.5) brightness(1.2) !important; }
+        #ballOverlay { position: absolute; width: 40px; display: none; right: 55px; top: 55px; transform: translate(50%, -50%); z-index: 50; }
+        .hp-container { width: 100px; height: 8px; background: #555; border: 2px solid #000; margin: 5px auto; border-radius: 4px; overflow: hidden; }
+        .hp-bar { height: 100%; background: var(--hp-green); transition: 0.4s; width: 100%; }
+        .message-box { height: 85px; background: #fff; padding: 12px; font-size: 14px; font-weight: bold; border-top: 4px solid #888; box-shadow: inset 0 0 0 2px #333; overflow-y: auto; box-sizing: border-box; }
+        .ui-layer { width: 100%; max-width: 412px; margin-top: 10px; }
+        .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--primary); color: white; padding: 8px; border-radius: 8px; margin-bottom: 8px; font-size: 11px; gap: 4px; text-align: center; align-items: center; }
+        .icon-sm { width: 18px; vertical-align: middle; margin-right: 4px; }
+        .card { background: #f8fff0; border: 2px solid var(--primary); padding: 12px; margin-bottom: 8px; border-radius: 10px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        button { padding: 10px; border: 2px solid #333; font-weight: bold; cursor: pointer; border-radius: 6px; font-family: inherit; transition: 0.2s; background: #eee; }
+        .btn-mega { background: linear-gradient(135deg, #ff00ff, #7a2af0); color: white; border-color: #fff; animation: glow 1.5s infinite; }
+        @keyframes glow { 0% { box-shadow: 0 0 5px #ff00ff; } 50% { box-shadow: 0 0 20px #ff00ff; } 100% { box-shadow: 0 0 5px #ff00ff; } }
+        .hidden { display: none; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .task-box { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 8px; background: #fff; }
+        .progress-container { width: 100%; height: 12px; background: #eee; border-radius: 6px; overflow: hidden; border: 1px solid #ccc; margin-top: 5px; }
+        .progress-fill { height: 100%; background: var(--task-blue); transition: width 0.5s ease; }
+        .buddy-menu-wrapper { display: flex; height: 80%; border: 2px solid #333; border-radius: 10px; overflow: hidden; margin-top: 10px; }
+        .buddy-list-left { flex: 1.2; background: #f9f9f9; overflow-y: scroll; border-right: 2px solid #333; }
+        .buddy-view-right { flex: 0.8; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; text-align: center; }
+        .buddy-name-item { padding: 15px 10px; border-bottom: 1px solid #eee; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; white-space: nowrap; }
+        .buddy-name-item:hover { background: #e0eed0; }
+        .buddy-name-item.selected { background: var(--primary); color: white; }
+        #previewImg { width: 130px; height: 130px; filter: drop-shadow(2px 2px 5px rgba(0,0,0,0.2)); }
+        .guide-box { background: #f0f0f0; padding: 10px; border-radius: 5px; font-size: 12px; line-height: 1.5; margin-top: 15px; border-left: 4px solid var(--gold); }
+        .stat-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        .stat-table th, .stat-table td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+        .archive-zone { border: 2px solid #3498db; margin-top: 20px; padding: 15px; border-radius: 10px; background: #f0faff; }
+        .shiny-toggle { font-size: 10px; margin-bottom: 5px; display: block; background: gold; border-radius: 4px; padding: 2px; }
+    </style>
+</head>
+<body>
+
+<div class="game-screen">
+    <div class="battle-stage">
+        <div class="buddy-container"><img id="buddyImg" src=""></div>
+        <div class="enemy-container">
+            <div id="hpWrapper" class="hidden"><div class="hp-container"><div id="hpFill" class="hp-bar"></div></div></div>
+            <img id="pokeImg" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png">
+        </div>
+        <img id="ballOverlay" src="">
+    </div>
+    <div class="message-box" id="msgText">歡迎回來！準備好今天的記帳冒險了嗎？</div>
+</div>
+
+<div class="ui-layer">
+    <div class="stats-bar">
+        <span>💰 P$<span id="balance">0</span></span>
+        <span>Lv.<span id="level">1</span></span>
+        <span>🧩 <span id="megaShard">0</span>/5</span>
+        <span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/mega-stone.png" class="icon-sm">x<span id="inv-stones">0</span></span>
+        <span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="icon-sm">x<span id="inv-poke">0</span></span>
+        <span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png" class="icon-sm">x<span id="inv-great">0</span></span>
+        <span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png" class="icon-sm">x<span id="inv-ultra">0</span></span>
+        <span>✨ <span id="shinyRate">0</span>%</span>
+    </div>
+
+    <div class="card" id="inputArea">
+        <div class="grid"><select id="cat"><option>飲食</option><option>交通</option><option>娛樂</option><option>其他</option></select><input id="note" type="text" placeholder="品名"></div>
+        <div class="grid" style="margin-top:8px;"><input id="amt" type="number" placeholder="金額"><button onclick="record()" style="background:var(--primary); color:white;">記帳</button></div>
+    </div>
+
+    <div id="battleActions" class="card hidden">
+        <div class="grid"><button onclick="atk()">⚔️ 削減生命</button><button class="btn-mega hidden" id="megaBtn" onclick="triggerMega()">MEGA 進化</button></div>
+        <div class="grid" style="margin-top:8px;">
+            <select id="ballSelect"><option value="poke">精靈球</option><option value="great">超級球</option><option value="ultra">高級球</option><option value="master">大師球</option></select>
+            <button style="background:#333; color:gold;" onclick="throwBall()">投球 (<span id="turnText">1</span>/8)</button>
+        </div>
+    </div>
+
+    <div class="grid">
+        <button onclick="openModal('shopModal')">🛒 商店</button>
+        <button onclick="openModal('taskModal')">🎯 任務</button>
+        <button onclick="openModal('adminModal')">⚙️ 設定</button>
+        <button onclick="openBuddyMenu()">🐾 夥伴</button>
+    </div>
+</div>
+
+<div id="shopModal" class="modal">
+    <h3>🛒 友好商店 <button onclick="closeModals()" style="float:right">❌</button></h3>
+    <div id="shopItems"></div>
+</div>
+
+<div id="taskModal" class="modal">
+    <h3>🎯 任務進度與獎勵 <button onclick="closeModals()" style="float:right">❌</button></h3>
+    <div id="taskContainer" style="overflow-y:auto; height:85%;"></div>
+</div>
+
+<div id="buddyModal" class="modal">
+    <h3>🐾 選擇夥伴 <button onclick="closeModals()" style="float:right">❌</button></h3>
+    <div class="buddy-menu-wrapper">
+        <div class="buddy-list-left" id="buddyListMenu"></div>
+        <div class="buddy-view-right" id="buddyPreview">
+            <div id="formSwitchArea"></div>
+            <img id="previewImg" src="">
+            <h4 id="previewName">寶可夢名稱</h4>
+            <button id="setBuddyBtn" style="background:var(--primary); color:white; width:100%;">就決定是你了！</button>
+        </div>
+    </div>
+</div>
+
+<div id="adminModal" class="modal">
+    <h3>⚙️ 系統與統計 <button onclick="closeModals()" style="float:right">❌</button></h3>
+    <h4>📊 每月支出統計</h4>
+    <div id="monthlyStatsArea"></div>
+    <hr>
+    <div class="archive-zone">
+        <h4>📂 區間清理與輕量化</h4>
+        <p style="font-size: 11px; color:#555;">匯出指定日期內的明細並從手機刪除以釋放空間。</p>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; margin-bottom:8px;">
+            <div><label style="font-size:11px;">起始:</label><br><input type="date" id="purgeStart" style="width:90%;"></div>
+            <div><label style="font-size:11px;">結束:</label><br><input type="date" id="purgeEnd" style="width:90%;"></div>
+        </div>
+        <button style="width:100%; background:#3498db; color:white;" onclick="exportAndPurge()">匯出明細並刪除紀錄</button>
+    </div>
+    <hr>
+    <h4>💾 資料備份</h4>
+    <button style="width:100%; margin-bottom:8px;" onclick="exportSave()">📤 輸出全系統存檔 (JSON)</button>
+    <button style="width:100%; margin-bottom:8px;" onclick="document.getElementById('importFile').click()">📥 匯入系統存檔 (JSON)</button>
+    <button style="width:100%; margin-bottom:12px; background:var(--gold);" onclick="document.getElementById('csvFile').click()">📊 匯入載具 CSV</button>
+    <input type="file" id="importFile" class="hidden" onchange="importSave(event)">
+    <input type="file" id="csvFile" class="hidden" onchange="importCSV(event)">
+    <div class="guide-box">
+        <strong>📖 遊戲說明</strong><br>
+        1. <b>捕捉：</b> 記帳每滿 500 P$ 遇怪。血量越低捕捉率越高。<br>
+        2. <b>任務：</b> 每日完成記帳送精靈球，連續5天送大師球。<br>
+        3. <b>Mega：</b> 捕捉具資格的寶可夢獲碎片，5碎片自動合1石。<br>
+        4. <b>閃光：</b> 累計記帳50筆後解鎖，Mega 狀態下閃率更高！
+    </div>
+</div>
+
+<script>
+const MEGA_DATA = { 3: 10033, 6: 10034, 9: 10035, 65: 10037, 94: 10038, 150: 10043 };
+const POKE_NAMES = { 1: "妙蛙種子", 3: "妙蛙花", 4: "小火龍", 6: "噴火龍", 7: "傑尼龜", 9: "水箭龜", 25: "皮卡丘", 65: "胡地", 94: "耿鬼", 150: "超夢", 151: "夢幻" };
+
+let state = {
+    balance: 0, level: 1, pool: 0,
+    items: { poke: 10, great: 0, ultra: 0, master: 0, shards: 0, stones: 0 },
+    owned: [{id: 25, shiny: false}],
+    buddy: {id: 25, shiny: false},
+    megaTime: 0, totalRecords: 0, totalCaught: 0,
+    dailyCount: 0, dailyResetDate: "", consecutiveDays: 0, lastRecordDate: "",
+    history: []
+};
+
+let tempPreview = { id: 25, shiny: false };
+
+function updateUI() {
+    document.getElementById('balance').innerText = state.balance.toLocaleString();
+    document.getElementById('level').innerText = state.level;
+    document.getElementById('megaShard').innerText = state.items.shards;
+    document.getElementById('inv-stones').innerText = state.items.stones;
+    document.getElementById('inv-poke').innerText = state.items.poke;
+    document.getElementById('inv-great').innerText = state.items.great;
+    document.getElementById('inv-ultra').innerText = state.items.ultra;
+    document.getElementById('shinyRate').innerText = (state.totalRecords < 50 ? 0 : (isMegaActive() ? 20 : 5));
+    
+    const isMega = isMegaActive() && MEGA_DATA[state.buddy.id];
+    const sId = isMega ? MEGA_DATA[state.buddy.id] : state.buddy.id;
+    const bImg = document.getElementById('buddyImg');
+    bImg.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${sId}.png`;
+    
+    if (state.buddy.shiny) bImg.classList.add('shiny-effect');
+    else bImg.classList.remove('shiny-effect');
+
+    const btn = document.getElementById('megaBtn');
+    if (state.items.stones > 0 && MEGA_DATA[state.buddy.id] && !isMegaActive()) btn.classList.remove('hidden'); else btn.classList.add('hidden');
+    if (state.current) {
+        document.getElementById('hpFill').style.width = state.current.hp + "%";
+        document.getElementById('turnText').innerText = state.current.turn;
+    }
+    renderShop();
+    localStorage.setItem('pokeClassic_v31', JSON.stringify(state));
+}
+
+function openBuddyMenu() {
+    const list = document.getElementById('buddyListMenu');
+    const uniqueIds = [...new Set(state.owned.map(p => p.id))].sort((a, b) => a - b);
+    list.innerHTML = uniqueIds.map(id => {
+        const name = POKE_NAMES[id] || `寶可夢`;
+        const no = String(id).padStart(3, '0');
+        const hasShiny = state.owned.some(p => p.id === id && p.shiny);
+        return `<div class="buddy-name-item ${state.buddy.id === id ? 'selected' : ''}" onclick="previewBuddy(${id})">No.${no} ${name} ${hasShiny?'✨':''}</div>`;
+    }).join('');
+    previewBuddy(state.buddy.id, state.buddy.shiny);
+    document.getElementById('buddyModal').style.display = 'block';
+}
+
+function previewBuddy(id, forceShiny = null) {
+    const hasNormal = state.owned.some(p => p.id === id && !p.shiny);
+    const hasShiny = state.owned.some(p => p.id === id && p.shiny);
+    tempPreview.id = id;
+    if (forceShiny !== null) tempPreview.shiny = forceShiny;
+    else tempPreview.shiny = hasShiny && (!hasNormal || state.buddy.id === id ? state.buddy.shiny : false);
+    const pImg = document.getElementById('previewImg');
+    pImg.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+    if (tempPreview.shiny) pImg.classList.add('shiny-effect'); else pImg.classList.remove('shiny-effect');
+    document.getElementById('previewName').innerText = (POKE_NAMES[id] || `寶可夢 #${id}`) + (tempPreview.shiny ? " (✨)" : "");
+    let switchHtml = "";
+    if (hasNormal && hasShiny) {
+        switchHtml = `<div class="shiny-toggle"><button onclick="previewBuddy(${id}, false)" style="padding:2px 5px; font-size:10px;">普通</button><button onclick="previewBuddy(${id}, true)" style="padding:2px 5px; font-size:10px; background:gold;">閃光✨</button></div>`;
+    }
+    document.getElementById('formSwitchArea').innerHTML = switchHtml;
+}
+
+document.getElementById('setBuddyBtn').onclick = () => { state.buddy = { ...tempPreview }; updateUI(); closeModals(); };
+
+async function throwBall() {
+    const t = document.getElementById('ballSelect').value;
+    if (state.items[t] <= 0) return alert("球不足");
+    state.items[t]--;
+    const ov = document.getElementById('ballOverlay');
+    ov.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${t}-ball.png`;
+    ov.style.display = 'block'; document.getElementById('pokeImg').style.opacity = '0.2';
+    await new Promise(r => setTimeout(r, 800));
+    let rate = {poke:0.2, great:0.3, ultra:0.4, master:1.0}[t] + (100-state.current.hp)/200;
+    if (Math.random() < (rate + (isMegaActive()?0.2:0)) || t === 'master') {
+        const isShiny = state.current.isShiny;
+        document.getElementById('msgText').innerText = `成功捕捉了 ${isShiny?'✨':''}${POKE_NAMES[state.current.id] || ''}！`;
+        state.totalCaught++;
+        state.owned.push({ id: state.current.id, shiny: isShiny });
+        if (MEGA_DATA[state.current.id]) { state.items.shards++; if(state.items.shards>=5){state.items.shards=0; state.items.stones++;} }
+        setTimeout(resetBattle, 1200);
+    } else {
+        document.getElementById('pokeImg').style.opacity = '1'; ov.style.display = 'none';
+        state.current.turn++; if(state.current.turn >= 8) runAway();
+    }
+    updateUI();
+}
+
+function record() {
+    const amt = parseInt(document.getElementById('amt').value); if (!amt) return;
+    const today = new Date().toISOString().split('T')[0];
+    state.history.push({ date: today, cat: document.getElementById('cat').value, note: document.getElementById('note').value, amt: amt });
+    state.balance += amt; state.totalRecords++; state.pool += (amt / 500) * 100;
+    if (state.dailyCount < 3) { state.dailyCount++; state.items.poke++; }
+    if (state.lastRecordDate !== today) {
+        const yest = new Date(); yest.setDate(yest.getDate()-1);
+        state.consecutiveDays = (state.lastRecordDate === yest.toISOString().split('T')[0]) ? state.consecutiveDays+1 : 1;
+        state.lastRecordDate = today;
+        if (state.consecutiveDays >= 5) { state.items.master++; state.consecutiveDays = 0; }
+    }
+    if (state.pool >= 100) { state.pool = 0; spawn(); }
+    updateUI(); document.getElementById('amt').value = ""; document.getElementById('note').value = "";
+}
+
+function spawn() {
+    const id = Math.random() < 0.1 ? Math.floor(Math.random()*3)+144 : Math.floor(Math.random()*151)+1;
+    const name = POKE_NAMES[id] || `寶可夢 #${id}`;
+    state.current = { id, hp: 100, turn: 1, isShiny: (state.totalRecords >= 50 && Math.random() < (isMegaActive()?0.2:0.05)) };
+    const pImg = document.getElementById('pokeImg');
+    pImg.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+    state.current.isShiny ? pImg.classList.add('shiny-effect') : pImg.classList.remove('shiny-effect');
+    document.getElementById('inputArea').classList.add('hidden');
+    document.getElementById('battleActions').classList.remove('hidden');
+    document.getElementById('hpWrapper').classList.remove('hidden');
+    document.getElementById('msgText').innerText = `發現了野生的 ${state.current.isShiny?'✨':''}${name}！`;
+    updateUI();
+}
+
+function resetBattle() {
+    state.current = null; document.getElementById('inputArea').classList.remove('hidden'); document.getElementById('battleActions').classList.add('hidden');
+    document.getElementById('hpWrapper').classList.add('hidden'); document.getElementById('ballOverlay').style.display = 'none';
+    document.getElementById('pokeImg').style.opacity = '1'; 
+    // 重置後改為高級球
+    document.getElementById('pokeImg').src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png";
+    updateUI();
+}
+
+function exportAndPurge() {
+    const start = document.getElementById('purgeStart').value;
+    const end = document.getElementById('purgeEnd').value;
+    if (!start || !end) return alert("請選擇日期範圍");
+    const toExport = state.history.filter(h => h.date >= start && h.date <= end);
+    if (toExport.length === 0) return alert("該區間內無明細可整理");
+    if (!confirm(`找到 ${toExport.length} 筆明細，即將匯出備份並從遊戲中永久刪除，是否繼續？`)) return;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(toExport, null, 2)], {type: "application/json"}));
+    a.download = `Expense_Backup_${start}_to_${end}.json`;
+    a.click();
+    state.history = state.history.filter(h => h.date < start || h.date > end);
+    updateMonthlyStats(); updateUI();
+}
+
+function updateMonthlyStats() {
+    const stats = {};
+    state.history.forEach(item => { const month = item.date.substring(0, 7); if (!stats[month]) stats[month] = 0; stats[month] += item.amt; });
+    let html = '<table class="stat-table"><tr><th>月份</th><th>累計支出 (P$)</th></tr>';
+    const sortedMonths = Object.keys(stats).sort().reverse();
+    sortedMonths.forEach(m => { html += `<tr><td>${m}</td><td>${stats[m].toLocaleString()}</td></tr>`; });
+    html += '</table>';
+    document.getElementById('monthlyStatsArea').innerHTML = sortedMonths.length ? html : '<p style="font-size:12px; color:#666;">尚無記帳紀錄</p>';
+}
+
+function atk() { state.current.hp = Math.max(5, state.current.hp - 25); state.current.turn++; if(state.current.turn >= 8) runAway(); updateUI(); }
+function triggerMega() { if (state.items.stones > 0) { state.items.stones--; state.megaTime = Date.now() + 86400000; updateUI(); } }
+function isMegaActive() { return Date.now() < state.megaTime; }
+function buy(id, p) { if(state.balance < p) return alert("P$ 不足"); state.balance -= p; state.items[id]++; updateUI(); }
+function renderShop() {
+    const s = [{id:'poke', n:'精靈球', p:100, img:'poke-ball'}, {id:'great', n:'超級球', p:300, img:'great-ball'}, {id:'ultra', n:'高級球', p:600, img:'ultra-ball'}];
+    document.getElementById('shopItems').innerHTML = s.map(i => `<div style="padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;"><span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${i.img}.png" class="icon-sm">${i.n}</span><button onclick="buy('${i.id}', ${i.p})">P$ ${i.p}</button></div>`).join('');
+}
+function runAway() { document.getElementById('msgText').innerText = "逃走了！"; setTimeout(resetBattle, 1200); }
+function openModal(id) { if(id === 'taskModal') renderTasks(); if(id === 'adminModal') updateMonthlyStats(); document.getElementById(id).style.display = 'block'; }
+function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
+function exportSave() { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], {type: "application/json"})); a.download = `PokeFullBackup_v31.json`; a.click(); }
+function importSave(e) { const r = new FileReader(); r.onload = (ev) => { state = JSON.parse(ev.target.result); updateUI(); }; r.readAsText(e.target.files[0]); }
+function importCSV(e) { const r = new FileReader(); r.onload = (ev) => { const l = ev.target.result.split('\n'); l.slice(1).forEach(row => { const c = row.split(','); if(c.length > 1) { const amt = parseInt(c[c.length-1]) || 0; state.balance += amt; state.history.push({ date: new Date().toISOString().split('T')[0], cat: "載具匯入", note: "CSV資料", amt: amt }); }}); updateUI(); }; r.readAsText(e.target.files[0]); }
+function renderTasks() {
+    const ts = [{ n: "每日記帳進度", c: state.dailyCount, m: 3, r: "精靈球 x1" }, { n: "連續記帳成就", c: state.consecutiveDays, m: 5, r: "大師球 x1" }, { n: "捕捉達人任務", c: state.totalCaught % 5, m: 5, r: "超級球 x1" }, { n: "閃光系統覺醒", c: Math.min(state.totalRecords, 50), m: 50, r: "解鎖閃光(5%)" }];
+    document.getElementById('taskContainer').innerHTML = ts.map(t => { const p = (t.c / t.m) * 100; return `<div class="task-box"><b>${t.n}</b><br><small>${t.c}/${t.m} (獎勵: ${t.r})</small><div class="progress-container"><div class="progress-fill" style="width:${p}%"></div></div></div>`; }).join('');
+}
+
+// 註冊 Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(reg => { console.log('SW Registered'); }).catch(err => { console.log('SW Failed', err); });
+    });
+}
+
+const saved = localStorage.getItem('pokeClassic_v31');
+if(saved) {
+    state = JSON.parse(saved);
+    if (state.owned.length > 0 && typeof state.owned[0] === 'number') {
+        state.owned = state.owned.map(id => ({id, shiny: false}));
+        state.buddy = {id: state.buddy, shiny: false};
+    }
+}
+updateUI();
+</script>
+</body>
+</html>
