@@ -1,7 +1,8 @@
 const CACHE_NAME = 'pokemaster-v31';
 const ASSETS = [
-    'index.html', // 確保這裡改為你的 HTML 檔名
-    'manifest.json',
+    './',           // 代表根目錄
+    './index.html',
+    './manifest.json',
     'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/luxury-ball.png'
 ];
 
