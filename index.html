@@ -3,29 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster v52 - 終極神奧版</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>PokeMaster v52 - 終極神奧穩定版</title>
+    <script>
+        const cdns = [
+            'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js',
+            'https://cdn.jsdelivr.net/npm/chart.js',
+            'https://unpkg.com/chart.js@3.9.1/dist/chart.min.js'
+        ];
+        let chartLoaded = false;
+        async function loadChartJS() {
+            for (let url of cdns) {
+                try {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = url;
+                        script.onload = () => { chartLoaded = true; resolve(); };
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                    console.log("Chart.js loaded from: " + url);
+                    return;
+                } catch (e) { console.warn("Failed to load: " + url); }
+            }
+        }
+        loadChartJS();
+    </script>
     <style>
         :root { 
             --p: #2d5a27; --bg: #f4f7f6; --text: #2c3e50; --accent: #f1c40f;
             --mega: #9b59b6; --danger: #e74c3c; --white: #ffffff;
         }
         body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: #1a1a1a; margin: 0; color: var(--text); overflow: hidden; }
-        
-        /* 全屏分頁系統 */
         .page { display: none; width: 100vw; height: 100vh; background: var(--bg); position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto; }
         .page-active { display: block; animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        /* 主畫面：戰鬥舞台 */
         .battle-stage { height: 260px; position: relative; background: linear-gradient(#87ceeb 60%, #9cd39c 60%); border-bottom: 4px solid #333; overflow: hidden; }
         .buddy-box { position: absolute; bottom: 20px; left: 30px; width: 100px; z-index: 5; }
         .enemy-box { position: absolute; top: 30px; right: 30px; width: 100px; text-align: center; }
         #ballOverlay { position: absolute; width: 40px; display: none; z-index: 100; pointer-events: none; }
         .hp-bar { width: 100%; height: 6px; background: #333; border-radius: 3px; border: 1px solid #000; margin-bottom: 5px; }
         #hpFill { height: 100%; background: #2ecc71; width: 100%; transition: 0.3s; }
-
-        /* 圖鑑：左滑動右詳情 */
         .dex-container { display: flex; height: calc(100vh - 110px); background: #eee; margin: 5px; border-radius: 12px; overflow: hidden; }
         .dex-sidebar { width: 35%; overflow-y: auto; background: #ddd; border-right: 2px solid #ccc; }
         .dex-main { width: 65%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; background: white; }
@@ -33,21 +50,16 @@
         .dex-item.active { background: var(--p); color: white; }
         .mega-fx { filter: drop-shadow(0 0 15px var(--mega)); animation: glow 1.5s infinite; }
         @keyframes glow { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-
-        /* UI 元件 */
         .card { background: var(--white); border-radius: 12px; padding: 15px; margin: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .msg-box { height: 45px; background: #fff; padding: 10px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #ddd; overflow-y: auto; }
         .control-panel { padding: 5px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; background: #333; height: 80px; position: fixed; bottom: 0; width: 100%; }
         .btn-nav { background: #444; color: white; border: none; font-size: 10px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .btn-back { background: var(--danger); color: white; width: calc(100% - 20px); padding: 15px; margin: 10px; border: none; border-radius: 8px; font-weight: bold; }
-        
-        /* 捕捉動畫 */
         .ball-throw { display: block !important; animation: ballCurve 0.8s cubic-bezier(0.25, 0.5, 0.5, 1) forwards; }
         .ball-shake { display: block !important; animation: ballShake 0.5s 3; }
         @keyframes ballCurve { 0% { left: 40px; bottom: 40px; transform: scale(1); } 100% { left: 240px; bottom: 160px; transform: scale(0.7); } }
         @keyframes ballShake { 0%, 100% { transform: translate(240px, -160px) rotate(0deg); } 25% { transform: translate(240px, -160px) rotate(20deg); } 75% { transform: translate(240px, -160px) rotate(-20deg); } }
         .gotcha-text { position: absolute; top: 40%; left: 50%; transform: translate(-50%,-50%); color: gold; font-size: 45px; font-weight: 900; text-shadow: 3px 3px 0 #000; z-index: 200; display: none; }
-
         .hist-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; align-items: center; }
         .hidden { display: none; }
     </style>
@@ -64,9 +76,7 @@
         </div>
         <img id="ballOverlay" src="">
     </div>
-
-    <div id="msg" class="msg-box">準備好開始明天的冒險了嗎？</div>
-
+    <div id="msg" class="msg-box">系統載入中...</div>
     <div id="inputArea" class="card">
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:8px;">
             <input type="date" id="recDate" style="padding:8px; border-radius:5px; border:1px solid #ccc;">
@@ -78,7 +88,6 @@
         </div>
         <button onclick="record()" style="background:var(--p); color:white; width:100%; padding:12px; border:none; border-radius:8px; font-weight:bold;">記帳並探索冒險</button>
     </div>
-
     <div id="battleActions" class="card hidden" style="border:2px solid var(--p);">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
             <button onclick="attack()" style="background:#e74c3c; color:white; padding:10px; border:none; border-radius:8px;">⚔️ 攻擊</button>
@@ -89,7 +98,6 @@
             <button onclick="throwBall()" style="background:var(--p); color:white; padding:0 25px; border:none; border-radius:8px;">投球</button>
         </div>
     </div>
-
     <div class="control-panel">
         <button class="btn-nav" onclick="openPage('chartPage')">📈<br>報表</button>
         <button class="btn-nav" onclick="openPage('dexPage')">📖<br>圖鑑</button>
@@ -100,78 +108,28 @@
 </div>
 
 <div id="dexPage" class="page">
-    <div class="dex-container">
-        <div class="dex-sidebar" id="dexNav"></div>
-        <div class="dex-main" id="dexView">
-            <h3 id="dexTitle">選擇寶可夢</h3>
-            <img id="dexImg" src="" style="width:160px; height:160px; object-fit:contain;">
-            <div id="dexCtrl" class="hidden" style="text-align:center;">
-                <div style="margin:10px 0;">
-                    <button id="btnNormal" onclick="setDexShiny(false)" style="padding:5px 15px;">常規</button>
-                    <button id="btnShiny" onclick="setDexShiny(true)" style="padding:5px 15px;">✨ 閃光</button>
-                </div>
-                <button onclick="assignBuddy()" style="background:var(--p); color:white; padding:10px 20px; border:none; border-radius:20px;">就決定是你了！</button>
-            </div>
-        </div>
-    </div>
+    <div class="dex-container"><div class="dex-sidebar" id="dexNav"></div><div class="dex-main" id="dexView"><h3 id="dexTitle">選擇寶可夢</h3><img id="dexImg" src="" style="width:160px; height:160px; object-fit:contain;"><div id="dexCtrl" class="hidden" style="text-align:center;"><div style="margin:10px 0;"><button id="btnNormal" onclick="setDexShiny(false)" style="padding:5px 15px;">常規</button><button id="btnShiny" onclick="setDexShiny(true)" style="padding:5px 15px;">✨ 閃光</button></div><button onclick="assignBuddy()" style="background:var(--p); color:white; padding:10px 20px; border:none; border-radius:20px;">就決定是你了！</button></div></div></div>
     <button class="btn-back" onclick="back()">✖ 關閉圖鑑</button>
 </div>
 
 <div id="chartPage" class="page">
-    <div class="card">
-        <h3>📊 年度支出趨勢</h3>
-        <canvas id="chartYear" style="height:200px;"></canvas>
-    </div>
-    <div class="card">
-        <h3>🍕 類別佔比</h3>
-        <canvas id="chartCat" style="height:200px;"></canvas>
-    </div>
+    <div class="card"><h3>📊 年度支出趨勢</h3><canvas id="chartYear" style="height:200px;"></canvas></div>
+    <div class="card"><h3>🍕 類別佔比</h3><canvas id="chartCat" style="height:200px;"></canvas></div>
     <button class="btn-back" onclick="back()">✖ 關閉報表</button>
 </div>
 
 <div id="historyPage" class="page">
-    <div class="card">
-        <h3>📜 歷史明細 (限7天)</h3>
-        <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <input type="date" id="hStart" style="flex:1;"> 到 <input type="date" id="hEnd" style="flex:1;">
-        </div>
-        <button onclick="searchHistory()" style="background:#2980b9; color:white; width:100%; padding:10px; border:none; border-radius:5px;">查詢紀錄</button>
-        <div id="historyList" style="margin-top:15px; max-height:300px; overflow-y:auto;"></div>
-    </div>
+    <div class="card"><h3>📜 歷史明細 (限7天)</h3><div style="display:flex; gap:5px; margin-bottom:10px;"><input type="date" id="hStart" style="flex:1;"> 到 <input type="date" id="hEnd" style="flex:1;"></div><button onclick="searchHistory()" style="background:#2980b9; color:white; width:100%; padding:10px; border:none; border-radius:5px;">查詢紀錄</button><div id="historyList" style="margin-top:15px; max-height:300px; overflow-y:auto;"></div></div>
     <button class="btn-back" onclick="back()">✖ 返回</button>
 </div>
 
 <div id="statusPage" class="page">
-    <div class="card">
-        <h3>👤 訓練家中心</h3>
-        <p>錢包：P$ <b id="st-bal">0</b></p>
-        <p>大師成就進度：P$ <span id="st-achieve">0</span> / 5000</p>
-        <hr>
-        <p>進化石進度 (<span id="p-evo-txt">0</span>/5)</p>
-        <div class="hp-bar"><div id="p-evo-bar" style="height:100%; background:var(--accent); width:0%;"></div></div>
-        <p>Mega石進度 (<span id="p-mega-txt">0</span>/5)</p>
-        <div class="hp-bar"><div id="p-mega-bar" style="height:100%; background:var(--mega); width:0%;"></div></div>
-        <hr>
-        <div id="st-items" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; text-align:center;"></div>
-        <button onclick="performEvolve()" style="background:orange; color:white; width:100%; padding:15px; margin-top:15px; border:none; border-radius:8px;">消耗進化石永久進化夥伴</button>
-    </div>
+    <div class="card"><h3>👤 訓練家中心</h3><p>錢包：P$ <b id="st-bal">0</b></p><p>大師成就進度：P$ <span id="st-achieve">0</span> / 5000</p><hr><p>進化石進度 (<span id="p-evo-txt">0</span>/5)</p><div class="hp-bar"><div id="p-evo-bar" style="height:100%; background:var(--accent); width:0%;"></div></div><p>Mega石進度 (<span id="p-mega-txt">0</span>/5)</p><div class="hp-bar"><div id="p-mega-bar" style="height:100%; background:var(--mega); width:0%;"></div></div><hr><div id="st-items" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; text-align:center;"></div><button onclick="performEvolve()" style="background:orange; color:white; width:100%; padding:15px; margin-top:15px; border:none; border-radius:8px;">消耗進化石永久進化夥伴</button></div>
     <button class="btn-back" onclick="back()">✖ 返回</button>
 </div>
 
 <div id="adminPage" class="page">
-    <div class="card">
-        <h3>⚙️ 系統管理</h3>
-        <button onclick="exportData()" style="background:#2980b9; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">💾 匯出備份 (JSON)</button>
-        <input type="file" id="importFile" style="display:none" onchange="importData(event)">
-        <button onclick="document.getElementById('importFile').click()" style="background:#27ae60; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">📂 匯入存檔 (JSON)</button>
-        <hr>
-        <button onclick="document.getElementById('csvFile').click()" style="background:var(--p); color:white; width:100%; padding:12px; border:none; border-radius:5px;">📑 匯入財政部 CSV</button>
-        <input type="file" id="csvFile" style="display:none" onchange="handleCSV(event)">
-        <hr>
-        <h4>區間輕量化</h4>
-        <input type="date" id="lStart"> ~ <input type="date" id="lEnd">
-        <button onclick="archiveData()" style="background:var(--danger); color:white; width:100%; padding:12px; margin-top:10px; border:none; border-radius:5px;">⚠️ 輕量化歸檔並刪除</button>
-    </div>
+    <div class="card"><h3>⚙️ 系統管理</h3><button onclick="exportData()" style="background:#2980b9; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">💾 匯出備份 (JSON)</button><input type="file" id="importFile" style="display:none" onchange="importData(event)"><button onclick="document.getElementById('importFile').click()" style="background:#27ae60; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">📂 匯入存檔 (JSON)</button><hr><button onclick="document.getElementById('csvFile').click()" style="background:var(--p); color:white; width:100%; padding:12px; border:none; border-radius:5px;">📑 匯入財政部 CSV</button><input type="file" id="csvFile" style="display:none" onchange="handleCSV(event)"><hr><h4>區間輕量化</h4><input type="date" id="lStart"> ~ <input type="date" id="lEnd"><button onclick="archiveData()" style="background:var(--danger); color:white; width:100%; padding:12px; margin-top:10px; border:none; border-radius:5px;">⚠️ 輕量化歸檔並刪除</button></div>
     <button class="btn-back" onclick="back()">✖ 返回</button>
 </div>
 
@@ -190,7 +148,7 @@ let s = {
     lastUpdate: new Date().toDateString()
 };
 
-// --- [ 核心：數據與 UI 刷新 ] ---
+// --- [ 核心刷新與初始化 ] ---
 function updateUI() {
     localStorage.setItem('pokemaster_v52', JSON.stringify(s));
     document.getElementById('st-bal').innerText = s.bal.toLocaleString();
@@ -199,59 +157,34 @@ function updateUI() {
     document.getElementById('p-evo-bar').style.width = (s.prog.evo/5*100) + "%";
     document.getElementById('p-mega-txt').innerText = s.prog.mega;
     document.getElementById('p-mega-bar').style.width = (s.prog.mega/5*100) + "%";
-    
     const isMega = Date.now() < s.buddy.megaUntil;
-    let bImg = isMega ? `${API}/pokemon/${MEGA_DATA[s.buddyId] || s.buddyId+'-mega'}.png` 
-                      : `${API}/pokemon/${s.isShinyBuddy?'shiny/':''}${s.buddyId}.png`;
+    let bImg = isMega ? `${API}/pokemon/${MEGA_DATA[s.buddyId] || s.buddyId+'-mega'}.png` : `${API}/pokemon/${s.isShinyBuddy?'shiny/':''}${s.buddyId}.png`;
     document.getElementById('buddyImg').src = bImg;
     isMega ? document.getElementById('buddyImg').classList.add('mega-fx') : document.getElementById('buddyImg').classList.remove('mega-fx');
-    
     renderBackpack();
 }
 
-// --- [ 記帳探索與歷史紀錄 ] ---
 function record() {
     const amt = parseInt(document.getElementById('recAmt').value);
     const date = document.getElementById('recDate').value;
     if (!amt || !date) return alert("請填入金額與日期");
-
-    s.bal += Math.floor(amt * 0.1); // 記帳獎勵 10%
-    s.pool += amt;
-    s.achieveBal += amt;
-    
+    s.bal += Math.floor(amt * 0.1); s.pool += amt; s.achieveBal += amt;
     const month = date.substring(0, 7);
     s.hist.push({id: Date.now(), date, cat: document.getElementById('recCat').value, amt, note: document.getElementById('recNote').value});
     s.yearSums[month] = (s.yearSums[month] || 0) + amt;
-
-    // 成就檢查
-    while (s.achieveBal >= 5000) {
-        s.achieveBal -= 5000;
-        s.items.master++;
-        alert("🏆 成就達成！獲得 1 顆大師球！");
-    }
-
+    while (s.achieveBal >= 5000) { s.achieveBal -= 5000; s.items.master++; alert("🏆 成就達成！獲得 1 顆大師球！"); }
     if (s.pool >= 500) { s.pool -= 500; spawnEnemy(); }
-    
-    document.getElementById('recAmt').value = "";
-    updateUI();
+    document.getElementById('recAmt').value = ""; updateUI();
 }
 
 function searchHistory() {
-    const start = document.getElementById('hStart').value;
-    const end = document.getElementById('hEnd').value;
+    const start = document.getElementById('hStart').value, end = document.getElementById('hEnd').value;
     if (!start || !end) return;
-    
-    const d1 = new Date(start); const d2 = new Date(end);
-    const diff = (d2 - d1) / (1000 * 60 * 60 * 24);
-    if (diff < 0 || diff > 7) return alert("查詢區間不可超過 7 天");
-
+    const d1 = new Date(start), d2 = new Date(end);
+    if (((d2 - d1) / (1000 * 60 * 60 * 24)) > 7) return alert("查詢區間不可超過 7 天");
     const filtered = s.hist.filter(h => h.date >= start && h.date <= end);
-    const list = document.getElementById('historyList');
-    list.innerHTML = filtered.map(h => `
-        <div class="hist-item">
-            <div><small>${h.date}</small><br><b>${h.cat}</b>: $${h.amt}</div>
-            <button onclick="deleteRecord(${h.id})" style="background:var(--danger); color:white; border:none; padding:5px; border-radius:3px;">刪除</button>
-        </div>
+    document.getElementById('historyList').innerHTML = filtered.map(h => `
+        <div class="hist-item"><div><small>${h.date}</small><br><b>${h.cat}</b>: $${h.amt}</div><button onclick="deleteRecord(${h.id})" style="background:var(--danger); color:white; border:none; padding:5px; border-radius:3px;">刪除</button></div>
     `).join('') || "查無資料";
 }
 
@@ -259,23 +192,17 @@ function deleteRecord(id) {
     const idx = s.hist.findIndex(h => h.id === id);
     if (idx > -1) {
         const h = s.hist[idx];
-        const penalty = Math.floor(h.amt * 0.1);
-        s.bal = Math.max(0, s.bal - penalty);
+        s.bal = Math.max(0, s.bal - Math.floor(h.amt * 0.1));
         s.achieveBal = Math.max(0, s.achieveBal - h.amt);
-        s.hist.splice(idx, 1);
-        alert(`已刪除紀錄，扣除獎勵 P$ ${penalty}`);
-        searchHistory();
-        updateUI();
+        s.hist.splice(idx, 1); alert("已刪除紀錄並扣除獎勵"); searchHistory(); updateUI();
     }
 }
 
-// --- [ 捕捉系統 ] ---
 let curE = null;
 function spawnEnemy() {
     const id = Math.floor(Math.random()*493)+1;
     const isShiny = Math.random() < (Date.now() < s.buddy.megaUntil ? 0.1 : 0.05);
     curE = {id, hp: 100, isShiny, name: NAMES[id-1]};
-    
     document.getElementById('enemyImg').src = `${API}/pokemon/${isShiny?'shiny/':''}${id}.png`;
     document.getElementById('enemyArea').style.display = "block";
     document.getElementById('battleActions').classList.remove('hidden');
@@ -288,39 +215,30 @@ async function throwBall() {
     const type = document.getElementById('ballSelect').value;
     if (s.items[type] <= 0 && type !== 'master') return alert("球不足！");
     if (type !== 'master') s.items[type]--;
-    
     const ball = document.getElementById('ballOverlay');
-    ball.src = `${API}/items/${type}-ball.png`;
-    ball.className = 'ball-throw';
-    
-    await wait(800);
+    ball.src = `${API}/items/${type}-ball.png`; ball.className = 'ball-throw';
+    await new Promise(r => setTimeout(r, 800));
     ball.className = 'ball-shake';
-    await wait(1500);
-
+    await new Promise(r => setTimeout(r, 1500));
     const catchRate = {poke:0.3, great:0.5, ultra:0.7, master:1.0}[type] * (1.5 - curE.hp/100);
     if (Math.random() < catchRate || type === 'master') {
         document.getElementById('gotcha').style.display = "block";
         if (!s.owned.includes(curE.id)) s.owned.push(curE.id);
         if (curE.isShiny && !s.shinyOwned.includes(curE.id)) s.shinyOwned.push(curE.id);
-        
-        s.prog.evo++;
-        if ([3,6,9,94,130,448].includes(curE.id)) s.prog.mega++;
+        s.prog.evo++; if ([3,6,9,94,130,448].includes(curE.id)) s.prog.mega++;
         if (s.prog.evo >= 5) { s.prog.evo=0; s.items.stone++; }
         if (s.prog.mega >= 5) { s.prog.mega=0; s.items.mstone++; }
-        
         setTimeout(resetBattle, 2000);
-    } else {
-        ball.style.display = 'none';
-        document.getElementById('msg').innerText = "哎呀！差一點就抓到了！";
-    }
+    } else { ball.style.display = 'none'; document.getElementById('msg').innerText = "哎呀！被逃走了！"; }
     updateUI();
 }
 
-// --- [ 圖鑑與夥伴 ] ---
 let tempId = 25, tempShiny = false;
 function renderDex() {
-    const nav = document.getElementById('dexNav');
-    nav.innerHTML = NAMES.map((n, i) => {
-        const id = i + 1;
-        const own = s.owned.includes(id);
-        return `<div class="dex-item ${tempId===id?'active':''}" onclick="previewDex(${id})">N
+    document.getElementById('dexNav').innerHTML = NAMES.map((n, i) => {
+        const id = i + 1; const own = s.owned.includes(id);
+        return `<div class="dex-item ${tempId===id?'active':''}" onclick="previewDex(${id})">No.${String(id).padStart(3,'0')} ${own?n:'???' }</div>`;
+    }).join('');
+}
+function previewDex(id) {
+    tempId
