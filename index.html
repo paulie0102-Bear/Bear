@@ -658,6 +658,31 @@ document.getElementById('msg').innerText =
 "圖鑑完成率：" + rate + "% ("+c+"/493)";
 }
 }
+<script>
+// 等頁面完全載入後執行
+window.addEventListener('DOMContentLoaded', () => {
+    // 選取所有按鈕
+    const buttons = document.querySelectorAll('button');
+
+    buttons.forEach(btn => {
+        // 移除 disabled 屬性
+        btn.disabled = false;
+
+        // 確保可點擊 (CSS 層級保險)
+        btn.style.pointerEvents = 'auto';
+        btn.style.zIndex = '1000';
+
+        // 如果沒有事件監聽器，給一個測試點擊提示
+        if (!btn.onclick) {
+            btn.addEventListener('click', () => {
+                alert('按鈕已點擊！');
+            });
+        }
+    });
+
+    console.log('所有按鈕已強制啟用。');
+});
+</script>
 </script>
 </body>
 </html>
