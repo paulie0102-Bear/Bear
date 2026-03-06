@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster v55.2 - 官方進化優化版</title>
+    <title>PokeMaster v55.1 - 穩定優化版</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <style>
         :root { 
@@ -30,6 +30,10 @@
         .control-panel { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 4px; background: #222; height: 120px; position: fixed; bottom: 0; width: 100%; padding: 5px; box-sizing: border-box; }
         .btn-nav { background: #333; color: white; border: none; font-size: 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .btn-back { background: var(--danger); color: white; width: calc(100% - 20px); padding: 15px; margin: 10px; border: none; border-radius: 10px; font-weight: bold; }
+        .ball-throw { display: block !important; animation: ballCurve 0.8s forwards; }
+        .ball-shake { display: block !important; animation: ballShake 0.5s 3; }
+        @keyframes ballCurve { 0% { left: 40px; bottom: 40px; } 100% { left: 210px; bottom: 140px; transform: scale(0.7) rotate(360deg); } }
+        @keyframes ballShake { 0%, 100% { transform: translate(210px, -140px) rotate(0deg); } 25% { transform: translate(210px, -140px) rotate(15deg); } 75% { transform: translate(210px, -140px) rotate(-15deg); } }
         .mega-fx { filter: drop-shadow(0 0 10px var(--mega)); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .gotcha-text { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: gold; font-size: 40px; font-weight: 900; text-shadow: 2px 2px #000; z-index: 200; display: none; }
@@ -63,7 +67,7 @@
         </div>
         <button onclick="record()" style="background:var(--p); color:white; width:100%; padding:12px; border:none; border-radius:8px; font-weight:bold;">記帳並探索冒險</button>
     </div>
-    <div id="battleActions" class="card" style="border:2px solid var(--p); display:none;">
+    <div id="battleActions" class="card hidden" style="border:2px solid var(--p); display:none;">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
             <button onclick="attack()" style="background:#e74c3c; color:white; padding:10px; border:none; border-radius:5px;">⚔️ 攻擊</button>
             <button onclick="tryMega()" style="background:var(--mega); color:white; padding:10px; border:none; border-radius:5px;">🧬 MEGA進化</button>
@@ -98,9 +102,11 @@
             <h3 id="dexTitle">載入中</h3>
             <img id="dexImg" src="" style="width:130px; height:130px; object-fit:contain;">
             <div id="dexCtrl" style="margin-top:10px; text-align:center;">
-                <button onclick="setDexShiny(false)">一般</button>
-                <button onclick="setDexShiny(true)" id="shinyBtn">✨ 閃光</button>
-                <button onclick="assignBuddy()" style="background:var(--p); color:white; padding:10px; border:none; border-radius:20px; width:150px; display:block; margin: 10px auto;">就決定是你了</button>
+                <div style="margin-bottom:10px;">
+                    <button onclick="setDexShiny(false)">一般</button>
+                    <button onclick="setDexShiny(true)" id="shinyBtn">✨ 閃光</button>
+                </div>
+                <button onclick="assignBuddy()" style="background:var(--p); color:white; padding:10px; border:none; border-radius:20px; width:150px;">就決定是你了</button>
             </div>
         </div>
     </div>
@@ -156,32 +162,35 @@
 <div id="adminPage" class="page">
     <div class="card">
         <h3>⚙️ 管理與備份</h3>
-        <button onclick="exportData()" style="background:#2980b9; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">💾 匯出全存檔</button>
+        <button onclick="exportData()" style="background:#2980b9; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">💾 匯出全存檔 (JSON)</button>
         <input type="file" id="importFile" style="display:none" onchange="importData(event)">
-        <button onclick="document.getElementById('importFile').click()" style="background:#27ae60; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">📂 匯入存檔</button>
+        <button onclick="document.getElementById('importFile').click()" style="background:#27ae60; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">📂 匯入存檔 (JSON)</button>
+        <hr>
+        <button onclick="document.getElementById('csvFile').click()" style="background:var(--p); color:white; width:100%; padding:12px; border:none; border-radius:5px;">📑 匯入財政部 CSV</button>
+        <input type="file" id="csvFile" style="display:none" onchange="handleCSV(event)">
+        <hr>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:10px;">
+            <input type="date" id="lightStart"> <input type="date" id="lightEnd">
+        </div>
+        <button onclick="lighten()" style="background:var(--mega); color:white; width:100%; padding:10px; border:none; border-radius:5px;">🧹 匯出期間存檔並清理明細</button>
+        <hr>
         <button onclick="if(confirm('確定清除？')){localStorage.clear();location.reload();}" style="background:var(--danger); color:white; width:100%; padding:12px; border:none; border-radius:5px;">🔥 重設系統</button>
     </div>
     <button class="btn-back" onclick="back()">✖ 關閉</button>
 </div>
 
 <script>
-// --- [ 數據核心 ] ---
-const NAMES = ["妙蛙種子","妙蛙草","妙蛙花","小火龍","火恐龍","噴火龍","傑尼龜","卡咪龜","水箭龜","綠毛蟲","鐵甲蛹","巴大蝶","獨角蟲","鐵殼蛹","大針蜂","波波","比比鳥","比雕","小拉達","拉達","烈雀","大嘴雀","阿柏蛇","阿柏怪","皮卡丘","雷丘","穿山鼠","穿山王","尼多蘭","尼多娜","尼多后","尼多朗","尼多力諾","尼多王","皮皮","皮可西","六尾","九尾","胖丁","胖丁","胖可丁","超音蝠","大嘴蝠","走路草","臭臭花","霸王花","派拉斯","派拉斯特","毛球","末入蛾","地鼠","三地鼠","喵喵","貓老大","可達鴨","哥達鴨","猴怪","火爆猴","卡蒂狗","風速狗","蚊香蝌蚪","蚊香蛙","快泳蛙","凱西","勇吉拉","胡地","腕力","豪力","怪力","喇叭芽","口呆花","大食花","瑪瑙水母","毒刺水母","小拳石","隆隆石","隆隆岩","小火馬","烈焰馬","呆呆獸","呆殼獸","小磁怪","三合一磁怪","大蔥鴨","嘟嘟","嘟嘟利","小海獅","白海獅","臭泥","臭臭泥","大舌貝","刺甲貝","鬼斯","鬼斯通","耿鬼","大岩蛇","催眠貘","引夢貘人","大鉗蟹","巨鉗蟹","霹靂電球","頑皮雷彈","蛋蛋","椰蛋樹","卡拉卡拉","嘎啦嘎啦","飛腿郎","快拳郎","大舌頭","瓦斯彈","雙彈瓦斯","獨角犀牛","鑽角犀獸","吉利蛋","蔓藤怪","袋獸","墨海馬","海刺龍","角金魚","金魚王","海星星","寶石海星","魔牆人偶","飛天螳螂","迷唇姐","電擊獸","鴨嘴火獸","凱羅斯","肯泰羅","鯉魚王","暴鯉龍","拉普拉斯","百變怪","伊布","水伊布","雷伊布","火伊布","多邊獸","菊石獸","多刺菊石獸","化石盔","鐮刀盔","化石翼龍","卡比獸","急凍鳥","閃電鳥","火焰鳥","迷你龍","哈克龍","快龍","超夢","夢幻","菊草葉","月桂葉","大竺葵","火球鼠","火岩鼠","火爆獸","小鋸鱷","藍鱷","大力鱷","尾立","大尾立","咕咕","貓頭夜鷹","芭瓢蟲","安瓢蟲","圓絲蛛","阿利多斯","叉字蝠","電燈怪","大文字","皮丘","皮寶寶","寶寶丁","波克比","波克基古","天然雀","天然鳥","咩利羊","茸茸羊","電龍","美麗花","瑪力露","瑪力露麗","胡說樹","蛙皇","毽子草","毽子花","毽子綿","長尾怪手","向日種子","向日花怪","陽陽瑪","烏波","沼王","太陽伊布","月亮伊布","黑暗鴉","呆呆王","夢妖","未知圖騰","果然翁","麒麟奇","榛果球","佛烈托斯","土龍弟弟","天蠍","大鋼蛇","布魯","布魯皇","千針魚","巨鉗螳螂","壺壺","赫拉克羅斯","狃拉","熊寶寶","圈圈熊","熔岩蟲","熔岩蝸牛","小山豬","長毛豬","太陽珊瑚","鐵炮魚","章魚桶","信使鳥","巨翅飛魚","盔甲鳥","戴魯比","黑魯加","刺龍王","小小象","頓甲","多邊獸Ⅱ","驚角鹿","圖圖犬","巴爾郎","柯波朗","迷唇娃","電擊怪","鴨嘴寶寶","大奶罐","幸福蛋","雷公","炎帝","水君","幼基拉斯","沙基拉斯","班基拉斯","洛奇亞","鳳王","雪拉比","木守宮","森林蜥蜴","蜥蜴王","火稚雞","力壯雞","火焰雞","水躍魚","沼躍魚","巨沼怪","土狼犬","大狼犬","蛇紋熊","直衝熊","刺尾蟲","甲殼繭","狩獵鳳蝶","盾甲繭","毒粉蛾","蓮葉童子","蓮帽小童","樂天河童","橡實果","長鼻葉","狡猾天狗","傲骨燕","大王燕","長翅鷗","大嘴鷗","拉魯拉絲","奇魯莉安","沙奈朵","溜溜糖球","雨翅蛾","蘑蘑菇","斗笠菇","懶人獺","過動猿","請假王","土居忍士","脫殼忍者","鐵面忍者","咕妞妞","吼爆彈","爆音怪","幕下力士","超力王","露力麗","朝北鼻","向尾喵","優雅貓","勾魂眼","大嘴娃","可可多拉","可多拉","波士可多拉","瑪沙那","恰雷姆","落雷獸","雷電獸","正電拍拍","負電拍拍","電螢蟲","甜甜螢","毒薔薇","溶食獸","吞食獸","利牙魚","巨牙鯊","吼吼鯨","吼鯨王","呆火駝","噴火駝","煤炭龜","跳跳豬","噗噗豬","晃晃斑","大顎蟻","超音波幼蟲","沙漠蜻蜓","沙漠奈亞","夢歌仙人掌","青綿鳥","七夕青鳥","貓鼬斬","飯匙蛇","月石","太陽岩","泥泥鰍","鯰魚王","龍蝦小兵","鐵螯龍蝦","天秤偶","念力土土","觸手百合","搖籃百合","太古羽蟲","太古盔甲","笨笨魚","美納斯","飄浮泡泡","變隱龍","怨影娃娃","詛咒娃娃","夜巡靈","夜巨人","熱帶龍","風鈴鈴","阿勃梭魯","小果然","雪童子","冰鬼護","海豹球","海豹魔人","帝牙海獅","珍珠貝","獵斑魚","櫻花魚","古空棘魚","愛心魚","寶貝龍","甲殼龍","暴飛龍","鐵啞鈴","金屬怪","巨金怪","雷吉洛克","雷吉艾斯","雷吉斯奇魯","拉帝亞斯","拉帝歐斯","蓋歐卡","固拉多","烈空坐","基拉祈","代歐奇希斯","草苗龜","森林龜","土台龜","小火焰猴","猛火猴","烈焰猴","波加曼","波皇子","帝王拿波","姆克兒","姆克鳥","姆克鷹","大牙狸","大尾狸","圓法師","音箱蟀","小貓怪","勒克貓","倫琴貓","含羞苞","羅絲雷朵","頭蓋龍","戰槌龍","盾甲龍","護城龍","結草兒","結草貴婦","紳士蛾","三蜜蜂","蜂后","帕奇利茲","泳圈鼬","浮潛鼬","櫻花寶","櫻花兒","無殼海兔","海牛獸","雙尾怪手","飄飄球","隨風球","捲捲耳","長耳兔","夢妖魔","烏鴉頭頭","魅力喵","東施喵","鈴鐺響","臭鼬噗","坦克臭鼬","銅鏡怪","青銅鐘","盆才怪","魔尼尼","小福蛋","聒噪鳥","花岩怪","圓陸鯊","尖牙陸鯊","烈咬陸鯊","小卡比獸","利歐路","路卡利歐","怪河馬","河馬獸","鉗尾蠍","德王蠍","不良蛙","毒骷蛙","尖牙籠","螢火魚","霓虹魚","小球飛魚","雪笠怪","暴雪王","瑪狃拉","自爆磁怪","大舌舔","超甲狂犀","唐菖蒲","電擊魔獸","鴨嘴炎獸","波克基斯","梅卡陽瑪","葉伊布","冰伊布","天蠍王","象牙豬","多邊獸Ｚ","艾路雷朵","大朝北鼻","黑夜魔靈","雪妖女","洛托姆","由克希","艾姆利多","亞克諾姆","帝牙盧卡","帕路奇亞","席多藍恩","雷吉奇卡斯","騎拉帝納","克雷色利亞","霏歐納","瑪納霏","達克萊伊","謝米","阿爾宙斯"];
+const NAMES = ["妙蛙種子","妙蛙草","妙蛙花","小火龍","火恐龍","噴火龍","傑尼龜","卡咪龜","水箭龜","綠毛蟲","鐵甲蛹","巴大蝶","獨角蟲","鐵殼蛹","大針蜂","波波","比比鳥","比雕","小拉達","拉達","烈雀","大嘴雀","阿柏蛇","阿柏怪","皮卡丘","雷丘","穿山鼠","穿山王","尼多蘭","尼多娜","尼多后","尼多朗","尼多力諾","尼多王","皮皮","皮可西","六尾","九尾","胖丁","胖可丁","超音蝠","大嘴蝠","走路草","臭臭花","霸王花","派拉斯","派拉斯特","毛球","末入蛾","地鼠","三地鼠","喵喵","貓老大","可達鴨","哥達鴨","猴怪","火爆猴","卡蒂狗","風速狗","蚊香蝌蚪","蚊香蛙","快泳蛙","凱西","勇吉拉","胡地","腕力","豪力","怪力","喇叭芽","口呆花","大食花","瑪瑙水母","毒刺水母","小拳石","隆隆石","隆隆岩","小火馬","烈焰馬","呆呆獸","呆殼獸","小磁怪","三合一磁怪","大蔥鴨","嘟嘟","嘟嘟利","小海獅","白海獅","臭泥","臭臭泥","大舌貝","刺甲貝","鬼斯","鬼斯通","耿鬼","大岩蛇","催眠貘","引夢貘人","大鉗蟹","巨鉗蟹","霹靂電球","頑皮雷彈","蛋蛋","椰蛋樹","卡拉卡拉","嘎啦嘎啦","飛腿郎","快拳郎","大舌頭","瓦斯彈","雙彈瓦斯","獨角犀牛","鑽角犀獸","吉利蛋","蔓藤怪","袋獸","墨海馬","海刺龍","角金魚","金魚王","海星星","寶石海星","魔牆人偶","飛天螳螂","迷唇姐","電擊獸","鴨嘴火獸","凱羅斯","肯泰羅","鯉魚王","暴鯉龍","拉普拉斯","百變怪","伊布","水伊布","雷伊布","火伊布","多邊獸","菊石獸","多刺菊石獸","化石盔","鐮刀盔","化石翼龍","卡比獸","急凍鳥","閃電鳥","火焰鳥","迷你龍","哈克龍","快龍","超夢","夢幻","菊草葉","月桂葉","大竺葵","火球鼠","火岩鼠","火爆獸","小鋸鱷","藍鱷","大力鱷","尾立","大尾立","咕咕","貓頭夜鷹","芭瓢蟲","安瓢蟲","圓絲蛛","阿利多斯","叉字蝠","電燈怪","大文字","皮丘","皮寶寶","寶寶丁","波克比","波克基古","天然雀","天然鳥","咩利羊","茸茸羊","電龍","美麗花","瑪力露","瑪力露麗","胡說樹","蛙皇","毽子草","毽子花","毽子綿","長尾怪手","向日種子","向日花怪","陽陽瑪","烏波","沼王","太陽伊布","月亮伊布","黑暗鴉","呆呆王","夢妖","未知圖騰","果然翁","麒麟奇","榛果球","佛烈托斯","土龍弟弟","天蠍","大鋼蛇","布魯","布魯皇","千針魚","巨鉗螳螂","壺壺","赫拉克羅斯","狃拉","熊寶寶","圈圈熊","熔岩蟲","熔岩蝸牛","小山豬","長毛豬","太陽珊瑚","鐵炮魚","章魚桶","信使鳥","巨翅飛魚","盔甲鳥","戴魯比","黑魯加","刺龍王","小小象","頓甲","多邊獸Ⅱ","驚角鹿","圖圖犬","巴爾郎","柯波朗","迷唇娃","電擊怪","鴨嘴寶寶","大奶罐","幸福蛋","雷公","炎帝","水君","幼基拉斯","沙基拉斯","班基拉斯","洛奇亞","鳳王","雪拉比","木守宮","森林蜥蜴","蜥蜴王","火稚雞","力壯雞","火焰雞","水躍魚","沼躍魚","巨沼怪","土狼犬","大狼犬","蛇紋熊","直衝熊","刺尾蟲","甲殼繭","狩獵鳳蝶","盾甲繭","毒粉蛾","蓮葉童子","蓮帽小童","樂天河童","橡實果","長鼻葉","狡猾天狗","傲骨燕","大王燕","長翅鷗","大嘴鷗","拉魯拉絲","奇魯莉安","沙奈朵","溜溜糖球","雨翅蛾","蘑蘑菇","斗笠菇","懶人獺","過動猿","請假王","土居忍士","脫殼忍者","鐵面忍者","咕妞妞","吼爆彈","爆音怪","幕下力士","超力王","露力麗","朝北鼻","向尾喵","優雅貓","勾魂眼","大嘴娃","可可多拉","可多拉","波士可多拉","瑪沙那","恰雷姆","落雷獸","雷電獸","正電拍拍","負電拍拍","電螢蟲","甜甜螢","毒薔薇","溶食獸","吞食獸","利牙魚","巨牙鯊","吼吼鯨","吼鯨王","呆火駝","噴火駝","煤炭龜","跳跳豬","噗噗豬","晃晃斑","大顎蟻","超音波幼蟲","沙漠蜻蜓","沙漠奈亞","夢歌仙人掌","青綿鳥","七夕青鳥","貓鼬斬","飯匙蛇","月石","太陽岩","泥泥鰍","鯰魚王","龍蝦小兵","鐵螯龍蝦","天秤偶","念力土土","觸手百合","搖籃百合","太古羽蟲","太古盔甲","笨笨魚","美納斯","飄浮泡泡","變隱龍","怨影娃娃","詛咒娃娃","夜巡靈","夜巨人","熱帶龍","風鈴鈴","阿勃梭魯","小果然","雪童子","冰鬼護","海豹球","海豹魔人","帝牙海獅","珍珠貝","獵斑魚","櫻花魚","古空棘魚","愛心魚","寶貝龍","甲殼龍","暴飛龍","鐵啞鈴","金屬怪","巨金怪","雷吉洛克","雷吉艾斯","雷吉斯奇魯","拉帝亞斯","拉帝歐斯","蓋歐卡","固拉多","烈空坐","基拉祈","代歐奇希斯","草苗龜","森林龜","土台龜","小火焰猴","猛火猴","烈焰猴","波加曼","波皇子","帝王拿波","姆克兒","姆克鳥","姆克鷹","大牙狸","大尾狸","圓法師","音箱蟀","小貓怪","勒克貓","倫琴貓","含羞苞","羅絲雷朵","頭蓋龍","戰槌龍","盾甲龍","護城龍","結草兒","結草貴婦","紳士蛾","三蜜蜂","蜂后","帕奇利茲","泳圈鼬","浮潛鼬","櫻花寶","櫻花兒","無殼海兔","海牛獸","雙尾怪手","飄飄球","隨風球","捲捲耳","長耳兔","夢妖魔","烏鴉頭頭","魅力喵","東施喵","鈴鐺響","臭鼬噗","坦克臭鼬","銅鏡怪","青銅鐘","盆才怪","魔尼尼","小福蛋","聒噪鳥","花岩怪","圓陸鯊","尖牙陸鯊","烈咬陸鯊","小卡比獸","利歐路","路卡利歐","怪河馬","河馬獸","鉗尾蠍","德王蠍","不良蛙","毒骷蛙","尖牙籠","螢火魚","霓虹魚","小球飛魚","雪笠怪","暴雪王","瑪狃拉","自爆磁怪","大舌舔","超甲狂犀","唐菖蒲","電擊魔獸","鴨嘴炎獸","波克基斯","梅卡陽瑪","葉伊布","冰伊布","天蠍王","象牙豬","多邊獸Ｚ","艾路雷朵","大朝北鼻","黑夜魔靈","雪妖女","洛托姆","由克希","艾姆利多","亞克諾姆","帝牙盧卡","帕路奇亞","席多藍恩","雷吉奇卡斯","騎拉帝納","克雷色利亞","霏歐納","瑪納霏","達克萊伊","謝米","阿爾宙斯"];
 const API = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites";
 
-// --- [ 進化鏈與 Mega 數據庫 ] ---
-const EVO_DATA = {
+// 進化鏈數據 (1-493)
+const EVO_CHAIN = {
     1:2, 2:3, 4:5, 5:6, 7:8, 8:9, 10:11, 11:12, 13:14, 14:15, 16:17, 17:18, 19:20, 21:22, 23:24, 25:26, 27:28, 29:30, 30:31, 32:33, 33:34, 37:38, 39:40, 41:42, 43:44, 46:47, 48:49, 50:51, 52:53, 54:55, 56:57, 58:59, 60:61, 63:64, 64:65, 66:67, 67:68, 69:70, 70:71, 72:73, 74:75, 75:76, 77:78, 81:82, 84:85, 86:87, 88:89, 90:91, 92:93, 93:94, 95:208, 96:97, 98:99, 100:101, 102:103, 104:105, 108:463, 109:110, 111:112, 113:242, 114:465, 116:117, 117:230, 118:119, 120:121, 123:212, 125:466, 126:467, 129:130, 137:233, 138:139, 140:141, 147:148, 148:149, 152:153, 153:154, 155:156, 156:157, 158:159, 159:160, 161:162, 163:164, 165:166, 167:168, 170:171, 172:25, 173:35, 174:39, 175:176, 176:468, 177:178, 179:180, 180:181, 183:184, 187:188, 188:189, 190:424, 191:192, 193:469, 194:195, 198:430, 200:429, 204:205, 207:472, 209:210, 215:461, 216:217, 218:219, 220:221, 221:473, 223:224, 228:229, 231:232, 233:474, 236:[237, 106, 107], 246:247, 247:248, 252:253, 253:254, 255:256, 256:257, 258:259, 259:260, 261:262, 263:264, 265:[267, 269], 270:271, 271:272, 273:274, 274:275, 276:277, 278:279, 283:284, 285:286, 287:288, 288:289, 290:[291, 292], 293:294, 294:295, 296:297, 298:183, 299:476, 300:301, 304:305, 305:306, 307:308, 309:310, 315:407, 316:317, 318:319, 320:321, 322:323, 325:326, 328:329, 329:330, 331:332, 333:334, 339:340, 341:342, 343:344, 345:346, 347:348, 349:350, 353:354, 355:356, 356:477, 360:202, 363:364, 364:365, 366:[367, 368], 371:372, 372:373, 374:375, 375:376, 387:388, 388:389, 390:391, 391:392, 393:394, 394:395, 396:397, 397:398, 399:400, 401:402, 403:404, 404:405, 406:315, 408:409, 410:411, 412:[413, 414], 415:416, 418:419, 420:421, 422:423, 425:426, 427:428, 431:432, 433:358, 434:435, 436:437, 438:185, 439:122, 440:113, 443:444, 444:445, 446:143, 447:448, 449:450, 451:452, 453:454, 456:457, 458:226, 459:460, 44:[45, 182], 61:[62, 186], 79:[80, 199], 133:[134, 135, 136, 196, 197, 470, 471], 281:[282, 475], 361:[362, 478]
 };
 
+// Mega 數據庫
 const MEGA_DATA = {
-    3: ["-mega"], 6: ["-mega-x", "-mega-y"], 9: ["-mega"], 15: ["-mega"], 18: ["-mega"], 65: ["-mega"], 80: ["-mega"], 
-    94: ["-mega"], 115: ["-mega"], 127: ["-mega"], 130: ["-mega"], 142: ["-mega"], 150: ["-mega-x", "-mega-y"], 
-    181: ["-mega"], 208: ["-mega"], 212: ["-mega"], 214: ["-mega"], 229: ["-mega"], 248: ["-mega"], 254: ["-mega"], 
-    257: ["-mega"], 260: ["-mega"], 282: ["-mega"], 302: ["-mega"], 303: ["-mega"], 306: ["-mega"], 308: ["-mega"], 
-    310: ["-mega"], 319: ["-mega"], 323: ["-mega"], 334: ["-mega"], 354: ["-mega"], 359: ["-mega"], 362: ["-mega"], 
-    373: ["-mega"], 376: ["-mega"], 380: ["-mega"], 381: ["-mega"], 384: ["-mega"], 428: ["-mega"], 445: ["-mega"], 
-    448: ["-mega"], 460: ["-mega"], 475: ["-mega"]
+    3: ["-mega"], 6: ["-mega-x", "-mega-y"], 9: ["-mega"], 94: ["-mega"], 130: ["-mega"], 150: ["-mega-x", "-mega-y"], 448: ["-mega"]
 };
 
 let s = {
@@ -196,14 +205,14 @@ let s = {
 let curE = null;
 
 window.onload = () => {
-    const saved = localStorage.getItem('pokemaster_v55.2');
+    const saved = localStorage.getItem('pokemaster_v55.1');
     if(saved) s = JSON.parse(saved);
     document.getElementById('recDate').valueAsDate = new Date();
     updateUI();
 };
 
 function updateUI() {
-    localStorage.setItem('pokemaster_v55.2', JSON.stringify(s));
+    localStorage.setItem('pokemaster_v55.1', JSON.stringify(s));
     document.getElementById('st-bal').innerText = s.bal;
     document.getElementById('st-achieve').innerText = s.achieveBal;
     document.getElementById('p-evo-txt').innerText = s.prog.evo;
@@ -215,26 +224,33 @@ function updateUI() {
     let bImg = (isMega && s.buddy.activeMegaSuffix) 
         ? `${API}/pokemon/${s.buddyId}${s.buddy.activeMegaSuffix}.png` 
         : `${API}/pokemon/${s.isShinyBuddy?'shiny/':''}${s.buddyId}.png`;
-
+    
     const bEl = document.getElementById('buddyImg');
-    bEl.src = bImg;
-    isMega ? bEl.classList.add('mega-fx') : bEl.classList.remove('mega-fx');
+    if(bEl) {
+        bEl.src = bImg;
+        isMega ? bEl.classList.add('mega-fx') : bEl.classList.remove('mega-fx');
+    }
 
     const inv = document.getElementById('st-items');
-    inv.innerHTML = `
-        <div><img class="res-icon" src="${API}/items/poke-ball.png"><br>${s.items.poke}</div>
-        <div><img class="res-icon" src="${API}/items/great-ball.png"><br>${s.items.great}</div>
-        <div><img class="res-icon" src="${API}/items/ultra-ball.png"><br>${s.items.ultra}</div>
-        <div><img class="res-icon" src="${API}/items/master-ball.png"><br>${s.items.master}</div>
-        <div><img class="res-icon" src="${API}/items/sun-stone.png"><br>${s.items.stone}</div>
-        <div><img class="res-icon" src="${API}/items/key-stone.png"><br>${s.items.mstone}</div>
-    `;
+    if(inv) {
+        inv.innerHTML = `
+            <div><img class="res-icon" src="${API}/items/poke-ball.png"><br>${s.items.poke}</div>
+            <div><img class="res-icon" src="${API}/items/great-ball.png"><br>${s.items.great}</div>
+            <div><img class="res-icon" src="${API}/items/ultra-ball.png"><br>${s.items.ultra}</div>
+            <div><img class="res-icon" src="${API}/items/master-ball.png"><br>${s.items.master}</div>
+            <div><img class="res-icon" src="${API}/items/sun-stone.png"><br>${s.items.stone}</div>
+            <div><img class="res-icon" src="${API}/items/key-stone.png"><br>${s.items.mstone}</div>
+        `;
+    }
     
-    document.getElementById('ballSelect').innerHTML = `
-        <option value="poke">精靈球 (${s.items.poke})</option>
-        <option value="great">超級球 (${s.items.great})</option>
-        <option value="ultra">高級球 (${s.items.ultra})</option>
-        <option value="master">大師球 (${s.items.master})</option>`;
+    const bs = document.getElementById('ballSelect');
+    if(bs) {
+        bs.innerHTML = `
+            <option value="poke">精靈球 (${s.items.poke})</option>
+            <option value="great">超級球 (${s.items.great})</option>
+            <option value="ultra">高級球 (${s.items.ultra})</option>
+            <option value="master">大師球 (${s.items.master})</option>`;
+    }
 }
 
 function record() {
@@ -251,7 +267,7 @@ function record() {
     s.yearSums[month] = (s.yearSums[month] || 0) + amt;
     s.hist.push({id: Date.now(), date, cat, amt, note: document.getElementById('recNote').value, reward});
 
-    if(s.achieveBal >= 5000) { s.achieveBal -= 5000; s.items.master++; alert("🏆 獲得大師球！"); }
+    if(s.achieveBal >= 5000) { s.achieveBal -= 5000; s.items.master++; alert("🏆 成就達成：獲得大師球！"); }
     if(s.pool >= 500) { s.pool -= 500; spawnEnemy(); }
     else { document.getElementById('msg').innerText = `獲得 P$ ${reward}！遭遇還差 P$ ${500-s.pool}`; }
 
@@ -260,7 +276,7 @@ function record() {
 
 function spawnEnemy() {
     const id = Math.floor(Math.random()*493)+1;
-    const isShiny = Math.random() < ((Date.now() < s.buddy.megaUntil) ? 0.15 : 0.05);
+    const isShiny = Math.random() < (Date.now() < s.buddy.megaUntil ? 0.15 : 0.05);
     curE = {id, hp: 100, isShiny, name: NAMES[id-1]};
     document.getElementById('enemyImg').src = `${API}/pokemon/${isShiny?'shiny/':''}${id}.png`;
     document.getElementById('enemyArea').style.display = "block";
@@ -276,8 +292,7 @@ async function throwBall() {
     if(type !== 'master') s.items[type]--;
 
     const ball = document.getElementById('ballOverlay');
-    ball.src = `${API}/items/${type}-ball.png`; ball.style.display = "block";
-    ball.className = 'ball-throw';
+    ball.src = `${API}/items/${type}-ball.png`; ball.className = 'ball-throw';
     await new Promise(r => setTimeout(r, 800));
     ball.className = 'ball-shake';
     await new Promise(r => setTimeout(r, 1500));
@@ -287,9 +302,12 @@ async function throwBall() {
         document.getElementById('gotcha').style.display = "block";
         if(!s.owned.includes(curE.id)) s.owned.push(curE.id);
         if(curE.isShiny && !s.shinyOwned.includes(curE.id)) s.shinyOwned.push(curE.id);
-        s.prog.evo++; if(MEGA_DATA[curE.id]) s.prog.mega++;
+        
+        s.prog.evo++;
+        if(MEGA_DATA[curE.id]) s.prog.mega++;
         if(s.prog.evo >= 5) { s.prog.evo=0; s.items.stone++; }
         if(s.prog.mega >= 5) { s.prog.mega=0; s.items.mstone++; }
+        
         s.tasks.dCatch++; s.tasks.wCatch++; s.tasks.mCatch++;
         setTimeout(() => {
             document.getElementById('gotcha').style.display = "none";
@@ -297,65 +315,58 @@ async function throwBall() {
             document.getElementById('battleActions').style.display = "none";
             document.getElementById('inputArea').style.display = "block";
             ball.style.display = "none"; ball.className = "";
-            document.getElementById('msg').innerText = `捕捉成功！`; updateUI();
+            document.getElementById('msg').innerText = `成功捕捉！`; updateUI();
         }, 1500);
     } else {
         ball.style.display = "none"; ball.className = "";
-        document.getElementById('msg').innerText = "哎呀！沒抓到！";
+        document.getElementById('msg').innerText = "沒抓到！";
     }
 }
 
 function attack() {
     if(!curE) return; curE.hp -= 25;
     document.getElementById('hpFill').style.width = Math.max(0, curE.hp) + "%";
-    if(curE.hp <= 0) { alert("寶可夢被打跑了！"); location.reload(); }
-}
-
-function performEvolve() {
-    if (s.items.stone <= 0) { alert("進化石不足！"); return; }
-    let target = EVO_DATA[s.buddyId];
-    if (!target) {
-        if (s.buddyId >= 493) { alert("已是最終型態！"); return; }
-        target = s.buddyId + 1;
-    }
-    if (Array.isArray(target)) {
-        let msg = "請選擇進化目標：\n";
-        target.forEach((id, idx) => { msg += `${idx + 1}: ${NAMES[id-1]}\n`; });
-        let choice = prompt(msg);
-        let selectedIdx = parseInt(choice) - 1;
-        if (target[selectedIdx]) executeEvolve(target[selectedIdx]);
-    } else {
-        if (confirm(`進化為 ${NAMES[target-1]}？`)) executeEvolve(target);
-    }
-}
-
-function executeEvolve(nextId) {
-    s.items.stone--; s.buddyId = nextId;
-    if (!s.owned.includes(nextId)) s.owned.push(nextId);
-    updateUI(); alert("✨ 進化成功！");
+    if(curE.hp <= 0) { alert("寶可夢跑掉了！"); location.reload(); }
 }
 
 function tryMega() {
+    const options = MEGA_DATA[s.buddyId];
+    if(!options) { alert("此夥伴無法 Mega 進化！"); return; }
+    if(s.items.mstone <= 0) { alert("需要 Mega 石！"); return; }
     const today = new Date().toDateString();
-    const megaOptions = MEGA_DATA[s.buddyId];
-    if (!megaOptions) { alert("無法 Mega 進化！"); return; }
-    if (s.items.mstone <= 0) { alert("需要 Mega 石！"); return; }
-    if (s.buddy.dailyMegaDate === today) { alert("今天已進化過！"); return; }
-    let suffix = megaOptions[0];
-    if (megaOptions.length > 1) {
+    if(s.buddy.dailyMegaDate === today) { alert("今日已進化過！"); return; }
+
+    let suffix = options[0];
+    if(options.length > 1) {
         let choice = prompt(`選擇型態：\n1: Mega ${NAMES[s.buddyId-1]} X\n2: Mega ${NAMES[s.buddyId-1]} Y`);
-        if (choice === "1") suffix = megaOptions[0];
-        else if (choice === "2") suffix = megaOptions[1];
+        if(choice === "1") suffix = options[0];
+        else if(choice === "2") suffix = options[1];
         else return;
     }
-    s.items.mstone--; s.buddy.activeMegaSuffix = suffix; 
+    s.items.mstone--; s.buddy.activeMegaSuffix = suffix;
     s.buddy.megaUntil = Date.now() + 7200000; s.buddy.dailyMegaDate = today;
-    updateUI(); alert(`🧬 Mega 進化成功！`);
+    updateUI(); alert("🧬 Mega 進化成功！");
 }
 
-function buy(type, price) {
-    if(s.bal < price) { alert("錢不夠！"); return; }
-    s.bal -= price; s.items[type]++; updateUI();
+function performEvolve() {
+    if(s.items.stone <= 0) { alert("進化石不足！"); return; }
+    let target = EVO_CHAIN[s.buddyId];
+    if(!target) { alert("已是最終型態！"); return; }
+
+    if(Array.isArray(target)) {
+        let msg = "請選擇進化目標：\n";
+        target.forEach((id, idx) => msg += `${idx+1}: ${NAMES[id-1]}\n`);
+        let choice = parseInt(prompt(msg)) - 1;
+        if(target[choice]) executeEvolve(target[choice]);
+    } else {
+        if(confirm(`進化為 ${NAMES[target-1]}？`)) executeEvolve(target);
+    }
+}
+
+function executeEvolve(id) {
+    s.items.stone--; s.buddyId = id;
+    if(!s.owned.includes(id)) s.owned.push(id);
+    updateUI(); alert("✨ 進化成功！");
 }
 
 function renderTasks() {
@@ -364,24 +375,21 @@ function renderTasks() {
         s.tasks.dailyDate = today; s.tasks.dRec = 0; s.tasks.dCatch = 0; s.tasks.claimed = [];
     }
     document.getElementById('taskList').innerHTML = `
-        <div class="card"><b>每日</b>: ${s.tasks.dRec}/1 記帳, ${s.tasks.dCatch}/1 捕捉 
-        <button onclick="claimTask('daily')" ${(s.tasks.dRec>=1 && s.tasks.dCatch>=1 && !s.tasks.claimed.includes('daily'))?'':'disabled'}>領取</button></div>
-        <div class="card"><b>每週</b>: ${s.tasks.wRec}/5 記帳, ${s.tasks.wCatch}/10 捕捉 
-        <button onclick="claimTask('weekly')" ${(s.tasks.wRec>=5 && s.tasks.wCatch>=10 && !s.tasks.claimed.includes('weekly'))?'':'disabled'}>領取</button></div>
-    `;
+        <div class="card"><p>每日: 記帳 ${s.tasks.dRec}/1, 捕捉 ${s.tasks.dCatch}/1</p>
+        <button onclick="claimTask('daily')" ${(s.tasks.dRec>=1 && s.tasks.dCatch>=1 && !s.tasks.claimed.includes('daily'))?'':'disabled'}>領取球</button></div>
+        <div class="card"><p>成就: 累計消費滿 $5000 (目前 $${s.achieveBal})</p></div>`;
 }
 
-function claimTask(type) {
-    if(type==='daily') s.items.great++; else s.items.stone++;
-    s.tasks.claimed.push(type); updateUI(); renderTasks();
-}
+function claimTask(t) { s.items.great++; s.tasks.claimed.push(t); updateUI(); renderTasks(); }
+
+function buy(t, p) { if(s.bal>=p){ s.bal-=p; s.items[t]++; updateUI(); } else alert("錢不夠"); }
 
 let dexId = 25, dexShiny = false;
 function renderDex() {
     const nav = document.getElementById('dexNav'); nav.innerHTML = "";
     for(let i=1; i<=493; i++) {
         const item = document.createElement('div');
-        item.className = `dex-item ${i === dexId ? 'active' : ''}`;
+        item.className = `dex-item ${i===dexId?'active':''}`;
         item.innerText = s.owned.includes(i) ? `No.${i} ${NAMES[i-1]}` : `No.${i} ???`;
         item.onclick = () => { dexId = i; renderDex(); };
         nav.appendChild(item);
@@ -391,11 +399,9 @@ function renderDex() {
     document.getElementById('dexImg').src = isCaught ? `${API}/pokemon/${dexShiny?'shiny/':''}${dexId}.png` : `${API}/pokemon/0.png`;
     document.getElementById('shinyBtn').disabled = !s.shinyOwned.includes(dexId);
 }
-function setDexShiny(val) { dexShiny = val; renderDex(); }
-function assignBuddy() {
-    if(!s.owned.includes(dexId)) return;
-    s.buddyId = dexId; s.isShinyBuddy = dexShiny; updateUI(); alert("夥伴更換！");
-}
+
+function setDexShiny(v) { dexShiny = v; renderDex(); }
+function assignBuddy() { if(s.owned.includes(dexId)){ s.buddyId=dexId; s.isShinyBuddy=dexShiny; updateUI(); alert("更換成功"); } }
 
 function searchHistory() {
     const start = document.getElementById('hStart').value;
@@ -405,34 +411,61 @@ function searchHistory() {
         list.innerHTML += `<div class="card">${h.date} ${h.cat} $${h.amt} <button onclick="delHist(${h.id})">刪</button></div>`;
     });
 }
-function delHist(id) {
-    const idx = s.hist.findIndex(h => h.id === id);
-    if(idx > -1) { s.bal = Math.max(0, s.bal - s.hist[idx].reward); s.hist.splice(idx, 1); updateUI(); searchHistory(); }
-}
-function exportData() {
-    const blob = new Blob([JSON.stringify(s)], {type: "application/json"});
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `poke_save.json`; a.click();
-}
-function importData(e) {
-    const reader = new FileReader(); reader.onload = (ev) => { s = JSON.parse(ev.target.result); updateUI(); alert("成功"); };
-    reader.readAsText(e.target.files[0]);
+function delHist(id) { 
+    const i = s.hist.findIndex(h => h.id === id);
+    if(i>-1){ s.bal = Math.max(0, s.bal-s.hist[i].reward); s.hist.splice(i,1); updateUI(); searchHistory(); }
 }
 
-let chart1, chart2;
+function exportData() {
+    const blob = new Blob([JSON.stringify(s)], {type:"application/json"});
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`save.json`; a.click();
+}
+function importData(e) {
+    const r = new FileReader(); r.onload=(ev)=>{ s=JSON.parse(ev.target.result); updateUI(); alert("成功"); };
+    r.readAsText(e.target.files[0]);
+}
+
+function lighten() {
+    const start = document.getElementById('lightStart').value;
+    const end = document.getElementById('lightEnd').value;
+    if(!start || !end) return;
+    const data = s.hist.filter(h => h.date >= start && h.date <= end);
+    const blob = new Blob([JSON.stringify(data)], {type:"application/json"});
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`backup.json`; a.click();
+    s.hist = s.hist.filter(h => h.date < start || h.date > end); updateUI(); alert("清理完成");
+}
+
+function handleCSV(e) {
+    const r = new FileReader(); r.onload=(ev)=>{
+        const lines = ev.target.result.split('\n');
+        lines.forEach(l => {
+            const c = l.split(',');
+            if(c.length>=4 && !isNaN(parseInt(c[3]))){
+                const d = c[0].replace(/\//g,'-'), a = parseInt(c[3]);
+                s.hist.push({id:Date.now()+Math.random(), date:d, cat:"其他", amt:a, note:c[2], reward:Math.floor(a*0.1)});
+                s.yearSums[d.substring(0,7)] = (s.yearSums[d.substring(0,7)]||0)+a;
+            }
+        });
+        updateUI(); alert("匯入成功");
+    };
+    r.readAsText(e.target.files[0]);
+}
+
+let c1, c2;
 function renderCharts() {
     const ctx1 = document.getElementById('chartYear').getContext('2d');
-    if(chart1) chart1.destroy();
-    chart1 = new Chart(ctx1, { type: 'line', data: { labels: Object.keys(s.yearSums).sort(), datasets: [{ label: '支出', data: Object.values(s.yearSums), borderColor: '#2d5a27' }] } });
-    const cats = {}; s.hist.forEach(h => cats[h.cat] = (cats[h.cat] || 0) + h.amt);
+    if(c1) c1.destroy();
+    c1 = new Chart(ctx1, { type:'line', data:{ labels:Object.keys(s.yearSums).sort(), datasets:[{label:'支出', data:Object.values(s.yearSums), borderColor:'#2d5a27'}] } });
+    const cats = {}; s.hist.forEach(h => cats[h.cat] = (cats[h.cat]||0)+h.amt);
     const ctx2 = document.getElementById('chartCat').getContext('2d');
-    if(chart2) chart2.destroy();
-    chart2 = new Chart(ctx2, { type: 'pie', data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: ['#ff6384','#36a2eb','#cc65fe','#ffce56','#4bc0c0'] }] } });
+    if(c2) c2.destroy();
+    c2 = new Chart(ctx2, { type:'pie', data:{ labels:Object.keys(cats), datasets:[{data:Object.values(cats), backgroundColor:['#ff6384','#36a2eb','#cc65fe','#ffce56','#4bc0c0']}] } });
 }
 
 function openPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active'));
     document.getElementById(id).classList.add('page-active');
-    if(id === 'dexPage') renderDex(); if(id === 'chartPage') renderCharts(); if(id === 'taskPage') renderTasks();
+    if(id==='dexPage') renderDex(); if(id==='chartPage') renderCharts(); if(id==='taskPage') renderTasks();
 }
 function back() { document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active')); }
 </script>
