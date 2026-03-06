@@ -339,7 +339,8 @@ const rate =
 ({poke:0.3,great:0.5,ultra:0.7,master:1}[type]) *
 hpRate *
 (1 + s.catchBonus) *
-(Date.now() < s.buddy.megaUntil ? 2 : 1); * (1.5 - curE.hp/100) * (Date.now() < s.buddy.megaUntil ? 2.0 : 1.0);
+(Date.now() < s.buddy.megaUntil ? 2 : 1) *
+(1.5 - curE.hp/100); * (Date.now() < s.buddy.megaUntil ? 2.0 : 1.0);
     if(Math.random() < rate || type === 'master') {
         document.getElementById('gotcha').style.display = "block";
         if(!s.owned.includes(curE.id)) s.owned.push(curE.id);
@@ -503,11 +504,7 @@ updateUI();
 
 alert("進化成功！");
 }
-    if(s.items.stone <= 0) { alert("進化石不足！"); return; }
-    const nextId = s.buddyId + 1;
-    if(nextId > 493) return;
-    s.items.stone--;
-    s.buddyId = nextId;
+
     if(!s.owned.includes(nextId)) s.owned.push(nextId);
     updateUI(); alert("夥伴進化了！");
 }
