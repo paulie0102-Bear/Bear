@@ -10,10 +10,25 @@
             --p: #2d5a27; --bg: #f4f7f6; --text: #2c3e50; --accent: #f1c40f;
             --mega: #9b59b6; --danger: #e74c3c; --white: #ffffff;
         }
-        body { font-family: -apple-system, sans-serif; background: #1a1a1a; margin: 0; color: var(--text); overflow: hidden; }
-        .page { display: none; width: 100vw; height: 100vh; background: var(--bg); position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto; padding-bottom: 140px; box-sizing: border-box; }
-        .page-active { display: block; }
+       /* 修改這段 */
+/* 修改這部分 */
+.page { 
+    display: none; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh; 
+    background: #ffffff; 
+    z-index: 9999; /* 暴力調高，確保沒有人能擋住它 */
+    overflow: hidden; 
+}
 
+/* 當頁面開啟時，底下的儀表板與導覽列應該要被隔離 */
+.page-active { 
+    display: block !important; 
+    pointer-events: auto !important;
+}
         /* 戰鬥舞台 */
         .battle-stage { height: 240px; position: relative; background: linear-gradient(#87ceeb 60%, #9cd39c 60%); border-bottom: 4px solid #333; }
         .buddy-box { position: absolute; bottom: 20px; left: 30px; width: 100px; transition: 0.3s; }
@@ -25,16 +40,53 @@
 
         /* 導覽列：兩列四欄 */
         .control-panel { 
-            display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr);
-            gap: 2px; background: #222; height: 130px; position: fixed; bottom: 0; width: 100%; padding: 5px; box-sizing: border-box; z-index: 1000;
-        }
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    grid-template-rows: repeat(2, 1fr);
+    gap: 2px; 
+    background: #222; 
+    height: 130px; 
+    position: fixed; 
+    bottom: 0; 
+    width: 100%; 
+    padding: 5px; 
+    box-sizing: border-box; 
+    z-index: 500; /* 從 1000 降到 500 */
+}
         .btn-nav { background: #333; color: white; border: none; font-size: 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         
         /* 圖覽與 UI 佈局 */
         .dex-container { display: flex; height: calc(100% - 60px); }
-        .dex-sidebar { width: 35%; overflow-y: auto; background: #ddd; }
-        .dex-main { width: 65%; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; }
-        .dex-item { padding: 10px; border-bottom: 1px solid #ccc; font-size: 13px; }
+        .dex-sidebar { 
+    width: 35%; 
+    overflow-y: auto; 
+    background: #f0f0f0; /* 稍微淺一點比較好看 */
+    position: relative; 
+    z-index: 2001; /* 確保在 .page 之上 */
+    -webkit-overflow-scrolling: touch; /* 讓手機滑動更順暢 */
+}
+        .dex-main { 
+    width: 65%; 
+    background: white; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    /* 修正點：改用 flex-start 並配合 padding，防止內容太多時頂部被切掉 */
+    justify-content: flex-start; 
+    padding: 20px 10px; 
+    /* 修正點：允許右側內容區塊在手機上可以滾動 */
+    overflow-y: auto; 
+    box-sizing: border-box;
+}
+        .dex-item { 
+    padding: 15px 10px; /* 增加點擊面積 */
+    border-bottom: 1px solid #ccc; 
+    font-size: 13px; 
+    cursor: pointer !important; /* 強制滑動游標變手指 */
+    user-select: none; /* ★重要：禁止反白文字，這樣點擊才會靈敏 */
+    pointer-events: auto !important; /* ★重要：強制開啟點擊事件 */
+    -webkit-tap-highlight-color: rgba(0,0,0,0.1); /* 點擊時有回饋感 */
+}
         .dex-item.active { background: var(--p); color: white; }
 
         .card { background: white; border-radius: 10px; padding: 12px; margin: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -104,20 +156,25 @@
     </div>
 </div>
 
-<div id="dexPage" class="page">
-    <div class="dex-container">
-        <div class="dex-sidebar" id="dexNav"></div>
-        <div class="dex-main">
-            <h3 id="dexTitle">???</h3>
-            <img id="dexImg" src="" style="width:150px; height:150px; object-fit:contain;">
-            <div id="dexCtrl" style="margin-top:20px;">
-                <button onclick="setDexShiny(false)">非閃光</button>
+<div id="dexPage" class="page" style="background:white; z-index:9999;">
+    <div class="dex-container" style="display:flex; height:calc(100vh - 60px); width:100%;">
+        <div class="dex-sidebar" id="dexNav" style="width:40%; overflow-y:auto; border-right:1px solid #ddd; background:#f9f9f9; -webkit-overflow-scrolling:touch; position:relative; z-index:10001;">
+            </div>
+        <div class="dex-main" style="width:60%; padding:20px; text-align:center; z-index:10001;">
+            <h3 id="dexTitle">請選擇寶可夢</h3>
+            <div style="background:#f0f0f0; border-radius:50%; width:120px; height:120px; margin:0 auto; display:flex; align-items:center; justify-content:center;">
+                <img id="dexImg" src="" style="width:100px; height:100px; object-fit:contain;">
+            </div>
+            <div id="dexCtrl" style="display:none; margin-top:10px;">
+                <button onclick="setDexShiny(false)">一般</button>
                 <button onclick="setDexShiny(true)">閃光</button><br><br>
-                <button onclick="assignBuddy()" style="background:var(--p); color:white; border:none; padding:10px 20px; border-radius:20px;">就決定是你了</button>
+                <button onclick="assignBuddy()" style="background:#3498db; color:white; border:none; padding:8px 15px; border-radius:15px;">就決定是你了</button>
             </div>
         </div>
     </div>
-    <button class="btn-back" onclick="back()" style="position:fixed; bottom:140px; width:100%; padding:15px; background:var(--danger); color:white; border:none;">關閉圖鑑</button>
+    <button class="btn-back" onclick="back()" style="width:100%; height:60px; background:#e74c3c; color:white; border:none; position:absolute; bottom:0; left:0; z-index:10002;">
+        返回主畫面
+    </button>
 </div>
 
 <div id="statusPage" class="page">
@@ -146,7 +203,22 @@
     </div>
     <button class="btn-back" onclick="back()" style="width:100%; padding:15px; background:var(--danger); color:white; border:none;">返回</button>
 </div>
+<div id="shopPage" class="page">
+    <div class="card">
+        <h3>🏪 道具商店</h3>
+        <div id="shopList"></div>
+    </div>
+    <button class="btn-back" onclick="back()" style="width:100%; padding:15px; background:var(--danger); color:white; border:none;">返回</button>
+</div>
 
+<div id="chartPage" class="page">
+    <div class="card">
+        <h3>📊 記帳統計</h3>
+        <div id="statSummary" style="line-height:2;"></div>
+        <canvas id="mainChart" style="width:100%; height:200px; margin-top:15px;"></canvas>
+    </div>
+    <button class="btn-back" onclick="back()" style="width:100%; padding:15px; background:var(--danger); color:white; border:none;">返回</button>
+</div>
 <div id="taskPage" class="page">
     <div class="card">
         <h3>🎯 任務板</h3>
@@ -263,7 +335,99 @@ isMega ? bEl.classList.add('mega-fx') : bEl.classList.remove('mega-fx');
         <option value="master">大師球 (${s.items.master})</option>
     `;
 }
+// --- 1. 定義全局狀態 (放在所有函數外面) ---
+let currentDexId = 1; 
+let isDexShiny = false;
 
+// --- 2. 新版 renderDex (對接 dexNav) ---
+// 圖鑑渲染邏輯
+function renderDex() {
+    const nav = document.getElementById('dexNav');
+    if (!nav) return;
+    nav.innerHTML = "";
+    
+    for (let i = 1; i <= 493; i++) {
+        const div = document.createElement('div');
+        const isCaught = s.owned.includes(i);
+        div.className = "dex-item"; // 這裡對應你 CSS 裡的 .dex-item
+        div.style = `padding:10px; border-bottom:1px solid #ccc; cursor:pointer; ${isCaught ? 'color:#2ecc71; font-weight:bold;' : 'color:#999;'}`;
+        div.innerText = isCaught ? `${i}. ${NAMES[i-1]}` : `${i}. ???`;
+
+        div.onclick = (e) => {
+            e.stopPropagation(); // 阻止事件冒泡，確保點擊有效
+            currentDexId = i;
+            updateDexDetail();
+            
+            // 點擊效果
+            document.querySelectorAll('.dex-item').forEach(item => item.style.background = "transparent");
+            div.style.background = "#e3f2fd";
+        };
+        nav.appendChild(div);
+    }
+}
+
+function updateDexDetail() {
+    const title = document.getElementById('dexTitle');
+    const img = document.getElementById('dexImg');
+    const ctrl = document.getElementById('dexCtrl');
+    const isCaught = s.owned.includes(currentDexId);
+
+    if (isCaught) {
+        title.innerText = `#${currentDexId} ${NAMES[currentDexId-1]}`;
+        img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${currentDexId}.png`;
+        img.style.filter = "none";
+        if(ctrl) ctrl.style.display = "block";
+    } else {
+        title.innerText = `#${currentDexId} ???`;
+        img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${currentDexId}.png`;
+        img.style.filter = "brightness(0)"; // 顯示黑影
+        if(ctrl) ctrl.style.display = "none";
+    }
+}
+
+// --- 4. 切換閃光與更換夥伴的函數 ---
+function setDexShiny(val) {
+    isDexShiny = val;
+    updateDexDetail();
+}
+
+function assignBuddy() {
+    if (!s.owned.includes(currentDexId)) {
+        alert("尚未捕捉此寶可夢！");
+        return;
+    }
+    s.buddyId = currentDexId;
+    s.isShinyBuddy = isDexShiny;
+    updateUI(); // 同步更新主畫面
+    alert(`已經派 ${NAMES[currentDexId-1]} 出戰！`);
+}
+    // --- 從這裡開始貼入以下代碼 ---
+
+
+
+function renderTasks() {
+    const taskBox = document.querySelector('#taskPage .card');
+    if (taskBox) {
+        taskBox.innerHTML = `<h3>📜 冒險任務</h3><p>✅ 累計捕捉: ${s.owned.length}/493</p><p>💰 當前預算: $${s.pool}</p>`;
+    }
+}
+
+function renderCharts() {
+    const sum = document.getElementById('statSummary');
+    if (sum) {
+        const total = s.hist.reduce((a, b) => a + (b.amt || 0), 0);
+        sum.innerHTML = `<div class="card"><h4>累計記帳總額</h4><h2>$${total}</h2></div>`;
+    }
+}
+
+function handleEvolve() {
+    if (s.items.stone <= 0) { alert("進化石不足！"); return; }
+    // 之前提供的分支進化邏輯貼在這裡...
+    s.items.stone--;
+    s.buddyId++; // 簡單示例：ID+1
+    updateUI();
+    alert("進化成功！");
+}
 function record() {
     const amt = parseInt(document.getElementById('recAmt').value);
     if(!amt) return;
@@ -407,10 +571,33 @@ function exportAndClear() {
 }
 
 function openPage(id) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active'));
-    document.getElementById(id).classList.add('page-active');
+    // 1. 強制隱藏主介面的所有點擊攔截者
+    const controlPanel = document.querySelector('.control-panel');
+    if (controlPanel) controlPanel.style.display = 'none'; // 徹底移除佔位
+    
+    // 2. 隱藏所有頁面並顯示目標
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    const target = document.getElementById(id);
+    if (target) {
+        target.style.display = 'block';
+        target.classList.add('page-active');
+        
+        // 3. 觸發圖鑑渲染
+        if (id === 'dexPage') renderDex();
+    }
 }
-function back() { document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active')); }
+
+function back() {
+    // 1. 隱藏功能頁
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    
+    // 2. 重新顯示主畫面與導覽列
+    const controlPanel = document.querySelector('.control-panel');
+    if (controlPanel) controlPanel.style.display = 'grid'; // 恢復顯示
+    
+    const dash = document.getElementById('dashboard');
+    if (dash) dash.style.display = 'block';
+}
 // 分支進化主入口
 // 1. 處理普通進化按鈕 (玩家頁面使用)
 function handleEvolve() {
@@ -483,6 +670,114 @@ function finishEvo(id) {
 function finishMega() {
     updateUI();
     alert("🧬 Mega 進化成功！時效 2 小時");
+}
+    // 1. 背包渲染 (原版圖示版)
+function renderBag() {
+    const bag = document.getElementById('bagList');
+    if (!bag) return;
+    
+    const items = [
+        { id: 'poke', n: '精靈球', img: 'poke-ball' },
+        { id: 'great', n: '超級球', img: 'great-ball' },
+        { id: 'ultra', n: '高級球', img: 'ultra-ball' },
+        { id: 'master', n: '大師球', img: 'master-ball' }
+    ];
+
+    bag.innerHTML = `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:10px;">
+            ${items.map(i => `
+                <div class="card" style="text-align:center; padding:10px;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${i.img}.png" style="width:35px;"><br>
+                    <small>${i.n}</small><br><b>${s.items[i.id] || 0}</b>
+                </div>
+            `).join('')}
+            <div class="card" style="text-align:center; border:2px solid var(--accent);">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/sun-stone.png" style="width:35px;"><br>
+                <small>進化石</small><br><b>${s.items.stone || 0}</b>
+            </div>
+            <div class="card" style="text-align:center; border:2px solid var(--mega);">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/mega-stone.png" style="width:35px;"><br>
+                <small>Mega石</small><br><b>${s.items.mstone || 0}</b>
+            </div>
+        </div>
+    `;
+}
+
+// 2. 商店渲染 (原版圖示版)
+function renderShop() {
+    const shop = document.getElementById('shopList');
+    if (!shop) return;
+    
+    const products = [
+        { id: 'poke', n: '精靈球', p: 200, img: 'poke-ball' },
+        { id: 'great', n: '超級球', p: 500, img: 'great-ball' },
+        { id: 'ultra', n: '高級球', p: 1000, img: 'ultra-ball' }
+    ];
+
+    shop.innerHTML = `
+        <div class="card" style="background:#fff3e0; margin-bottom:10px;">💰 當前預算 (Pool): <b>$${s.pool || 0}</b></div>
+        ${products.map(p => `
+            <div class="card" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="display:flex; align-items:center;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${p.img}.png" style="width:30px; margin-right:10px;">
+                    <span>${p.n} ($${p.p})</span>
+                </div>
+                <button onclick="buyItem('${p.id}', ${p.p})" style="background:var(--p); color:white; border:none; padding:5px 15px; border-radius:5px;">購買</button>
+            </div>
+        `).join('')}
+    `;
+}
+
+// 購買功能
+function buyItem(id, price) {
+    if (s.pool < price) { alert("預算(Pool)不足！請先記帳獲取金幣。"); return; }
+    s.pool -= price;
+    s.items[id] = (s.items[id] || 0) + 1;
+    updateUI();
+    renderShop();
+}
+
+// 3. 圖鑑渲染
+function renderDex() {
+    const nav = document.getElementById('dexNav');
+    if (!nav) return;
+    nav.innerHTML = "";
+    for (let i = 1; i <= 493; i++) {
+        const div = document.createElement('div');
+        const caught = s.owned.includes(i);
+        div.style = `padding:10px; border-bottom:1px solid #eee; font-size:12px; ${caught ? 'background:#e3f2fd;' : 'color:#ccc;'}`;
+        div.innerText = caught ? `${i}. ${NAMES[i-1]}` : `${i}. ???`;
+        div.onclick = () => {
+            const detail = document.getElementById('dexDetail');
+            detail.innerHTML = caught ? 
+                `<h3>#${i} ${NAMES[i-1]}</h3><img src="${API}/pokemon/${i}.png" style="width:100px;">` : 
+                `<h3>#${i} ???</h3><p>尚未獲得</p>`;
+        };
+        nav.appendChild(div);
+    }
+}
+    function handleEvolve() {
+    if (s.items.stone <= 0) { alert("進化石不足！"); return; }
+    const bid = s.buddyId;
+    
+    // 定義分支進化 (例如伊布 133)
+    const BRANCH = { 133: [134, 135, 136, 196, 197, 470, 471] };
+
+    if (BRANCH[bid]) {
+        // 這邊簡化邏輯：直接隨機進化其中一個分支 (或你可以套用之前給你的 Overlay 選單)
+        const next = BRANCH[bid][Math.floor(Math.random() * BRANCH[bid].length)];
+        executeEvo(next);
+    } else {
+        executeEvo(bid + 1);
+    }
+}
+
+function executeEvo(nextId) {
+    s.items.stone--;
+    s.buddyId = nextId;
+    if (!s.owned.includes(nextId)) s.owned.push(nextId);
+    updateUI();
+    alert("進化成功！");
 }
 </script>
 <div id="branchOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; flex-direction:column; align-items:center; justify-content:center;">
