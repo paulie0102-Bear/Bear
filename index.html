@@ -3,23 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster v51 - 載具進化終極版</title>
+    <title>PokeMaster v51 - 台灣載具終極版</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
-            --p: #2d5a27; --bg: #f5f7f2; --text: #333; --accent: #f1c40f;
-            --mega: #9b59b6; --white: #ffffff;
+            --p: #2d5a27; --bg: #f0f4f0; --text: #2c3e50; --accent: #f1c40f;
+            --mega: #9b59b6; --danger: #e74c3c; --white: #ffffff;
         }
-        body { font-family: -apple-system, "Microsoft JhengHei", sans-serif; background: #222; margin: 0; color: var(--text); touch-action: manipulation; }
+        body { font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; background: #222; margin: 0; color: var(--text); overflow: hidden; }
         
-        /* 極簡 UI 佈局 */
-        .page { display: none; width: 100vw; height: 100vh; background: var(--bg); position: fixed; top: 0; left: 0; z-index: 10; overflow-y: auto; }
-        .page-active { display: block; }
+        /* 極簡介面 */
+        .page { display: none; width: 100vw; height: 100vh; background: var(--bg); position: fixed; top: 0; left: 0; z-index: 10; overflow-y: auto; padding-bottom: 20px; }
+        .page-active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
-        .battle-stage { height: 260px; position: relative; background: linear-gradient(#87ceeb, #9cd39c); border-bottom: 4px solid #444; overflow: hidden; }
-        .buddy-box { position: absolute; bottom: 20px; left: 30px; width: 110px; z-index: 5; transition: 0.5s; }
-        .enemy-box { position: absolute; top: 30px; right: 30px; width: 110px; text-align: center; }
-        .hp-bar { width: 100%; height: 6px; background: #333; border-radius: 3px; margin-bottom: 5px; overflow: hidden; }
+        /* 戰鬥舞台 */
+        .battle-stage { height: 260px; position: relative; background: linear-gradient(#87ceeb 60%, #9cd39c 60%); border-bottom: 4px solid #444; overflow: hidden; }
+        .buddy-box { position: absolute; bottom: 20px; left: 30px; width: 100px; z-index: 5; transition: 0.5s ease; }
+        .enemy-box { position: absolute; top: 40px; right: 40px; width: 100px; text-align: center; }
+        .hp-bar { width: 100%; height: 6px; background: #333; border-radius: 3px; margin-bottom: 5px; overflow: hidden; border: 1px solid #000; }
         #hpFill { height: 100%; background: #2ecc71; width: 100%; transition: 0.3s; }
         
         /* 捕獲動畫 */
@@ -28,31 +30,39 @@
         .ball-shake { display: block !important; animation: ballShake 0.4s 3; }
         @keyframes ballCurve { 
             0% { left: 50px; bottom: 50px; transform: scale(1.2) rotate(0deg); }
-            100% { left: 260px; bottom: 170px; transform: scale(0.7) rotate(720deg); }
+            100% { left: 250px; bottom: 160px; transform: scale(0.7) rotate(720deg); }
         }
-        @keyframes ballShake { 50% { transform: translate(260px, -170px) rotate(20deg); } }
+        @keyframes ballShake { 50% { transform: translate(250px, -160px) rotate(20deg); } }
 
-        .gotcha-text { position: absolute; top: 40%; left: 50%; transform: translate(-50%,-50%); color: #f1c40f; font-size: 48px; font-weight: 900; text-shadow: 2px 2px 0 #000; z-index: 200; display: none; }
+        .gotcha-text { position: absolute; top: 40%; left: 50%; transform: translate(-50%,-50%); color: #f1c40f; font-size: 50px; font-weight: 900; text-shadow: 3px 3px 0 #000; z-index: 200; display: none; }
 
-        .msg-box { height: 70px; background: var(--white); padding: 12px; border-top: 2px solid #ddd; font-size: 14px; line-height: 1.5; font-weight: bold; color: #444; }
+        .msg-box { height: 60px; background: var(--white); padding: 10px 15px; border-top: 2px solid #ddd; font-size: 14px; font-weight: bold; display: flex; align-items: center; }
         
-        .control-panel { padding: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #eee; }
-        .card { background: var(--white); border-radius: 15px; padding: 15px; margin: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        /* 選單佈局 */
+        .control-panel { padding: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #ddd; }
+        .card { background: var(--white); border-radius: 12px; padding: 15px; margin: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         
-        button { padding: 12px 5px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; }
-        .btn-main { background: var(--p); color: white; width: 100%; margin-top: 5px; }
-        .btn-nav { background: var(--white); border: 1px solid #ccc; color: #555; }
-        .btn-back { background: #444; color: white; width: 100%; margin-top: 15px; }
+        button { border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.1s; }
+        .btn-main { background: var(--p); color: white; width: 100%; padding: 12px; }
+        .btn-nav { background: #fdfdfd; border: 1px solid #ccc; color: #444; padding: 10px 5px; font-size: 12px; }
+        .btn-back { background: #333; color: white; width: 100%; padding: 12px; margin-top: 10px; }
 
-        /* 進度條 */
-        .progress-box { margin: 12px 0; }
-        .p-bg { background: #eee; height: 12px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd; }
-        .p-fill { height: 100%; background: linear-gradient(90deg, #f1c40f, #f39c12); width: 0%; transition: 0.5s; }
+        /* 進度條與狀態 */
+        .progress-box { margin: 10px 0; font-size: 13px; }
+        .p-bg { background: #eee; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 4px; }
+        .p-fill { height: 100%; background: var(--accent); width: 0%; transition: 0.5s; }
         
-        .item-row { display: flex; justify-content: space-around; text-align: center; margin: 15px 0; }
-        .item-icon { width: 40px; height: 40px; object-fit: contain; }
-        .shiny-fx { filter: drop-shadow(0 0 8px gold) brightness(1.1); }
-        .mega-fx { filter: hue-rotate(90deg) drop-shadow(0 0 10px #9b59b6); }
+        .item-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; text-align: center; font-size: 11px; margin-top: 10px; }
+        .item-icon { width: 35px; height: 35px; object-fit: contain; }
+        
+        .task-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .task-item small { color: #888; display: block; }
+        .badge { background: #eef; color: #55a; padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+
+        /* 特效庫 */
+        .shiny-fx { filter: drop-shadow(0 0 10px gold) brightness(1.2); }
+        .mega-fx { filter: drop-shadow(0 0 12px var(--mega)) hue-rotate(50deg); }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -60,87 +70,96 @@
 <div id="mainPage" class="page page-active">
     <div class="battle-stage">
         <div id="gotcha" class="gotcha-text">GOTCHA!</div>
-        <div class="buddy-box"><img id="buddyImg" src=""></div>
+        <div class="buddy-box"><img id="buddyImg" src="" style="width:100%;"></div>
         <div class="enemy-box" id="enemyArea" style="display:none;">
             <div class="hp-bar"><div id="hpFill"></div></div>
-            <img id="enemyImg" src="">
+            <img id="enemyImg" src="" style="width:100%;">
         </div>
         <img id="ballOverlay" src="">
     </div>
 
-    <div class="msg-box" id="msg">載入中...</div>
+    <div class="msg-box" id="msg">歡迎回來，點擊下方開始記帳或探索。</div>
 
     <div id="inputArea" style="padding: 10px;">
         <div class="card" style="margin: 0;">
-            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                <select id="cat" style="width: 70px;"><option>飲食</option><option>交通</option><option>娛樂</option><option>購物</option><option>其他</option></select>
-                <input id="note" type="text" placeholder="品項" style="flex:1; padding: 5px;">
-                <input id="amt" type="number" placeholder="金額" style="width:70px; padding: 5px;">
+            <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                <select id="cat" style="width: 70px; border-radius: 5px;"><option>飲食</option><option>交通</option><option>娛樂</option><option>購物</option><option>其他</option></select>
+                <input id="note" type="text" placeholder="品項名稱" style="flex:1; border: 1px solid #ccc; border-radius: 5px; padding: 5px;">
+                <input id="amt" type="number" placeholder="金額" style="width:70px; border: 1px solid #ccc; border-radius: 5px; padding: 5px;">
             </div>
-            <button onclick="record()" class="btn-main">記帳冒險 ➔</button>
+            <button onclick="record()" class="btn-main">記帳探索</button>
         </div>
     </div>
 
-    <div id="battleActions" style="display: none; padding: 10px;">
-        <div class="card" style="margin: 0;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                <button onclick="attack()" style="background:#e74c3c; color:white;">⚔️ 攻擊 (削血)</button>
-                <button id="megaBtn" onclick="tryMega()" style="background:var(--mega); color:white;">🧬 MEGA 進化</button>
+    <div id="battleActions" class="hidden" style="padding: 10px;">
+        <div class="card" style="margin: 0; border: 2px solid var(--p);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <button onclick="attack()" style="background:#e74c3c; color:white; padding: 8px;">⚔️ 攻擊</button>
+                <button id="megaBtn" onclick="tryMega()" style="background:var(--mega); color:white; padding: 8px;">🧬 MEGA進化</button>
             </div>
             <div style="display: flex; gap: 5px;">
-                <select id="ballSelect" style="flex:1;"></select>
-                <button onclick="throwBall()" style="background:var(--p); color:white; padding: 0 20px;">投球</button>
+                <select id="ballSelect" style="flex:1; border-radius: 5px;"></select>
+                <button onclick="throwBall()" style="background:var(--p); color:white; padding: 0 15px;">投球</button>
             </div>
         </div>
     </div>
 
     <div class="control-panel">
-        <button class="btn-nav" onclick="openPage('statusPage')">👤 狀態</button>
-        <button class="btn-nav" onclick="openPage('shopPage')">🛒 商店</button>
-        <button class="btn-nav" onclick="openPage('taskPage')">🎯 任務</button>
-        <button class="btn-nav" onclick="openPage('chartPage')">📈 統計</button>
-        <button class="btn-nav" onclick="openPage('adminPage')">⚙️ 管理</button>
-        <button class="btn-nav" onclick="openPage('helpPage')">📖 說明</button>
-    </div>
-</div>
-
-<div id="chartPage" class="page">
-    <div class="card">
-        <h3>📊 消費統計分析</h3>
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <button onclick="renderCharts('year')" style="flex:1; background:#eee;">年度趨勢</button>
-            <button onclick="renderCharts('month')" style="flex:1; background:#eee;">類別佔比</button>
-        </div>
-        <div style="height: 300px;"><canvas id="myChart"></canvas></div>
-        <button class="btn-back" onclick="back()">返回</button>
+        <button class="btn-nav" onclick="openPage('statusPage')">👤 人物狀態</button>
+        <button class="btn-nav" onclick="openPage('shopPage')">🛒 精靈商店</button>
+        <button class="btn-nav" onclick="openPage('taskPage')">🎯 任務成就</button>
+        <button class="btn-nav" onclick="openPage('chartPage')">📈 統計報表</button>
+        <button class="btn-nav" onclick="openPage('adminPage')">⚙️ 資料管理</button>
+        <button class="btn-nav" onclick="openPage('helpPage')">📖 使用說明</button>
     </div>
 </div>
 
 <div id="statusPage" class="page">
     <div class="card">
         <h3>👤 訓練家資料</h3>
-        <p>錢包餘額：<b>P$ <span id="st-bal"></span></b></p>
-        <p>閃光率：<b id="st-shiny">5</b>% <span id="megaInfo" style="color:var(--mega)"></span></p>
+        <p>P$ 餘額：<b id="st-bal">0</b></p>
+        <p>閃光率：<b id="st-shiny">5</b>% <span id="st-megaTimer" style="color:var(--mega); font-weight:bold;"></span></p>
+        <hr>
         <div class="progress-box">
-            <label>進化石任務 (<span id="p-evo-txt">0</span>/5)</label>
+            <label>進化石獲取進度 (<span id="p-evo-txt">0</span>/5)</label>
             <div class="p-bg"><div id="p-evo-bar" class="p-fill"></div></div>
         </div>
         <div class="progress-box">
-            <label>Mega石任務 (<span id="p-mega-txt">0</span>/5)</label>
-            <div class="p-bg"><div id="p-mega-bar" class="p-fill" style="background:var(--mega)"></div></div>
+            <label>Mega石獲取進度 (<span id="p-mega-txt">0</span>/5)</label>
+            <div class="p-bg"><div id="p-mega-bar" class="p-fill" style="background:var(--mega);"></div></div>
         </div>
         <hr>
-        <div class="item-row">
-            <div><img id="img-poke" src=""><br>x<span id="st-poke">0</span></div>
-            <div><img id="img-great" src=""><br>x<span id="st-great">0</span></div>
-            <div><img id="img-ultra" src=""><br>x<span id="st-ultra">0</span></div>
-            <div><img id="img-master" src=""><br>x<span id="st-master">0</span></div>
+        <h4>物品背包</h4>
+        <div class="item-grid" id="st-items"></div>
+        <button class="btn-main" style="margin-top: 20px; background:#f39c12;" onclick="tryEvolve()">✨ 夥伴永久進化 (消耗 1 進化石)</button>
+        <button class="btn-back" onclick="back()">返回</button>
+    </div>
+</div>
+
+<div id="chartPage" class="page">
+    <div class="card">
+        <h3>📈 消費統計分析</h3>
+        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+            <button onclick="renderCharts('year')" style="flex:1; background:#eee; padding:5px;">年度趨勢</button>
+            <button onclick="renderCharts('cat')" style="flex:1; background:#eee; padding:5px;">類別佔比</button>
         </div>
-        <div class="item-row">
-            <div><img id="img-stone" src=""><br>進化石: <span id="st-stone">0</span></div>
-            <div><img id="img-mstone" src=""><br>Mega石: <span id="st-mstone">0</span></div>
-        </div>
-        <button class="btn-main" onclick="tryEvolve()">✨ 夥伴進化 (需1顆進化石)</button>
+        <div style="height: 250px;"><canvas id="myChart"></canvas></div>
+        <button class="btn-back" onclick="back()">返回</button>
+    </div>
+</div>
+
+<div id="taskPage" class="page">
+    <div class="card">
+        <h3>🎯 任務中心</h3>
+        <div id="taskList"></div>
+        <button class="btn-back" onclick="back()">返回</button>
+    </div>
+</div>
+
+<div id="shopPage" class="page">
+    <div class="card">
+        <h3>🛒 精靈商店</h3>
+        <div id="shopList"></div>
         <button class="btn-back" onclick="back()">返回</button>
     </div>
 </div>
@@ -148,63 +167,235 @@
 <div id="adminPage" class="page">
     <div class="card">
         <h3>⚙️ 資料管理</h3>
-        <button onclick="exportJSON()" class="btn-main" style="background:#2980b9;">💾 匯出完整存檔 (JSON)</button>
+        <button onclick="exportData()" class="btn-main" style="background:#2980b9;">💾 匯出完整 JSON 存檔</button>
         <hr>
         <h4>台灣載具 CSV 匯入</h4>
-        <p style="font-size: 11px; color: #666;">支援財政部「手機條碼載具」下載之CSV</p>
+        <p style="font-size: 11px; color:#666;">請匯入財政部「手機條碼載具專區」下載之 CSV</p>
         <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="importCSV(event)">
-        <button onclick="document.getElementById('csvFile').click()" class="btn-main" style="background:#27ae60;">📑 匯入雲端發票 CSV</button>
+        <button onclick="document.getElementById('csvFile').click()" class="btn-main" style="background:#27ae60;">📑 讀取載具發票 CSV</button>
         <hr>
-        <h4>區間輕量化</h4>
-        <input type="date" id="cStart"> ~ <input type="date" id="cEnd">
-        <button onclick="archiveData()" class="btn-main" style="background:#c0392b;">⚠️ 歸檔並清除明細</button>
+        <h4>自選區間輕量化</h4>
+        <div style="display: flex; gap: 5px; align-items: center;">
+            <input type="date" id="cStart" style="flex:1;"> 到 <input type="date" id="cEnd" style="flex:1;">
+        </div>
+        <button onclick="archiveData()" class="btn-main" style="background:var(--danger); margin-top:10px;">⚠️ 歸檔並刪除細節</button>
         <button class="btn-back" onclick="back()">返回</button>
     </div>
 </div>
 
 <script>
-// --- [1] 配置與 PokeAPI 資產 ---
+// --- [1] 初始化資產與數據庫 ---
 const POKE_API = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites";
 const NAMES = ["妙蛙種子","妙蛙草","妙蛙花","小火龍","火恐龍","噴火龍","傑尼龜","卡咪龜","水箭龜","綠毛蟲","鐵甲蛹","巴大蝶","獨角蟲","鐵殼蛹","大針蜂","波波","比比鳥","比雕","小拉達","拉達","烈雀","大嘴雀","阿柏蛇","阿柏怪","皮卡丘","雷丘","穿山鼠","穿山王","尼多蘭","尼多娜","尼多后","尼多朗","尼多力諾","尼多王","皮皮","皮可西","六尾","九尾","胖丁","胖可丁","超音蝠","大嘴蝠","走路草","臭臭花","霸王花","派拉斯","派拉斯特","毛球","末入蛾","地鼠","三地鼠","喵喵","貓老大","可達鴨","哥達鴨","猴怪","火爆猴","卡蒂狗","風速狗","蚊香蝌蚪","蚊香蛙","快泳蛙","凱西","勇吉拉","胡地","腕力","豪力","怪力","喇叭芽","口呆花","大食花","瑪瑙水母","毒刺水母","小拳石","隆隆石","隆隆岩","小火馬","烈焰馬","呆呆獸","呆殼獸","小磁怪","三合一磁怪","大蔥鴨","嘟嘟","嘟嘟利","小海獅","白海獅","臭泥","臭臭泥","大舌貝","刺甲貝","鬼斯","鬼斯通","耿鬼","大岩蛇","催眠貘","引夢貘人","大鉗蟹","巨鉗蟹","霹靂電球","頑皮雷彈","蛋蛋","椰蛋樹","卡拉卡拉","嘎啦嘎啦","飛腿郎","快拳郎","大舌頭","瓦斯彈","雙彈瓦斯","獨角犀牛","鑽角犀獸","吉利蛋","蔓藤怪","袋獸","墨海馬","海刺龍","角金魚","金魚王","海星星","寶石海星","魔牆人偶","飛天螳螂","迷唇姐","電擊獸","鴨嘴火獸","凱羅斯","肯泰羅","鯉魚王","暴鯉龍","拉普拉斯","百變怪","伊布","水伊布","雷伊布","火伊布","多邊獸","菊石獸","多刺菊石獸","化石盔","鐮刀盔","化石翼龍","卡比獸","急凍鳥","閃電鳥","火焰鳥","迷你龍","哈克龍","快龍","超夢","夢幻"];
-const MEGA_IDS = [3, 6, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142]; // 進化鏈中有Mega的家族
+const MEGA_GENES = [3, 6, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142]; // 耿鬼、噴火龍等
 
 let s = {
-    bal: 500, pool: 0, items: { poke:10, great:0, ultra:0, master:0, stone:0, mstone:0 },
+    bal: 1000, pool: 0, items: { poke:10, great:5, ultra:0, master:1, stone:0, mstone:0 },
     prog: { evo:0, mega:0 }, buddy: { id:25, name:"皮卡丘", dailyMega:"", megaUntil:0 },
-    hist: [], yearSums: {}, owned: []
+    hist: [], yearSums: {}, owned: [],
+    tasks: {
+        daily: { record: false, catch: false },
+        weekly: { catch: 0 },
+        achieve: { totalSpend: 0, totalEvo: 0 }
+    },
+    lastUpdate: new Date().toDateString()
 };
 
-// --- [2] 核心邏輯 ---
+// --- [2] 核心機制：記帳與 CSV ---
 function updateUI() {
-    localStorage.setItem('pokemaster_v51', JSON.stringify(s));
-    document.getElementById('st-bal').innerText = s.bal;
-    ['poke','great','ultra','master','stone','mstone'].forEach(k => {
-        if(document.getElementById('st-'+k)) document.getElementById('st-'+k).innerText = s.items[k];
-    });
+    checkDayReset();
+    localStorage.setItem('pokemaster_v51_final', JSON.stringify(s));
     
-    // 進度條
+    // 文字更新
+    document.getElementById('st-bal').innerText = s.bal.toLocaleString();
     document.getElementById('p-evo-txt').innerText = s.prog.evo;
     document.getElementById('p-evo-bar').style.width = (s.prog.evo/5*100) + "%";
     document.getElementById('p-mega-txt').innerText = s.prog.mega;
     document.getElementById('p-mega-bar').style.width = (s.prog.mega/5*100) + "%";
 
-    // 狀態
     const isMega = Date.now() < s.buddy.megaUntil;
     document.getElementById('st-shiny').innerText = isMega ? 10 : 5;
-    document.getElementById('megaInfo').innerText = isMega ? " (MEGA中!)" : "";
+    document.getElementById('st-megaTimer').innerText = isMega ? "(MEGA模式中!)" : "";
     
-    // 圖示載入
+    // 圖示更新
     document.getElementById('buddyImg').src = `${POKE_API}/pokemon/${s.buddy.id}.png`;
     if(isMega) document.getElementById('buddyImg').classList.add('mega-fx');
     else document.getElementById('buddyImg').classList.remove('mega-fx');
 
-    document.getElementById('img-poke').src = `${POKE_API}/items/poke-ball.png`;
-    document.getElementById('img-great').src = `${POKE_API}/items/great-ball.png`;
-    document.getElementById('img-ultra').src = `${POKE_API}/items/ultra-ball.png`;
-    document.getElementById('img-master').src = `${POKE_API}/items/master-ball.png`;
-    document.getElementById('img-stone').src = `${POKE_API}/items/shiny-stone.png`;
-    document.getElementById('img-mstone').src = `${POKE_API}/items/mega-stone.png`;
+    renderBackpack();
+    renderBallSelect();
+}
 
+function record() {
+    const amt = parseInt(document.getElementById('amt').value);
+    if (!amt) return;
+    const cat = document.getElementById('cat').value;
+    const note = document.getElementById('note').value || "日常開銷";
+    const date = new Date().toISOString().split('T')[0];
+    const month = date.substring(0, 7);
+
+    // 更新帳務
+    s.bal -= amt; s.pool += amt;
+    s.hist.push({ date, cat, amt, note });
+    s.yearSums[month] = (s.yearSums[month] || 0) + amt;
+    
+    // 任務進度
+    s.tasks.daily.record = true;
+    s.tasks.achieve.totalSpend += amt;
+
+    document.getElementById('msg').innerText = `記錄成功！消耗 P$ ${amt}。目前能量池：${s.pool}/500`;
+    if (s.pool >= 500) { s.pool -= 500; spawn(); }
+    
+    document.getElementById('amt').value = "";
+    updateUI();
+}
+
+function importCSV(e) {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const rows = evt.target.result.split('\n');
+        let count = 0, total = 0;
+        rows.forEach((row, i) => {
+            const cols = row.split(',');
+            // 台灣載具典型格式：日期(0), 單號(1), 商家(2), 金額(3)...
+            if (i > 0 && cols.length >= 4) {
+                const date = cols[0].trim().replace(/\//g, '-');
+                const amt = parseInt(cols[3]);
+                const note = cols[2] + " (載具)";
+                if (!isNaN(amt)) {
+                    const month = date.substring(0, 7);
+                    s.hist.push({ date, cat: "購物", amt, note });
+                    s.yearSums[month] = (s.yearSums[month] || 0) + amt;
+                    s.pool += amt;
+                    count++; total += amt;
+                }
+            }
+        });
+        alert(`匯入完成！成功讀取 ${count} 筆交易，共計 P$ ${total}`);
+        while (s.pool >= 500) { s.pool -= 500; spawn(); }
+        updateUI();
+    };
+    reader.readAsText(file);
+}
+
+// --- [3] 戰鬥與進化系統 ---
+let curE = null;
+function spawn() {
+    const id = Math.floor(Math.random()*151)+1;
+    const isShiny = Math.random() < (Date.now() < s.buddy.megaUntil ? 0.1 : 0.05);
+    curE = { id, hp: 100, t: 1, isShiny, name: NAMES[id-1] };
+    
+    document.getElementById('enemyImg').src = `${POKE_API}/pokemon/${id}.png`;
+    isShiny ? document.getElementById('enemyImg').classList.add('shiny-fx') : document.getElementById('enemyImg').classList.remove('shiny-fx');
+
+    document.getElementById('enemyArea').style.display = "block";
+    document.getElementById('inputArea').classList.add('hidden');
+    document.getElementById('battleActions').classList.remove('hidden');
+    document.getElementById('hpFill').style.width = "100%";
+    document.getElementById('msg').innerText = `喔！野生的 ${curE.name} 出現了！`;
+}
+
+async function throwBall() {
+    const type = document.getElementById('ballSelect').value;
+    if (s.items[type] <= 0 && type!=='master') return alert("球數不足！");
+    if (type !== 'master') s.items[type]--;
+
+    const ball = document.getElementById('ballOverlay');
+    ball.src = `${POKE_API}/items/${type}-ball.png`;
+    ball.className = 'ball-throw';
+    
+    await wait(800);
+    ball.className = 'ball-shake';
+    await wait(1500);
+
+    const rate = { poke:0.3, great:0.5, ultra:0.7, master:1.0 }[type] * (1.2 - curE.hp/200);
+    if (Math.random() < rate || type === 'master') {
+        captureSuccess();
+    } else {
+        ball.style.display = 'none';
+        curE.t++;
+        if (curE.t > 8) {
+            document.getElementById('msg').innerText = `${curE.name} 逃走了...`;
+            setTimeout(resetBattle, 1500);
+        } else {
+            document.getElementById('msg').innerText = `${curE.name} 掙脫了！(${curE.t}/8)`;
+        }
+    }
+    updateUI();
+}
+
+function captureSuccess() {
+    document.getElementById('gotcha').style.display = "block";
+    s.tasks.daily.catch = true;
+    s.tasks.weekly.catch++;
+    
+    // 資源獲取邏輯
+    s.prog.evo++;
+    if (MEGA_GENES.includes(curE.id) || [1,2,4,5,7,8,92,93].includes(curE.id)) s.prog.mega++;
+    
+    if (s.prog.evo >= 5) { s.prog.evo = 0; s.items.stone++; }
+    if (s.prog.mega >= 5) { s.prog.mega = 0; s.items.mstone++; }
+
+    setTimeout(() => {
+        document.getElementById('gotcha').style.display = "none";
+        resetBattle();
+    }, 2000);
+}
+
+function tryEvolve() {
+    if (s.items.stone < 1) return alert("需要 1 顆進化石！");
+    const canEvo = [1,2,4,5,7,8,10,11,13,14,16,17,25,92,93]; // 範例
+    if (!canEvo.includes(s.buddy.id)) return alert("此寶可夢目前無法在此進化。");
+    
+    s.items.stone--;
+    s.buddy.id++;
+    s.tasks.achieve.totalEvo++;
+    alert(`恭喜！夥伴進化成了 ${NAMES[s.buddy.id-1]}！`);
+    updateUI();
+}
+
+function tryMega() {
+    if (s.items.mstone < 1) return alert("需要 Mega 石！");
+    if (s.buddy.dailyMega === new Date().toDateString()) return alert("今天已進行過一次 Mega 進化。");
+    
+    s.items.mstone--;
+    s.buddy.dailyMega = new Date().toDateString();
+    s.buddy.megaUntil = Date.now() + 7200000; // 2小時
+    alert("🧬 夥伴 Mega 進化！閃光率與捕捉力大幅上升！");
+    updateUI();
+}
+
+// --- [4] UI & 統計分頁 ---
+function renderCharts(mode) {
+    const ctx = document.getElementById('myChart').getContext('2d');
+    if (window.myChartObj) window.myChartObj.destroy();
+    
+    const labels = mode === 'year' ? Object.keys(s.yearSums) : ["飲食","交通","娛樂","購物","其他"];
+    const data = mode === 'year' ? Object.values(s.yearSums) : labels.map(c => s.hist.filter(h=>h.cat===c).reduce((a,b)=>a+b.amt,0));
+
+    window.myChartObj = new Chart(ctx, {
+        type: mode==='year' ? 'line' : 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{ label: '花費', data: data, backgroundColor: ['#ff6384','#36a2eb','#ffce56','#4bc0c0','#9966ff'] }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+    });
+}
+
+function renderBackpack() {
+    const items = [
+        {k:'poke', n:'精靈球', i:'poke-ball'}, {k:'great', n:'超級球', i:'great-ball'},
+        {k:'ultra', n:'高級球', i:'ultra-ball'}, {k:'master', n:'大師球', i:'master-ball'},
+        {k:'stone', n:'進化石', i:'shiny-stone'}, {k:'mstone', n:'Mega石', i:'mega-stone'}
+    ];
+    document.getElementById('st-items').innerHTML = items.map(it => `
+        <div><img src="${POKE_API}/items/${it.i}.png" class="item-icon"><br>${it.n}<br>x${s.items[it.k]}</div>
+    `).join('');
+}
+
+function renderBallSelect() {
     const bSel = document.getElementById('ballSelect');
     bSel.innerHTML = `
         <option value="poke">精靈球 (x${s.items.poke})</option>
@@ -214,216 +405,104 @@ function updateUI() {
     `;
 }
 
-// --- [3] 台灣載具 CSV 解析器 ---
-function importCSV(e) {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-        const lines = evt.target.result.split('\n');
-        let count = 0, total = 0;
-        // 台灣財政部格式通常從第 2 或 3 行開始是數據
-        lines.forEach((line, index) => {
-            const cols = line.split(',');
-            if (cols.length >= 5 && index > 0) {
-                // 典型格式: 發票日期(0), 發票號碼(1), 商家(2), 總金額(3), 明細(4)...
-                let dateStr = cols[0].trim();
-                let amt = parseInt(cols[3]);
-                let note = cols[4] ? cols[4].replace(/"/g, '') : "雲端發票";
-                
-                if (!isNaN(amt) && dateStr.includes('/')) {
-                    const month = dateStr.substring(0, 7).replace(/\//g, '-');
-                    s.hist.push({ date: dateStr, cat: "購物", amt, note });
-                    s.yearSums[month] = (s.yearSums[month] || 0) + amt;
-                    s.pool += amt;
-                    count++; total += amt;
-                }
-            }
-        });
-        alert(`匯入完成！成功讀取 ${count} 筆交易，共 P$ ${total}`);
-        if (s.pool >= 500) spawn();
-        updateUI();
-    };
-    reader.readAsText(file);
-}
-
-// --- [4] 進化與捕捉 ---
-function tryEvolve() {
-    if (s.items.stone < 1) return alert("進化石不足！");
-    // 簡單進化邏輯：ID + 1 (如果是可進化的)
-    const canEvolve = [1,2,4,5,7,8,10,11,13,14,16,17,19,21,23,25,27,29,30,32,33,37,39,41,43,44,46,48,50,52,54,56,58,60,61,63,64,66,67,69,70,72,74,75,77,79,81,84,86,88,90,92,93,95,96,98,100,102,104,109,111,113,116,118,120,123,129,133,138,140,147,148];
-    if (!canEvolve.includes(s.buddy.id)) return alert("此寶可夢已達最終型態或無法進化！");
-    
-    s.items.stone--;
-    s.buddy.id++;
-    s.buddy.name = NAMES[s.buddy.id-1];
-    alert(`✨ 恭喜！夥伴已進化為 ${s.buddy.name}！`);
-    updateUI();
-}
-
-let curE = null;
-function spawn() {
-    s.pool = 0;
-    const id = Math.floor(Math.random()*151)+1;
-    const isShiny = Math.random() < (Date.now() < s.buddy.megaUntil ? 0.1 : 0.05);
-    curE = { id, hp: 100, t: 1, isShiny, name: NAMES[id-1] };
-    
-    document.getElementById('enemyImg').src = `${POKE_API}/pokemon/${id}.png`;
-    if(isShiny) document.getElementById('enemyImg').classList.add('shiny-fx');
-    else document.getElementById('enemyImg').classList.remove('shiny-fx');
-
-    document.getElementById('enemyArea').style.display = "block";
-    document.getElementById('inputArea').style.display = "none";
-    document.getElementById('battleActions').style.display = "block";
-    document.getElementById('hpFill').style.width = "100%";
-    document.getElementById('msg').innerText = `喔！野生的 ${curE.name} 出現了！`;
-}
-
-function throwBall() {
-    const type = document.getElementById('ballSelect').value;
-    if (s.items[type] <= 0 && type!=='master') return alert("球數不足");
-    if (type!=='master') s.items[type]--;
-
-    const ball = document.getElementById('ballOverlay');
-    ball.src = `${POKE_API}/items/${type}-ball.png`;
-    ball.className = 'ball-throw';
-    
-    setTimeout(() => {
-        ball.className = 'ball-shake';
-        setTimeout(() => {
-            const catchRate = {poke:0.3, great:0.5, ultra:0.7, master:1}[type] * (1.2 - curE.hp/200);
-            if (Math.random() < catchRate || type==='master') {
-                document.getElementById('gotcha').style.display="block";
-                s.prog.evo++;
-                if (MEGA_IDS.includes(curE.id)) s.prog.mega++;
-                if (s.prog.evo>=5) { s.prog.evo=0; s.items.stone++; }
-                if (s.prog.mega>=5) { s.prog.mega=0; s.items.mstone++; }
-                setTimeout(resetBattle, 2000);
-            } else {
-                ball.style.display="none";
-                curE.t++;
-                if (curE.t > 8) { alert("跑掉了..."); resetBattle(); }
-                else document.getElementById('msg').innerText = `${curE.name} 掙脫了！(${curE.t}/8)`;
-            }
-            updateUI();
-        }, 1200);
-    }, 800);
-}
-
-// --- [5] 統計圖表 ---
-let chart = null;
-function renderCharts(mode) {
-    const ctx = document.getElementById('myChart').getContext('2d');
-    if (chart) chart.destroy();
-    
-    const labels = mode === 'year' ? Object.keys(s.yearSums) : ["飲食", "交通", "購物", "其他"];
-    const data = mode === 'year' ? Object.values(s.yearSums) : [
-        s.hist.filter(h=>h.cat==='飲食').reduce((a,b)=>a+b.amt,0),
-        s.hist.filter(h=>h.cat==='交通').reduce((a,b)=>a+b.amt,0),
-        s.hist.filter(h=>h.cat==='購物').reduce((a,b)=>a+b.amt,0),
-        s.hist.filter(h=>h.cat==='其他').reduce((a,b)=>a+b.amt,0)
+function renderShop() {
+    const wares = [
+        {k:'poke', n:'精靈球', p:100, i:'poke-ball'},
+        {k:'great', n:'超級球', p:300, i:'great-ball'},
+        {k:'ultra', n:'高級球', p:600, i:'ultra-ball'}
     ];
-
-    chart = new Chart(ctx, {
-        type: mode==='year' ? 'line' : 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: ['#e74c3c','#3498db','#f1c40f','#2ecc71']
-            }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-    });
+    document.getElementById('shopList').innerHTML = wares.map(w => `
+        <div class="task-item">
+            <div style="display:flex; align-items:center;">
+                <img src="${POKE_API}/items/${w.i}.png" style="width:30px; margin-right:10px;">
+                <b>${w.n}</b>
+            </div>
+            <button onclick="buy('${w.k}', ${w.p})" style="background:var(--p); color:white; padding:5px 15px;">P$ ${w.p}</button>
+        </div>
+    `).join('');
 }
 
-// 基礎功能引導
-function record() {
-    const amt = parseInt(document.getElementById('amt').value);
-    if (!amt) return;
-    const cat = document.getElementById('cat').value;
-    const note = document.getElementById('note').value || "日常開銷";
-    const date = new Date().toISOString().split('T')[0];
-    const month = date.substring(0, 7);
-
-    s.bal -= amt; s.pool += amt;
-    s.hist.push({ date, cat, amt, note });
-    s.yearSums[month] = (s.yearSums[month] || 0) + amt;
-
-    document.getElementById('msg').innerText = `記錄成功！消耗 P$ ${amt}。能量累積中...`;
-    if (s.pool >= 500) spawn();
-    document.getElementById('amt').value = "";
-    updateUI();
+function buy(k, p) {
+    if (s.bal < p) return alert("P$ 錢包餘額不足！");
+    s.bal -= p; s.items[k]++;
+    updateUI(); renderShop();
 }
 
-function attack() {
-    curE.hp = Math.max(20, curE.hp - 25);
-    document.getElementById('hpFill').style.width = curE.hp + "%";
-    document.getElementById('msg').innerText = `使出了拍擊！捕捉率上升。`;
+function renderTaskList() {
+    const list = document.getElementById('taskList');
+    list.innerHTML = `
+        <div class="task-item"><span>每日記帳 1 筆</span> <span class="badge">${s.tasks.daily.record?'✅ 已達成':'進行中'}</span></div>
+        <div class="task-item"><span>每日捕捉 1 隻</span> <span class="badge">${s.tasks.daily.catch?'✅ 已達成':'進行中'}</span></div>
+        <div class="task-item"><span>每週捕捉進度</span> <span>${s.tasks.weekly.catch}/10</span></div>
+        <hr>
+        <div class="task-item"><span>成就：累積消費</span> <span>P$ ${s.tasks.achieve.totalSpend}/10000</span></div>
+        <div class="task-item"><span>成就：完成進化</span> <span>${s.tasks.achieve.totalEvo}/3</span></div>
+    `;
 }
 
-function tryMega() {
-    const day = new Date().toDateString();
-    if (s.items.mstone < 1) return alert("沒有 Mega 石！");
-    if (s.buddy.dailyMega === day) return alert("今天已進化過");
-    s.items.mstone--;
-    s.buddy.dailyMega = day;
-    s.buddy.megaUntil = Date.now() + 7200000;
-    alert("🧬 MEGA 進化！2小時內捕捉力與閃光率大增！");
-    updateUI();
+// --- [5] 輔助功能 ---
+function checkDayReset() {
+    const today = new Date().toDateString();
+    if (s.lastUpdate !== today) {
+        s.tasks.daily = { record: false, catch: false };
+        s.lastUpdate = today;
+    }
 }
-
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 function resetBattle() {
     curE = null;
-    document.getElementById('gotcha').style.display="none";
-    document.getElementById('enemyArea').style.display="none";
-    document.getElementById('battleActions').style.display="none";
-    document.getElementById('inputArea').style.display="block";
-    document.getElementById('ballOverlay').style.display="none";
-    document.getElementById('ballOverlay').className="";
-    document.getElementById('msg').innerText = "戰鬥結束，回到平穩的記帳生活。";
+    document.getElementById('enemyArea').style.display = "none";
+    document.getElementById('battleActions').classList.add('hidden');
+    document.getElementById('inputArea').classList.remove('hidden');
+    document.getElementById('ballOverlay').style.display = "none";
+    document.getElementById('ballOverlay').className = "";
 }
-
-function openPage(p) { 
-    document.querySelectorAll('.page').forEach(el=>el.classList.remove('page-active'));
-    document.getElementById(p).classList.add('page-active');
-    if(p==='chartPage') renderCharts('year');
+function openPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active'));
+    document.getElementById(id).classList.add('page-active');
+    if (id === 'chartPage') renderCharts('year');
+    if (id === 'shopPage') renderShop();
+    if (id === 'taskPage') renderTaskList();
 }
 function back() { openPage('mainPage'); }
-function exportJSON() {
-    const data = JSON.stringify(s);
-    const blob = new Blob([data], {type:'application/json'});
+function exportData() {
+    const blob = new Blob([JSON.stringify(s)], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `poke_save_${Date.now()}.json`;
+    a.download = `pokemaster_save_${Date.now()}.json`;
     a.click();
 }
 function archiveData() {
     const start = document.getElementById('cStart').value;
     const end = document.getElementById('cEnd').value;
-    if(!start || !end) return alert("請選區間");
-    exportJSON(); // 強制備份
+    if(!start || !end) return alert("請選擇日期區間");
+    exportData(); // 強制備份
     s.hist = s.hist.filter(h => h.date < start || h.date > end);
-    updateUI(); alert("清理完成，總額數據已保留。");
+    updateUI(); alert("區間紀錄已歸檔刪除，統計總額已保留。");
+}
+
+function attack() {
+    curE.hp = Math.max(10, curE.hp - 20);
+    document.getElementById('hpFill').style.width = curE.hp + "%";
+    document.getElementById('msg').innerText = `攻擊成功！捕捉機率提升了。`;
 }
 
 // 初始化
-const localS = localStorage.getItem('pokemaster_v51');
-if(localS) s = JSON.parse(localS);
+const saved = localStorage.getItem('pokemaster_v51_final');
+if (saved) s = JSON.parse(saved);
 updateUI();
-document.getElementById('msg').innerText = "歡迎回來，訓練家！點擊下方按鈕開始記錄。";
 </script>
 
 <div id="helpPage" class="page">
     <div class="card">
-        <h3>📖 冒險指南</h3>
-        <p>1. <b>記帳冒險：</b>手動記帳或匯入 CSV 載具，每滿 500 元觸發戰鬥。</p>
-        <p>2. <b>任務系統：</b>捕捉任意 5 隻 = 1 進化石；捕捉 Mega 家族 5 隻 = 1 Mega 石。</p>
-        <p>3. <b>統計：</b>獨立頁面查看年度趨勢，輕量化後仍會保留每月總額。</p>
-        <button class="btn-back" onclick="back()">返回</button>
+        <h3>📖 冒險手冊</h3>
+        <p><b>1. 記帳探索：</b>手動記帳或匯入 CSV 載具，每滿 500 P$ 發現寶可夢。</p>
+        <p><b>2. 道具獲取：</b>捕捉任意 5 隻獲得「進化石」，捕捉特定 Mega 家族獲得「Mega 石」。</p>
+        <p><b>3. 永久進化：</b>在狀態頁面消耗進化石，夥伴將獲得永久數值與型態成長。</p>
+        <p>4. <b>數據管理：</b>輕量化功能會自動幫您備份。請記得下載 JSON 存檔以防萬一。</p>
+        <button class="btn-back" onclick="back()">返回冒險</button>
     </div>
 </div>
-<div id="shopPage" class="page"><div class="card"><h3>🛒 商店</h3><p>此版本建議由記帳與任務獲取資源，商店功能開發中。</p><button class="btn-back" onclick="back()">返回</button></div></div>
-<div id="taskPage" class="page"><div class="card"><h3>🎯 任務獎勵</h3><p>捕捉 5 隻寶可夢即自動領取石子獎勵，請查看狀態頁面進度條。</p><button class="btn-back" onclick="back()">返回</button></div></div>
 
 </body>
 </html>
