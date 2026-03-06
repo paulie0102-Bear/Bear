@@ -5,12 +5,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster: Legacy Final v36.0</title>
+    <title>PokeMaster: Legacy Final v37.0</title>
     <style>
         :root { --primary: #2d5a27; --gold: #d4af37; --bg: #e0eed0; --mega: #ff00ff; --hp-green: #4caf50; --task-blue: #3498db; }
         body { font-family: -apple-system, sans-serif; background: #222; padding: 10px; margin: 0; display: flex; flex-direction: column; align-items: center; color: #333; }
         
-        /* 戰鬥舞台與動畫 */
+        /* 戰鬥舞台與星星動畫 */
         .game-screen { width: 100%; max-width: 400px; background: var(--bg); border: 6px solid #444; border-radius: 12px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
         .battle-stage { height: 240px; position: relative; background: linear-gradient(#b8eaea, #e0eed0); border-bottom: 4px solid #333; overflow: hidden; }
         .buddy-container { position: absolute; bottom: -10px; left: -10px; width: 180px; z-index: 5; }
@@ -19,7 +19,6 @@
         #pokeImg { width: 100%; transition: 0.3s; }
         .shiny-effect { filter: drop-shadow(0 0 10px gold) sepia(0.5) brightness(1.2); }
         
-        /* 投球與星星動畫 */
         #ballOverlay { position: absolute; width: 35px; display: none; left: 50px; bottom: 50px; z-index: 50; }
         .ball-throw { animation: ballCurve 0.8s forwards ease-in-out; }
         .ball-shake { animation: ballShake 0.5s 3; }
@@ -33,22 +32,25 @@
         .star-animate { animation: starBurst 0.6s ease-out forwards; }
         @keyframes starBurst { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)); opacity: 0; } }
 
-        /* UI 組件 */
-        .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--primary); color: white; padding: 8px; border-radius: 8px; margin: 10px 0; font-size: 11px; gap: 4px; text-align: center; width: 100%; max-width: 400px; box-sizing: border-box; }
-        .message-box { height: 90px; background: #fff; padding: 10px; font-weight: bold; border-top: 4px solid #888; box-shadow: inset 0 0 0 2px #333; position: relative; overflow-y: auto; }
-        .help-btn { position: absolute; right: 5px; top: 5px; background: #333; color: white; font-size: 10px; border-radius: 4px; padding: 2px 5px; border: none; cursor: pointer; }
+        /* UI 元件與道具圖示 */
+        .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--primary); color: white; padding: 8px; border-radius: 8px; margin: 10px 0; font-size: 11px; gap: 4px; text-align: center; width: 100%; max-width: 400px; box-sizing: border-box; align-items: center; }
+        .stats-bar span { display: flex; align-items: center; justify-content: center; gap: 2px; }
+        .item-icon { width: 18px; height: 18px; object-fit: contain; }
+        
+        .message-box { height: 95px; background: #fff; padding: 10px; font-weight: bold; border-top: 4px solid #888; box-shadow: inset 0 0 0 2px #333; position: relative; overflow-y: auto; box-sizing: border-box; }
+        .help-btn { position: absolute; right: 5px; top: 5px; background: #333; color: white; font-size: 10px; border-radius: 4px; padding: 2px 5px; border: none; cursor: pointer; z-index: 10; }
         .card { background: #f8fff0; border: 2px solid var(--primary); padding: 12px; margin-bottom: 8px; border-radius: 10px; width: 100%; max-width: 400px; box-sizing: border-box; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { padding: 10px; border: 2px solid #333; font-weight: bold; cursor: pointer; border-radius: 6px; font-family: inherit; }
+        button { padding: 10px; border: 2px solid #333; font-weight: bold; cursor: pointer; border-radius: 6px; }
         .hidden { display: none; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         
+        /* 任務系統 */
         .task-item { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 8px; background: #fff; }
         .progress-bar { height: 12px; background: #eee; border-radius: 6px; border: 1px solid #ccc; margin: 5px 0; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--task-blue); transition: 0.5s; }
         .shop-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
-        .shop-row img { width: 30px; margin-right: 10px; }
-        .help-content { font-size: 13px; line-height: 1.6; color: #444; }
+        .shop-row img { width: 28px; height: 28px; margin-right: 8px; }
     </style>
 </head>
 <body>
@@ -69,19 +71,19 @@
     </div>
     <div class="message-box" id="msgText">
         <button class="help-btn" onclick="openModal('helpModal')">❓說明</button>
-        加載數據中...
+        <div id="msgInner">加載中...</div>
     </div>
 </div>
 
 <div class="stats-bar">
     <span>💰 P$<span id="balance">0</span></span>
-    <span>🧩 <span id="megaShard">0</span>/5</span>
+    <span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/mega-stone.png" class="item-icon"> <span id="megaShard">0</span>/5</span>
     <span>💎 x<span id="inv-stones">0</span></span>
-    <span>✨ <span id="shinyRate">0</span>%</span>
-    <span>🔴 x<span id="inv-poke">0</span></span>
-    <span>🔵 x<span id="inv-great">0</span></span>
-    <span>🟡 x<span id="inv-ultra">0</span></span>
-    <span>⭐ x<span id="inv-master">0</span></span>
+    <span>✨ <span id="shinyRate">5</span>%</span>
+    <span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" class="item-icon"> x<span id="inv-poke">0</span></span>
+    <span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/great-ball.png" class="item-icon"> x<span id="inv-great">0</span></span>
+    <span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png" class="item-icon"> x<span id="inv-ultra">0</span></span>
+    <span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/master-ball.png" class="item-icon"> x<span id="inv-master">0</span></span>
 </div>
 
 <div class="card" id="inputArea">
@@ -118,11 +120,11 @@
 
 <div id="helpModal" class="modal">
     <h3>📖 冒險指南 <button onclick="closeModals()" style="float:right">❌</button></h3>
-    <div class="help-content">
-        <p><b>1. 記帳與遇怪：</b>輸入金額並點擊「記帳」，每累計消費達 500 元（滿100%）即觸發戰鬥。</p>
-        <p><b>2. 捕捉技巧：</b>HP 越低捕捉率越高。精靈球(20%)、超級球(30%)、高級球(40%)，大師球必中。</p>
-        <p><b>3. 任務系統：</b>每日記帳 3 次可獲精靈球；每週消費達標可領取珍貴球種。</p>
-        <p><b>4. MEGA 進化：</b>捕捉具備進化能力的寶可夢可獲「碎片」，集滿 5 個換取進化石。進化後 24 小時內閃光率大幅提升至 20%！</p>
+    <div style="font-size:14px; line-height:1.6;">
+        <p><b>1. 記帳觸發戰鬥：</b>輸入金額點擊「記帳」。累計消費每滿 500 元（滿100%），便會遭遇野生寶可夢。</p>
+        <p><b>2. 每日獎勵：</b>每天前 3 次記帳可額外獲得一顆精靈球 🔴。</p>
+        <p><b>3. 捕捉攻略：</b>使用「攻擊」減少體力。HP 越低，捕捉成功率越高。大師球 ⭐ 擁有 100% 成功率。</p>
+        <p><b>4. MEGA 進化：</b>捕捉特定對象（如御三家、路卡利歐）可獲得碎片 🧩。集滿 5 個自動轉為進化石 💎。進化後 24 小時內，遇到閃光 ✨ 的機率提升至 20%！</p>
     </div>
 </div>
 
@@ -151,7 +153,7 @@
 
 <div id="adminModal" class="modal">
     <h3>⚙️ 系統管理 <button onclick="closeModals()" style="float:right">❌</button></h3>
-    <h4>📊 本月統計</h4><div id="monthStats" style="background:#f9f9f9; padding:10px; border-radius:8px; font-size:12px;"></div>
+    <h4>📊 本月統計</h4><div id="monthStats" style="background:#f9f9f9; padding:10px; border-radius:8px;"></div>
     <hr>
     <h4>✏️ 近期紀錄</h4><div id="recentHistory" style="max-height:150px; overflow-y:auto;"></div>
     <hr>
@@ -169,7 +171,6 @@
 </div>
 
 <script>
-// 數據庫與 MEGA 對應 (包含 493 名稱，因長度關係維持陣列)
 const POKE_NAMES = ["妙蛙種子","妙蛙草","妙蛙花","小火龍","火恐龍","噴火龍","傑尼龜","卡咪龜","水箭龜","綠毛蟲","鐵甲蛹","巴大蝶","獨角蟲","鐵殼蛹","大針蜂","波波","比比鳥","大比鳥","小拉達","拉達","烈雀","大嘴雀","阿柏蛇","阿柏怪","皮卡丘","雷丘","穿山鼠","穿山王","尼多蘭","尼多娜","尼多后","尼多朗","尼多力諾","尼多王","皮皮","皮可西","六尾","九尾","胖丁","胖可丁","超音蝠","大嘴蝠","走路草","臭臭花","霸王花","派拉斯","派拉斯特","毛球","摩魯蛾","地鼠","三地鼠","喵喵","貓老大","可達鴨","哥達鴨","猴怪","火爆猴","卡蒂狗","風速狗","蚊香蝌蚪","蚊香君","蚊香泳士","凱西","勇基拉","胡地","腕力","豪力","怪力","喇叭芽","口呆花","大食花","瑪瑙水母","毒刺水母","小拳石","隆隆石","隆隆岩","小火馬","烈焰馬","呆呆獸","呆殼獸","小磁怪","三合一磁怪","大蔥鴨","嘟嘟","嘟嘟利","小海獅","白海獅","臭泥","臭臭泥","大舌貝","刺甲貝","鬼斯","鬼斯通","耿鬼","大岩蛇","催眠貘","引夢貘","大鉗蟹","巨鉗蟹","霹靂電球","頑皮雷彈","蛋蛋","椰蛋樹","卡拉卡拉","嘎啦嘎啦","飛腿郎","快拳郎","大舌頭","瓦斯彈","雙彈瓦斯","獨角犀牛","鑽角犀獸","吉利蛋","蔓藤怪","袋獸","墨海馬","海刺龍","角金魚","金魚王","海星星","寶石海星","魔牆人偶","飛天螳螂","迷唇姐","電擊獸","鴨嘴火獸","凱羅斯","肯泰羅","鯉魚王","暴鯉龍","拉普拉斯","百變怪","伊布","水伊布","雷伊布","火伊布","多邊獸","菊石獸","多刺菊石獸","化石盔","鐮刀盔","化石翼龍","卡比獸","急凍鳥","閃電鳥","火焰鳥","迷你龍","哈克龍","快龍","超夢","夢幻","菊草葉","月桂葉","大竺葵","火球鼠","火岩鼠","火暴獸","小鋸鱷","藍鱷","大力鱷","尾立","大尾立","咕咕","貓頭夜鷹","芭頭蟲","安瓢蟲","圓絲蛛","阿利多斯","叉字蝠","電燈怪","大文字","皮丘","皮寶寶","寶寶丁","波克比","波克基古","天然雀","天然鳥","咩利羊","茸茸羊","電龍","美麗花","瑪力露","瑪力露麗","胡說樹","蚊香蛙皇","毽子草","毽子花","毽子棉","長尾怪手","向日種子","向日花怪","陽陽瑪","烏波","沼王","太陽伊布","月亮伊布","黑暗鴉","呆呆王","夢妖","未知圖騰","果然翁","麒麟奇","榛果球","佛烈托斯","土龍弟弟","天蠍","大鋼蛇","布魯","布魯皇","千針魚","巨鉗螳螂","壺壺","赫拉克羅斯","狃拉","熊寶寶","圈圈熊","熔岩蟲","熔岩蝸牛","小山豬","長毛豬","太陽珊瑚","幽寧","章魚桶","信使鳥","巨翅飛魚","盔甲鳥","戴魯比","黑魯加","刺龍王","小小象","頓甲","多邊獸II","驚角鹿","圖圖犬","巴爾郎","柯波朗","迷唇娃","電擊怪","鴨嘴寶寶","大奶罐","幸福蛋","雷公","炎帝","水君","幼基拉斯","沙基拉斯","班基拉斯","洛奇亞","鳳王","雪拉比","木守宮","森林蜥蜴","蜥蜴王","火稚雞","力壯雞","火焰雞","水躍魚","沼躍魚","巨沼怪","土狼犬","大狼犬","蛇紋熊","直衝熊","刺尾蟲","甲殼繭","狩獵鳳蝶","盾甲繭","毒粉蛾","蓮葉童子","蓮帽小童","樂天河童","橡實果","長鼻葉","狡猾天狗","傲骨燕","大王燕","長翅鷗","大嘴鷗","拉魯拉絲","奇魯莉安","沙奈朵","溜溜糖球","雨翅蛾","蘑蘑菇","斗笠菇","懶人獺","過動猿","請假王","土居忍士","脫殼忍者","鐵面忍者","咕妞妞","吼爆彈","爆音怪","幕下力士","超力王","露力麗","朝北鼻","向尾喵","優雅貓","勾魂眼","大嘴娃","可可多拉","可多拉","波士可多拉","瑪沙那","恰雷姆","落雷獸","雷電獸","正電拍拍","負電拍拍","電螢蟲","甜甜螢","毒薔薇","溶食獸","吞食獸","利牙魚","巨牙鯊","吼吼鯨","吼鯨王","呆火駝","噴火駝","煤炭龜","跳跳豬","噗噗豬","晃晃斑","大顎蟻","超音波幼蟲","沙漠蜻蜓","沙漠奈亞","夢歌仙人掌","青綿鳥","七夕青鳥","貓鼬斬","飯匙蛇","月石","太陽岩","泥泥鰍","鯰魚王","龍蝦小兵","鐵螯龍蝦","天秤偶","念力土偶","觸手百合","搖籃百合","太古羽蟲","太古盔甲","笨笨魚","美納斯","飄浮泡泡","變隱龍","怨影娃娃","詛咒娃娃","夜巡靈","夜巨人","熱帶龍","風鈴鈴","阿勃梭魯","小果然","雪童子","冰鬼護","海豹球","海魔獅","帝牙海獅","珍珠貝","獵斑魚","櫻花魚","古空棘魚","愛心魚","寶貝龍","甲殼龍","暴飛龍","鐵啞鈴","金屬怪","巨金怪","雷吉洛克","雷吉艾斯","雷吉斯奇魯","拉帝亞斯","拉帝歐斯","蓋歐卡","固拉多","烈空坐","基拉祈","代歐奇希斯","草苗龜","樹林龜","土台龜","小火焰猴","猛火猴","烈焰猴","波加曼","波皇子","帝王拿波","姆克兒","姆克鳥","姆克鷹","大牙狸","大尾狸","圓法師","音箱蟀","小貓怪","勒克貓","倫琴貓","含羞苞","羅絲雷朵","頭蓋龍","戰槌龍","盾甲龍","護城龍","結草兒","結草貴婦","紳士蛾","三蜜蜂","蜂女王","帕奇利茲","泳圈鼬","浮潛鼬","櫻花寶","櫻花兒","無殼海兔","海兔獸","雙尾怪手","飄飄球","隨風球","捲捲耳","長耳兔","夢妖魔","烏鴉頭頭","魅力喵","東施喵","鈴鐺響","臭鼬噗","坦克臭鼬","銅鏡怪","青銅鐘","盆才怪","魔尼尼","小福蛋","憤怒饅頭","圓陸鯊","尖牙陸鯊","烈咬陸鯊","小卡比獸","利歐路","路卡利歐","怪河馬","河馬獸","鉗尾蠍","大葉蟻獅","毒骷蛙","骷髏蛙","尖牙籠","螢光魚","霓虹魚","小球飛魚","雪笠怪","暴雪王","瑪狃拉","自爆磁怪","大舌舔","超鐵暴龍","巨蔓藤","電擊魔獸","鴨嘴炎獸","波克基斯","古梅斯","遠古巨蜓","葉伊布","冰伊布","天蠍王","象牙豬","多邊獸Z","艾路雷朵","大朝北鼻","黑夜魔靈","雪妖女","洛托姆","由克希","艾姆利多","亞克諾姆","帝牙盧卡","帕路奇亞","席多藍恩","雷吉奇卡斯","騎拉帝納","克雷色利亞","瑪納霏","達克萊伊","潔咪","阿爾宙斯"];
 const MEGA_DATA = { 3: 10033, 6: 10034, 9: 10035, 65: 10037, 94: 10038, 150: 10043, 448: 10054 };
 
@@ -177,14 +178,12 @@ let state = {
     balance: 0, pool: 0, megaTime: 0,
     items: { poke: 10, great: 0, ultra: 0, master: 0, shards: 0, stones: 0 },
     owned: [{id: 25, shiny: false}], buddy: {id: 25, shiny: false},
-    history: [], dailyCount: 0, weeklySpend: 0, lastUpdate: ""
+    history: [], dailyCount: 0, weeklySpend: 0, lastDate: ""
 };
 
-// --- 初始化與核心 ---
 function updateUI() {
-    // 檢查跨日/跨週重置
     const today = new Date().toISOString().split('T')[0];
-    if(state.lastUpdate !== today) { state.dailyCount = 0; state.lastUpdate = today; }
+    if(state.lastDate !== today) { state.dailyCount = 0; state.lastDate = today; }
     
     document.getElementById('balance').innerText = state.balance.toLocaleString();
     document.getElementById('megaShard').innerText = state.items.shards;
@@ -207,7 +206,7 @@ function updateUI() {
         document.getElementById('hpFill').style.width = state.current.hp + "%";
         document.getElementById('turnText').innerText = state.current.turn;
     }
-    localStorage.setItem('poke_v36', JSON.stringify(state));
+    localStorage.setItem('poke_v37', JSON.stringify(state));
 }
 
 function isMega() { return Date.now() < state.megaTime; }
@@ -218,12 +217,13 @@ function record() {
     state.history.push({id: Date.now(), date, cat: document.getElementById('cat').value, note: document.getElementById('note').value || "記帳", amt});
     state.balance += amt; state.weeklySpend += amt; state.pool += (amt / 500) * 100;
     
-    if(state.dailyCount < 3) { state.dailyCount++; state.items.poke++; document.getElementById('msgText').innerText = "記帳成功！獎勵 🔴x1"; }
+    let msg = "記帳成功！";
+    if(state.dailyCount < 3) { state.dailyCount++; state.items.poke++; msg += " 獲得 🔴x1"; }
+    document.getElementById('msgInner').innerText = msg;
     if(state.pool >= 100) { state.pool = 0; spawn(); }
     updateUI(); document.getElementById('amt').value = "";
 }
 
-// --- 戰鬥與動畫 ---
 function spawn() {
     const id = Math.floor(Math.random() * 493) + 1;
     state.current = { id, hp: 100, turn: 1, isShiny: (Math.random() < (isMega()?0.2:0.05)) };
@@ -232,7 +232,7 @@ function spawn() {
     document.getElementById('inputArea').classList.add('hidden');
     document.getElementById('battleActions').classList.remove('hidden');
     document.getElementById('hpWrapper').classList.remove('hidden');
-    document.getElementById('msgText').innerText = `野生的 ${state.current.isShiny?'✨':''}${POKE_NAMES[id-1]} 出現了！ (HP越低越好捉)`;
+    document.getElementById('msgInner').innerText = `野生的 ${state.current.isShiny?'✨':''}${POKE_NAMES[id-1]} 出現了！`;
     updateUI();
 }
 
@@ -249,13 +249,13 @@ async function throwBall() {
     let chance = {poke:0.2, great:0.3, ultra:0.4, master:1.0}[t] + (100-state.current.hp)/200;
     if (Math.random() < chance || t === 'master') {
         ov.className = 'ball-success'; triggerStars();
-        document.getElementById('msgText').innerText = `捕捉成功！`;
+        document.getElementById('msgInner').innerText = `成功捕捉！`;
         state.owned.push({id: state.current.id, shiny: state.current.isShiny});
         if(MEGA_DATA[state.current.id]) { state.items.shards++; if(state.items.shards>=5){state.items.shards=0; state.items.stones++;}}
         setTimeout(resetBattle, 1200);
     } else {
-        ov.style.display='none'; document.getElementById('msgText').innerText = "逃脫了！";
-        state.current.turn++; if(state.current.turn > 8) { document.getElementById('msgText').innerText="逃走了..."; setTimeout(resetBattle, 1200); }
+        ov.style.display='none'; document.getElementById('msgInner').innerText = "掙脫了！";
+        state.current.turn++; if(state.current.turn > 8) { document.getElementById('msgInner').innerText="逃走了..."; setTimeout(resetBattle, 1200); }
     }
     updateUI();
 }
@@ -276,10 +276,9 @@ function resetBattle() {
     state.current = null; document.getElementById('inputArea').classList.remove('hidden');
     document.getElementById('battleActions').classList.add('hidden');
     document.getElementById('hpWrapper').classList.add('hidden');
-    document.getElementById('msgText').innerHTML = `<button class="help-btn" onclick="openModal('helpModal')">❓說明</button> 準備好下一次記帳了嗎？`; updateUI();
+    document.getElementById('msgInner').innerText = "準備好下一次記帳了嗎？"; updateUI();
 }
 
-// --- 商店與任務 ---
 function renderShop() {
     const items = [{id:'poke', n:'精靈球', p:100, img:'poke-ball'}, {id:'great', n:'超級球', p:300, img:'great-ball'}, {id:'ultra', n:'高級球', p:600, img:'ultra-ball'}];
     document.getElementById('shopList').innerHTML = items.map(i => `
@@ -292,42 +291,30 @@ function renderShop() {
 function buy(id, p) { if(state.balance >= p){ state.balance -= p; state.items[id]++; updateUI(); } }
 
 function renderTasks() {
-    // 每日任務
-    document.getElementById('dailyTasks').innerHTML = `
-        <div class="task-item">
-            <b>每日記帳獎勵 (3次)</b>
-            <div class="progress-bar"><div class="progress-fill" style="width:${(state.dailyCount/3)*100}%"></div></div>
-            <small>進度：${state.dailyCount}/3 (記帳即領取 🔴x1)</small>
-        </div>
-    `;
-    // 每週任務
+    document.getElementById('dailyTasks').innerHTML = `<div class="task-item"><b>每日記帳獎勵 (3次)</b><div class="progress-bar"><div class="progress-fill" style="width:${(state.dailyCount/3)*100}%"></div></div><small>進度：${state.dailyCount}/3</small></div>`;
     const weeklyGoal = 3000;
-    document.getElementById('weeklyTasks').innerHTML = `
-        <div class="task-item">
-            <b>每週消費達標</b>
-            <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, (state.weeklySpend/weeklyGoal)*100)}%"></div></div>
-            <small>本週累計：${state.weeklySpend} / ${weeklyGoal}</small>
-            ${state.weeklySpend >= weeklyGoal ? `<button onclick="claimWeekly()">領取 🟡高級球 x3</button>` : ''}
-        </div>
-    `;
+    document.getElementById('weeklyTasks').innerHTML = `<div class="task-item"><b>每週消費達標</b><div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100, (state.weeklySpend/weeklyGoal)*100)}%"></div></div><small>累計：${state.weeklySpend} / ${weeklyGoal}</small>${state.weeklySpend >= weeklyGoal ? `<button onclick="claimWeekly()">領取 🟡高級球 x3</button>` : ''}</div>`;
 }
 function claimWeekly() { state.items.ultra += 3; state.weeklySpend = 0; alert("領取成功！每週進度已重置。"); updateUI(); renderTasks(); }
 
-// --- 設定與管理 ---
 function renderAdmin() {
-    document.getElementById('recentHistory').innerHTML = state.history.slice(-10).reverse().map(h => `
-        <div class="shop-row" style="font-size:11px;">
-            <span>${h.date} ${h.note} $${h.amt}</span>
-            <button onclick="delRec(${h.id})" style="padding:2px 5px; background:#ff4d4d; color:white;">🗑️</button>
-        </div>
-    `).join('');
+    document.getElementById('recentHistory').innerHTML = state.history.slice(-10).reverse().map(h => `<div class="shop-row"><span>${h.date} ${h.note} $${h.amt}</span><button onclick="delRec(${h.id})" style="background:#ff4d4d; color:white;">🗑️</button></div>`).join('');
     const stats = state.history.reduce((acc, h) => { const m = h.date.substring(0,7); acc[m] = (acc[m]||0) + h.amt; return acc; }, {});
     document.getElementById('monthStats').innerHTML = Object.entries(stats).map(([m,v]) => `<div>${m}: P$ ${v}</div>`).join('');
 }
-function delRec(id) {
-    const i = state.history.findIndex(h => h.id === id);
-    if(i>-1) { state.balance -= state.history[i].amt; state.history.splice(i,1); renderAdmin(); updateUI(); }
+function delRec(id) { const i = state.history.findIndex(h => h.id === id); if(i>-1) { state.balance -= state.history[i].amt; state.history.splice(i,1); renderAdmin(); updateUI(); } }
+
+function openModal(id) {
+    if(id==='shopModal') renderShop(); if(id==='taskModal') renderTasks(); if(id==='adminModal') renderAdmin();
+    if(id==='buddyModal') {
+        const ids = [...new Set(state.owned.map(p=>p.id))].sort((a,b)=>a-b);
+        document.getElementById('buddyList').innerHTML = ids.map(id => `<div onclick="prevB(${id})" style="padding:10px; border-bottom:1px solid #eee;">No.${id} ${POKE_NAMES[id-1]}</div>`).join('');
+    }
+    document.getElementById(id).style.display = 'block';
 }
+function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
+function prevB(id) { state.tempId = id; document.getElementById('prevImg').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`; document.getElementById('prevName').innerText = POKE_NAMES[id-1]; }
+function setBuddy() { state.buddy.id = state.tempId; updateUI(); closeModals(); }
 
 function exportAndPurge() {
     const s = document.getElementById('csvStart').value, e = document.getElementById('csvEnd').value;
@@ -337,48 +324,19 @@ function exportAndPurge() {
     a.download = `Account_${s}.csv`; a.click();
     state.history = state.history.filter(h => h.date < s || h.date > e); updateUI();
 }
-
 function importCsv(e) {
     const reader = new FileReader();
     reader.onload = (ev) => {
-        ev.target.result.split('\n').forEach((l,i) => {
-            if(i===0 || !l.trim()) return;
-            const p = l.split(',');
-            state.history.push({id:Date.now()+i, date:p[0].replace(/^\uFEFF/,''), cat:p[1], note:p[2], amt:parseInt(p[3])});
-            state.balance += parseInt(p[3]);
-        });
-        updateUI(); alert("匯入完成");
+        ev.target.result.split('\n').forEach((l,i) => { if(i===0 || !l.trim()) return; const p = l.split(','); state.history.push({id:Date.now()+i, date:p[0].replace(/^\uFEFF/,''), cat:p[1], note:p[2], amt:parseInt(p[3])}); state.balance += parseInt(p[3]); });
+        updateUI(); alert("匯入成功");
     };
     reader.readAsText(e.target.files[0]);
 }
-
-// --- 彈窗與備份 ---
-function openModal(id) {
-    if(id==='shopModal') renderShop();
-    if(id==='taskModal') renderTasks();
-    if(id==='adminModal') renderAdmin();
-    if(id==='buddyModal') {
-        const list = document.getElementById('buddyList');
-        const ids = [...new Set(state.owned.map(p=>p.id))].sort((a,b)=>a-b);
-        list.innerHTML = ids.map(id => `<div onclick="prevB(${id})" style="padding:10px; border-bottom:1px solid #eee;">No.${id} ${POKE_NAMES[id-1]}</div>`).join('');
-    }
-    document.getElementById(id).style.display = 'block';
-}
-function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
-function prevB(id) { state.tempId = id; document.getElementById('prevImg').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`; document.getElementById('prevName').innerText = POKE_NAMES[id-1]; }
-function setBuddy() { state.buddy.id = state.tempId; updateUI(); closeModals(); }
-
-function exportJSON() {
-    const a = document.createElement('a'); a.href = 'data:text/json;base64,'+btoa(JSON.stringify(state)); a.download = 'poke_save.json'; a.click();
-}
-function importJSON(e) {
-    const reader = new FileReader();
-    reader.onload = (ev) => { state = JSON.parse(ev.target.result); updateUI(); alert("還原完成"); };
-    reader.readAsText(e.target.files[0]);
-}
+function exportJSON() { const a = document.createElement('a'); a.href = 'data:text/json;base64,'+btoa(JSON.stringify(state)); a.download = 'poke_save.json'; a.click(); }
+function importJSON(e) { const reader = new FileReader(); reader.onload = (ev) => { state = JSON.parse(ev.target.result); updateUI(); alert("還原成功"); }; reader.readAsText(e.target.files[0]); }
 
 // 初始化
-const saved = localStorage.getItem('poke_v36');
+const saved = localStorage.getItem('poke_v37');
 if(saved) state = JSON.parse(saved);
 resetBattle();
 updateUI();
