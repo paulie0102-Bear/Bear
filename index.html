@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster v55 - 最終奧義版</title>
+    <title>PokeMaster v55.1 - 穩定優化版</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <style>
         :root { 
@@ -36,7 +36,6 @@
         .card { background: var(--white); border-radius: 12px; padding: 15px; margin: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .msg-box { height: 40px; background: #fff; padding: 8px 15px; font-weight: bold; border-bottom: 1px solid #ddd; color: var(--p); overflow: hidden; }
         
-        /* 底部選單改為兩列四項 */
         .control-panel { 
             display: grid; 
             grid-template-columns: repeat(4, 1fr); 
@@ -56,9 +55,12 @@
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .gotcha-text { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: gold; font-size: 40px; font-weight: 900; text-shadow: 2px 2px #000; z-index: 200; display: none; }
 
-        /* 商店樣式 */
         .shop-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
         .shop-btn { background: var(--p); color: white; border: none; padding: 5px 15px; border-radius: 4px; }
+        
+        /* 玩家頁面資源網格 */
+        .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; text-align: center; }
+        .res-icon { width: 35px; height: 35px; object-fit: contain; }
     </style>
 </head>
 <body>
@@ -145,7 +147,7 @@
         <div class="hp-bar"><div id="p-evo-bar" style="height:100%; background:var(--accent); width:0%;"></div></div>
         <p>Mega石進度 (<span id="p-mega-txt">0</span>/5)</p>
         <div class="hp-bar"><div id="p-mega-bar" style="height:100%; background:var(--mega); width:0%;"></div></div>
-        <div id="st-items" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:15px; text-align:center;"></div>
+        <div id="st-items" class="res-grid"></div>
         <button onclick="performEvolve()" style="background:#e67e22; color:white; width:100%; padding:15px; margin-top:15px; border:none; border-radius:10px;">🧬 消耗進化石進化夥伴</button>
     </div>
     <button class="btn-back" onclick="back()">✖ 關閉</button>
@@ -191,8 +193,11 @@
         <button onclick="document.getElementById('csvFile').click()" style="background:var(--p); color:white; width:100%; padding:12px; border:none; border-radius:5px;">📑 匯入財政部 CSV</button>
         <input type="file" id="csvFile" style="display:none" onchange="handleCSV(event)">
         <hr>
-        <p style="font-size:12px; color:gray;">區域輕量化：刪除紀錄但保留統計</p>
-        <button onclick="lighten()" style="background:var(--mega); color:white; width:100%; padding:10px; border:none; border-radius:5px;">🧹 執行輕量化清理</button>
+        <p style="font-size:12px; color:gray;">區域輕量化：匯出特定期間備份並刪除明細</p>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:10px;">
+            <input type="date" id="lightStart"> <input type="date" id="lightEnd">
+        </div>
+        <button onclick="lighten()" style="background:var(--mega); color:white; width:100%; padding:10px; border:none; border-radius:5px;">🧹 匯出期間存檔並清理明細</button>
         <hr>
         <button onclick="if(confirm('確定清除？')){localStorage.clear();location.reload();}" style="background:var(--danger); color:white; width:100%; padding:12px; border:none; border-radius:5px;">🔥 重設系統</button>
     </div>
@@ -211,18 +216,18 @@ let s = {
     owned: [25], shinyOwned: [], 
     buddy: {megaUntil: 0, dailyMegaDate: ""},
     hist: [], yearSums: {}, achieveBal: 0,
-    tasks: {dailyDate: "", dRec: 0, dCatch: 0, wRec: 0, wCatch: 0}
+    tasks: {dailyDate: "", dRec: 0, dCatch: 0, wRec: 0, wCatch: 0, mRec: 0, mCatch: 0, claimed: []}
 };
 
 window.onload = () => {
-    const saved = localStorage.getItem('pokemaster_v55');
+    const saved = localStorage.getItem('pokemaster_v55.1');
     if(saved) s = JSON.parse(saved);
     document.getElementById('recDate').valueAsDate = new Date();
     updateUI();
 };
 
 function updateUI() {
-    localStorage.setItem('pokemaster_v55', JSON.stringify(s));
+    localStorage.setItem('pokemaster_v55.1', JSON.stringify(s));
     document.getElementById('st-bal').innerText = s.bal;
     document.getElementById('st-achieve').innerText = s.achieveBal;
     document.getElementById('p-evo-txt').innerText = s.prog.evo;
@@ -237,14 +242,21 @@ function updateUI() {
     bEl.src = bImg;
     isMega ? bEl.classList.add('mega-fx') : bEl.classList.remove('mega-fx');
 
+    // 玩家頁面：官方寶貝球圖片圖標化
     const inv = document.getElementById('st-items');
-    inv.innerHTML = `<div>⚾精靈<br>${s.items.poke}</div><div>🔵超級<br>${s.items.great}</div><div>🟡高級<br>${s.items.ultra}</div><div>🟣大師<br>${s.items.master}</div><div>💎進化石<br>${s.items.stone}</div><div>🧬Mega石<br>${s.items.mstone}</div>`;
+    const ballTypes = ['poke','great','ultra','master'];
+    let ballHtml = "";
+    ballTypes.forEach(t => {
+        ballHtml += `<div><img class="res-icon" src="${API}/items/${t}-ball.png"><br>${s.items[t]}</div>`;
+    });
+    ballHtml += `<div><img class="res-icon" src="${API}/items/sun-stone.png"><br>${s.items.stone}</div>`;
+    ballHtml += `<div><img class="res-icon" src="${API}/items/key-stone.png"><br>${s.items.mstone}</div>`;
+    inv.innerHTML = ballHtml;
     
     const bs = document.getElementById('ballSelect');
     bs.innerHTML = `<option value="poke">精靈球 (${s.items.poke})</option><option value="great">超級球 (${s.items.great})</option><option value="ultra">高級球 (${s.items.ultra})</option><option value="master">大師球 (${s.items.master})</option>`;
 }
 
-// --- [ 記帳與遭遇 ] ---
 function record() {
     const amt = parseInt(document.getElementById('recAmt').value);
     const date = document.getElementById('recDate').value;
@@ -255,7 +267,7 @@ function record() {
     s.bal += reward;
     s.pool += amt;
     s.achieveBal += amt;
-    s.tasks.dRec++; s.tasks.wRec++;
+    s.tasks.dRec++; s.tasks.wRec++; s.tasks.mRec++;
 
     const month = date.substring(0, 7);
     s.yearSums[month] = (s.yearSums[month] || 0) + amt;
@@ -283,7 +295,6 @@ function spawnEnemy() {
     document.getElementById('msg').innerText = `野生的 ${curE.name}${isShiny?' ✨':''} 出現了！`;
 }
 
-// --- [ 戰鬥邏輯 ] ---
 async function throwBall() {
     const type = document.getElementById('ballSelect').value;
     if(s.items[type] <= 0 && type !== 'master') { alert("沒球了！"); return; }
@@ -307,7 +318,7 @@ async function throwBall() {
         if(MEGA_LIST[curE.id]) s.prog.mega++;
         if(s.prog.evo >= 5) { s.prog.evo=0; s.items.stone++; }
         if(s.prog.mega >= 5) { s.prog.mega=0; s.items.mstone++; }
-        s.tasks.dCatch++; s.tasks.wCatch++;
+        s.tasks.dCatch++; s.tasks.wCatch++; s.tasks.mCatch++;
 
         setTimeout(() => {
             document.getElementById('gotcha').style.display = "none";
@@ -335,25 +346,44 @@ function attack() {
     }
 }
 
-// --- [ 商店與任務 ] ---
 function buy(type, price) {
     if(s.bal < price) { alert("錢不夠！"); return; }
     s.bal -= price; s.items[type]++;
     updateUI();
 }
 
+// 三階段任務系統修正
 function renderTasks() {
+    const today = new Date().toDateString();
+    if(s.tasks.dailyDate !== today) {
+        s.tasks.dailyDate = today; s.tasks.dRec = 0; s.tasks.dCatch = 0; s.tasks.claimed = s.tasks.claimed.filter(c => c !== 'daily');
+    }
     const list = document.getElementById('taskList');
     list.innerHTML = `
-        <p><b>每日任務</b> (重置：${s.tasks.dailyDate})<br>記帳 (1): ${s.tasks.dRec}/1 | 捕捉 (1): ${s.tasks.dCatch}/1</p>
-        <button onclick="claim('daily')" ${s.tasks.dRec>=1 && s.tasks.dCatch>=1 ? '' : 'disabled'}>領取超級球</button>
-        <hr>
-        <p><b>每週任務</b><br>記帳 (5): ${s.tasks.wRec}/5 | 捕捉 (10): ${s.tasks.wCatch}/10</p>
-        <button onclick="claim('weekly')" ${s.tasks.wRec>=5 && s.tasks.wCatch>=10 ? '' : 'disabled'}>領取進化石+高級球</button>
+        <div class="card">
+            <p><b>每日任務</b><br>記帳 (1): ${s.tasks.dRec}/1 | 捕捉 (1): ${s.tasks.dCatch}/1</p>
+            <button onclick="claimTask('daily')" ${s.tasks.dRec>=1 && s.tasks.dCatch>=1 && !s.tasks.claimed.includes('daily') ? '' : 'disabled'}>${s.tasks.claimed.includes('daily')?'已領取':'領取超級球'}</button>
+        </div>
+        <div class="card">
+            <p><b>每週任務</b><br>記帳 (5): ${s.tasks.wRec}/5 | 捕捉 (10): ${s.tasks.wCatch}/10</p>
+            <button onclick="claimTask('weekly')" ${s.tasks.wRec>=5 && s.tasks.wCatch>=10 && !s.tasks.claimed.includes('weekly') ? '' : 'disabled'}>${s.tasks.claimed.includes('weekly')?'已領取':'領取進化石+高級球'}</button>
+        </div>
+        <div class="card">
+            <p><b>成就任務</b> (每月重置)<br>記帳 (15): ${s.tasks.mRec}/15 | 捕捉 (30): ${s.tasks.mCatch}/30</p>
+            <button onclick="claimTask('monthly')" ${s.tasks.mRec>=15 && s.tasks.mCatch>=30 && !s.tasks.claimed.includes('monthly') ? '' : 'disabled'}>${s.tasks.claimed.includes('monthly')?'已領取':'領取大師球+Mega石'}</button>
+        </div>
     `;
 }
 
-// --- [ 圖鑑與夥伴 ] ---
+function claimTask(type) {
+    if(type === 'daily') { s.items.great++; }
+    else if(type === 'weekly') { s.items.stone++; s.items.ultra++; }
+    else if(type === 'monthly') { s.items.master++; s.items.mstone++; }
+    s.tasks.claimed.push(type);
+    updateUI(); renderTasks();
+    alert("領取成功！");
+}
+
 let dexId = 25, dexShiny = false;
 function renderDex() {
     const nav = document.getElementById('dexNav');
@@ -383,31 +413,27 @@ function tryMega() {
     if(s.items.mstone <= 0) { alert("需要 1 顆 Mega 石！"); return; }
     if(s.buddy.dailyMegaDate === today) { alert("今天已經進化過了！"); return; }
     s.items.mstone--;
-    s.buddy.megaUntil = Date.now() + 7200000; // 2小時
+    s.buddy.megaUntil = Date.now() + 7200000;
     s.buddy.dailyMegaDate = today;
-    updateUI();
-    alert("🧬 Mega 進化！2 小時內捕捉率翻倍！");
+    updateUI(); alert("🧬 Mega 進化！2 小時內捕捉率翻倍！");
 }
 
 function performEvolve() {
     if(s.items.stone <= 0) { alert("進化石不足！"); return; }
-    const nextId = s.buddyId + 1; // 簡化邏輯：直接編號+1
+    const nextId = s.buddyId + 1;
     if(nextId > 493) return;
     s.items.stone--;
     s.buddyId = nextId;
     if(!s.owned.includes(nextId)) s.owned.push(nextId);
-    updateUI();
-    alert("夥伴進化了！");
+    updateUI(); alert("夥伴進化了！");
 }
 
-// --- [ 管理與紀錄 ] ---
 function searchHistory() {
     const start = document.getElementById('hStart').value;
     const end = document.getElementById('hEnd').value;
     if(!start || !end) return;
     const diff = (new Date(end) - new Date(start)) / 86400000;
     if(diff > 7 || diff < 0) { alert("限查詢 7 天內的紀錄！"); return; }
-
     const list = document.getElementById('historyList');
     list.innerHTML = "";
     s.hist.filter(h => h.date >= start && h.date <= end).forEach(h => {
@@ -433,7 +459,7 @@ function exportData() {
     const blob = new Blob([data], {type: "application/json"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `pokemaster_backup_${Date.now()}.json`;
+    a.download = `pokemaster_full_${Date.now()}.json`;
     a.click();
 }
 
@@ -446,17 +472,51 @@ function importData(e) {
     reader.readAsText(e.target.files[0]);
 }
 
+// 管理頁面：修正輕量化區間匯出與清理
 function lighten() {
-    if(!confirm("將執行輕量化：保留統計總額，但刪除 30 天前的紀錄明細。執行前請先匯出備份！")) return;
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const iso = thirtyDaysAgo.toISOString().split('T')[0];
-    s.hist = s.hist.filter(h => h.date >= iso);
+    const start = document.getElementById('lightStart').value;
+    const end = document.getElementById('lightEnd').value;
+    if(!start || !end) { alert("請先選擇要清理與匯出的日期區間！"); return; }
+    
+    const targetData = s.hist.filter(h => h.date >= start && h.date <= end);
+    if(targetData.length === 0) { alert("該區間沒有紀錄可清理。"); return; }
+
+    if(!confirm(`將匯出 ${targetData.length} 筆紀錄並從明細中刪除（統計總額會保留）。確定？`)) return;
+
+    // 1. 執行區間備份匯出
+    const backup = { info: "PokeMaster Period Backup", start, end, records: targetData };
+    const blob = new Blob([JSON.stringify(backup)], {type: "application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `backup_${start}_to_${end}.json`;
+    a.click();
+
+    // 2. 清理明細
+    s.hist = s.hist.filter(h => h.date < start || h.date > end);
     updateUI();
-    alert("輕量化完成！");
+    alert("期間備份已下載，明細清理完成！");
 }
 
-// --- [ 報表圖表 ] ---
+function handleCSV(e) {
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const lines = ev.target.result.split('\n');
+        let count = 0;
+        lines.forEach(line => {
+            const cols = line.split(',');
+            if(cols.length >= 4 && !isNaN(parseInt(cols[3]))) {
+                const date = cols[0].replace(/\//g, '-');
+                const amt = parseInt(cols[3]);
+                s.hist.push({id: Date.now()+count, date, cat:"其他", amt, note: cols[2], reward: Math.floor(amt*0.1)});
+                s.yearSums[date.substring(0,7)] = (s.yearSums[date.substring(0,7)] || 0) + amt;
+                count++;
+            }
+        });
+        updateUI(); alert(`成功匯入 ${count} 筆財政部紀錄！`);
+    };
+    reader.readAsText(e.target.files[0]);
+}
+
 let chart1, chart2;
 function renderCharts() {
     const ctx1 = document.getElementById('chartYear').getContext('2d');
@@ -468,7 +528,6 @@ function renderCharts() {
             datasets: [{ label: '月支出', data: Object.values(s.yearSums), borderColor: '#2d5a27', tension: 0.1 }]
         }
     });
-
     const cats = {};
     s.hist.forEach(h => cats[h.cat] = (cats[h.cat] || 0) + h.amt);
     const ctx2 = document.getElementById('chartCat').getContext('2d');
