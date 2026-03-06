@@ -635,6 +635,20 @@ function importData(e) { const reader = new FileReader(); reader.onload = (ev) =
 function lighten() { /* 簡化清理邏輯保留 */ const start = document.getElementById('lightStart').value; const end = document.getElementById('lightEnd').value; if(!start || !end) return; exportData(); s.hist = s.hist.filter(h => h.date < start || h.date > end); updateUI(); alert("清理完成並已匯出備份。"); }
 function resetAll() { if(confirm("🔥 確定重置？這會永久刪除所有紀錄與圖鑑！")) { localStorage.removeItem('pokemaster_v60'); location.reload(); } }
 </script>
+<script>
+  // 取得今天的日期物件
+  const today = new Date();
+  
+  // 格式化為 YYYY-MM-DD (input type="date" 要求的標準格式)
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0'); // 月份從 0 開始，所以要 +1
+  const dd = String(today.getDate()).padStart(2, '0');
+  
+  const formattedToday = `${yyyy}-${mm}-${dd}`;
+
+  // 將格式化後的日期賦予給 input 欄位
+  document.getElementById('recDate').value = formattedToday;
+</script>
 
 </body>
 </html>
