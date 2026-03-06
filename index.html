@@ -6,7 +6,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster: Icon Swap v31.4</title>
+    <title>PokeMaster: Icon Swap v31.5</title>
     <style>
         :root { --primary: #2d5a27; --gold: #d4af37; --bg: #e0eed0; --mega: #ff00ff; --hp-green: #4caf50; --task-blue: #3498db; }
         body { font-family: 'Courier New', sans-serif; background: #222; padding: 10px; margin: 0; display: flex; flex-direction: column; align-items: center; color: #333; overflow-x: hidden; }
@@ -29,21 +29,19 @@
             50% { transform: translate(100px, -100px) rotate(360deg); }
             100% { transform: translate(245px, -115px) rotate(720deg); }
         }
-
         @keyframes ballShake {
             0% { transform: translate(245px, -115px) rotate(0deg); }
             25% { transform: translate(245px, -115px) rotate(-20deg); }
             75% { transform: translate(245px, -115px) rotate(20deg); }
             100% { transform: translate(245px, -115px) rotate(0deg); }
         }
-
         @keyframes ballCaptureSuccess {
             0% { transform: translate(245px, -115px) scale(1); filter: brightness(1); }
             50% { transform: translate(245px, -115px) scale(1.2); filter: brightness(2); }
             100% { transform: translate(245px, -115px) scale(0); opacity: 0; }
         }
 
-        /* 綠寶石風格星星特效 */
+        /* 綠寶石星星特效 */
         .stars-container { position: absolute; top: 55px; right: 55px; width: 40px; height: 40px; pointer-events: none; z-index: 60; }
         .star { position: absolute; width: 8px; height: 8px; background: gold; border-radius: 50%; opacity: 0; }
         .star-animate { animation: starBurst 0.6s ease-out forwards; }
@@ -64,6 +62,9 @@
         .btn-mega { background: linear-gradient(135deg, #ff00ff, #7a2af0); color: white; border-color: #fff; animation: glow 1.5s infinite; }
         .hidden { display: none; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .task-box { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 8px; background: #fff; }
+        .progress-container { width: 100%; height: 12px; background: #eee; border-radius: 6px; overflow: hidden; border: 1px solid #ccc; margin-top: 5px; }
+        .progress-fill { height: 100%; background: var(--task-blue); transition: width 0.5s ease; }
         .buddy-menu-wrapper { display: flex; height: 80%; border: 2px solid #333; border-radius: 10px; overflow: hidden; margin-top: 10px; }
         .buddy-list-left { flex: 1.2; background: #f9f9f9; overflow-y: scroll; border-right: 2px solid #333; }
         .buddy-view-right { flex: 0.8; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; text-align: center; }
@@ -72,6 +73,7 @@
         #previewImg { width: 130px; height: 130px; }
         .stat-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         .stat-table th, .stat-table td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+        .archive-zone { border: 2px solid #3498db; margin-top: 20px; padding: 15px; border-radius: 10px; background: #f0faff; }
         .history-item { display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 8px; border-bottom: 1px solid #eee; }
         .btn-del { background: #ff4d4d; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; }
     </style>
@@ -153,7 +155,16 @@
     <div id="monthlyStatsArea"></div>
     <hr>
     <h4>✏️ 近期帳目管理 (點擊刪除)</h4>
-    <div id="recentHistoryArea" style="max-height: 200px; overflow-y: auto; background: #f9f9f9; border-radius: 5px;"></div>
+    <div id="recentHistoryArea" style="max-height: 200px; overflow-y: auto; background: #f9f9f9; border-radius: 5px; border: 1px solid #ddd;"></div>
+    <hr>
+    <div class="archive-zone">
+        <h4>📂 區間清理與匯出</h4>
+        <div class="grid" style="grid-template-columns: 1fr 1fr; margin-bottom:8px;">
+            <div><label style="font-size:11px;">起始:</label><br><input type="date" id="purgeStart" style="width:90%;"></div>
+            <div><label style="font-size:11px;">結束:</label><br><input type="date" id="purgeEnd" style="width:90%;"></div>
+        </div>
+        <button style="width:100%; background:#3498db; color:white;" onclick="exportAndPurge()">匯出明細(CSV)並清理</button>
+    </div>
     <hr>
     <button style="width:100%; margin-bottom:8px;" onclick="exportSave()">📤 輸出全系統存檔 (JSON)</button>
     <input type="file" id="importFile" class="hidden" onchange="importSave(event)">
@@ -192,6 +203,9 @@ function updateUI() {
     bImg.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${sId}.png`;
     if (state.buddy.shiny) bImg.classList.add('shiny-effect'); else bImg.classList.remove('shiny-effect');
 
+    const btn = document.getElementById('megaBtn');
+    if (state.items.stones > 0 && MEGA_DATA[state.buddy.id] && !isMegaActive()) btn.classList.remove('hidden'); else btn.classList.add('hidden');
+
     if (state.current) {
         document.getElementById('hpFill').style.width = state.current.hp + "%";
         document.getElementById('turnText').innerText = state.current.turn;
@@ -225,7 +239,7 @@ function previewBuddy(id, forceShiny = null) {
     document.getElementById('previewName').innerText = (POKE_NAMES[id] || `寶可夢 #${id}`) + (tempPreview.shiny ? " (✨)" : "");
     let switchHtml = "";
     if (hasNormal && hasShiny) {
-        switchHtml = `<div class="shiny-toggle"><button onclick="previewBuddy(${id}, false)" style="padding:2px 5px; font-size:10px;">普通</button><button onclick="previewBuddy(${id}, true)" style="padding:2px 5px; font-size:10px; background:gold;">閃光✨</button></div>`;
+        switchHtml = `<div style="margin-bottom:5px;"><button onclick="previewBuddy(${id}, false)" style="padding:2px 5px; font-size:10px;">普通</button><button onclick="previewBuddy(${id}, true)" style="padding:2px 5px; font-size:10px; background:gold;">閃光✨</button></div>`;
     }
     document.getElementById('formSwitchArea').innerHTML = switchHtml;
 }
@@ -259,7 +273,6 @@ async function throwBall() {
     const isSuccess = Math.random() < (rate + (isMegaActive()?0.2:0)) || t === 'master';
 
     if (isSuccess) {
-        // 成功動畫邏輯
         ov.className = 'ball-success'; 
         const area = document.getElementById('starsArea');
         area.innerHTML = '';
@@ -272,19 +285,16 @@ async function throwBall() {
             s.style.background = ['#ff0', '#f0f', '#0ff', '#fff'][i%4];
             area.appendChild(s);
         }
-
         const isShiny = state.current.isShiny;
         const name = POKE_NAMES[state.current.id] || "寶可夢";
-        await new Promise(r => setTimeout(r, 600)); // 等待星星迸發
+        await new Promise(r => setTimeout(r, 600));
         document.getElementById('msgText').innerText = `太棒了！成功捕捉了 ${isShiny?'✨':''}${name}！`;
-        
         state.totalCaught++;
         state.owned.push({ id: state.current.id, shiny: isShiny });
         if (MEGA_DATA[state.current.id]) { state.items.shards++; if(state.items.shards>=5){state.items.shards=0; state.items.stones++;} }
         setTimeout(resetBattle, 1500);
     } else {
-        poke.style.opacity = '1'; 
-        ov.style.display = 'none';
+        poke.style.opacity = '1'; ov.style.display = 'none';
         document.getElementById('msgText').innerText = "可惜！差一點就捉到了！";
         state.current.turn++; 
         if(state.current.turn >= 8) runAway();
@@ -349,12 +359,28 @@ function resetBattle() {
     updateUI();
 }
 
+function exportAndPurge() {
+    const start = document.getElementById('purgeStart').value;
+    const end = document.getElementById('purgeEnd').value;
+    if (!start || !end) return alert("請選擇日期範圍");
+    const toExport = state.history.filter(h => h.date >= start && h.date <= end);
+    if (toExport.length === 0) return alert("該區間內無明細");
+    let csv = "\uFEFF日期,類別,品名,金額\n";
+    toExport.forEach(h => { csv += `${h.date},${h.cat},${h.note},${h.amt}\n`; });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv"}));
+    a.download = `Expense_${start}_to_${end}.csv`;
+    a.click();
+    state.history = state.history.filter(h => h.date < start || h.date > end);
+    updateMonthlyStats(); updateUI();
+}
+
 function updateMonthlyStats() {
     const stats = {};
     const recentHtml = state.history.slice(-10).reverse().map(h => `
         <div class="history-item">
             <span>${h.date.slice(5)} [${h.cat}] ${h.note} <b>$${h.amt}</b></span>
-            <button class="btn-del" onclick="deleteRecord(${h.id})">🗑️ 刪除</button>
+            <button class="btn-del" onclick="deleteRecord(${h.id})">🗑️</button>
         </div>
     `).join('');
     document.getElementById('recentHistoryArea').innerHTML = recentHtml || '<p style="padding:10px;font-size:12px;">尚無近期紀錄</p>';
@@ -363,7 +389,7 @@ function updateMonthlyStats() {
     const sortedMonths = Object.keys(stats).sort().reverse();
     sortedMonths.forEach(m => { html += `<tr><td>${m}</td><td>${stats[m].toLocaleString()}</td></tr>`; });
     html += '</table>';
-    document.getElementById('monthlyStatsArea').innerHTML = sortedMonths.length ? html : '<p style="font-size:12px; color:#666;">尚無紀錄</p>';
+    document.getElementById('monthlyStatsArea').innerHTML = sortedMonths.length ? html : '<p style="font-size:12px;">尚無紀錄</p>';
 }
 
 function atk() { state.current.hp = Math.max(5, state.current.hp - 25); state.current.turn++; if(state.current.turn >= 8) runAway(); updateUI(); }
@@ -375,9 +401,9 @@ function renderShop() {
     document.getElementById('shopItems').innerHTML = s.map(i => `<div style="padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;"><span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${i.img}.png" class="icon-sm">${i.n}</span><button onclick="buy('${i.id}', ${i.p})">P$ ${i.p}</button></div>`).join('');
 }
 function runAway() { document.getElementById('msgText').innerText = "逃走了！"; setTimeout(resetBattle, 1200); }
-function openModal(id) { if(id === 'adminModal') updateMonthlyStats(); document.getElementById(id).style.display = 'block'; }
+function openModal(id) { if(id === 'taskModal') renderTasks(); if(id === 'adminModal') updateMonthlyStats(); document.getElementById(id).style.display = 'block'; }
 function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
-function exportSave() { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], {type: "application/json"})); a.download = `PokeBackup.json`; a.click(); }
+function exportSave() { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], {type: "application/json"})); a.download = `PokeFullBackup.json`; a.click(); }
 function importSave(e) { const r = new FileReader(); r.onload = (ev) => { state = JSON.parse(ev.target.result); updateUI(); }; r.readAsText(e.target.files[0]); }
 function renderTasks() {
     const ts = [{ n: "每日記帳進度", c: state.dailyCount, m: 3, r: "精靈球 x1" }, { n: "連續記帳成就", c: state.consecutiveDays, m: 5, r: "大師球 x1" }, { n: "捕捉達人任務", c: state.totalCaught % 5, m: 5, r: "超級球 x1" }, { n: "閃光系統覺醒", c: Math.min(state.totalRecords, 50), m: 50, r: "解鎖閃光(5%)" }];
