@@ -339,8 +339,8 @@ const rate =
 ({poke:0.3,great:0.5,ultra:0.7,master:1}[type]) *
 hpRate *
 (1 + s.catchBonus) *
-(Date.now() < s.buddy.megaUntil ? 2 : 1) *
-(1.5 - curE.hp/100); * (Date.now() < s.buddy.megaUntil ? 2.0 : 1.0);
+(Date.now() < s.buddy.megaUntil ? 2.0 : 1.0) *
+(1.5 - curE.hp/100);
     if(Math.random() < rate || type === 'master') {
         document.getElementById('gotcha').style.display = "block";
         if(!s.owned.includes(curE.id)) s.owned.push(curE.id);
@@ -630,59 +630,64 @@ function openPage(id) {
     if(id === 'taskPage') renderTasks();
 }
 function back() { document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active')); }
-    function gainExp(v){
-    s.exp += v;
-
-    const need = s.level * 20;
-
-    if(s.exp >= need){
-        s.exp -= need;
-        s.level++;
-
-        s.catchBonus = s.level * 0.01;
-
-        alert("🎉 等級提升 Lv." + s.level);
-    }
-function updateTitle(){
-document.getElementById('st-dex').innerText = s.owned.length;
-const c = s.owned.length;
-
-if(c>=493) s.title="寶可夢大師";
-else if(c>=400) s.title="冠軍";
-else if(c>=300) s.title="四天王";
-else if(c>=200) s.title="道館館主";
-else if(c>=100) s.title="獨當一面";
-else if(c>=50) s.title="初出茅廬";
-const rate = ((c/493)*100).toFixed(1);
-document.getElementById('msg').innerText =
-"圖鑑完成率：" + rate + "% ("+c+"/493)";
-}
-}
-<script>
-// 等頁面完全載入後執行
-window.addEventListener('DOMContentLoaded', () => {
-    // 選取所有按鈕
-    const buttons = document.querySelectorAll('button');
-
-    buttons.forEach(btn => {
-        // 移除 disabled 屬性
-        btn.disabled = false;
-
-        // 確保可點擊 (CSS 層級保險)
-        btn.style.pointerEvents = 'auto';
-        btn.style.zIndex = '1000';
-
-        // 如果沒有事件監聽器，給一個測試點擊提示
-        if (!btn.onclick) {
-            btn.addEventListener('click', () => {
-                alert('按鈕已點擊！');
-            });
+    // --- 核心函式：經驗值與等級 ---
+    function gainExp(v) {
+        s.exp += v;
+        const need = s.level * 20;
+        if (s.exp >= need) {
+            s.exp -= need;
+            s.level++;
+            s.catchBonus = s.level * 0.01;
+            alert("🎉 等級提升 Lv." + s.level);
         }
-    });
+        updateUI();
+    }
 
-    console.log('所有按鈕已強制啟用。');
-});
+    // --- 核心函式：圖鑑稱號更新 ---
+    function updateTitle() {
+        const c = s.owned.length;
+        document.getElementById('st-dex').innerText = c;
+
+        if (c >= 493) s.title = "寶可夢大師";
+        else if (c >= 400) s.title = "冠軍";
+        else if (c >= 300) s.title = "四天王";
+        else if (c >= 200) s.title = "道館館主";
+        else if (c >= 100) s.title = "獨當一面";
+        else if (c >= 50) s.title = "初出茅廬";
+        else s.title = "新人訓練家";
+
+        const rate = ((c / 493) * 100).toFixed(1);
+        document.getElementById('msg').innerText = "圖鑑完成率：" + rate + "% (" + c + "/493)";
+        updateUI();
+    }
+
+    // --- 強制啟動機制：確保所有按鈕可用 ---
+    function forceEnableButtons() {
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(btn => {
+            // 1. 強制解除禁用 (注意：這會讓原本餘額不足的購買按鈕變亮)
+            btn.disabled = false;
+
+            // 2. 提升層級與點擊穿透，防止 CSS 隱形遮蓋
+            btn.style.pointerEvents = 'auto';
+            btn.style.position = 'relative';
+            btn.style.zIndex = '1000';
+
+            // 3. 測試監聽器 (僅限未定義點擊事件的按鈕)
+            if (!btn.onclick && btn.getAttribute('onclick') === null) {
+                btn.addEventListener('click', () => {
+                    console.log('系統提示：此按鈕目前無綁定功能。');
+                });
+            }
+        });
+        console.log('✅ 所有按鈕已強制校準並啟用。');
+    }
+
+    // 當頁面載入完成後執行
+    window.addEventListener('load', () => {
+        forceEnableButtons();
+    });
 </script>
-</script>
+
 </body>
 </html>
