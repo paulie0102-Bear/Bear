@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PokeMaster v55.2 - 全功能修復版</title>
+    <title>PokeMaster v56 - 終極整合版</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <style>
         :root { 
@@ -12,47 +12,64 @@
         }
         body { font-family: -apple-system, "Noto Sans TC", sans-serif; background: #1a1a1a; margin: 0; color: var(--text); overflow: hidden; }
         
-        .page { display: none; width: 100vw; height: 100vh; background: var(--bg); position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto; }
+        /* UI 頁面與動畫 */
+        .page { display: none; width: 100vw; height: 100vh; background: var(--bg); position: fixed; top: 0; left: 0; z-index: 100; overflow-y: auto; padding-bottom: 80px; }
         .page-active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .battle-stage { height: 240px; position: relative; background: linear-gradient(#87ceeb 60%, #9cd39c 60%); border-bottom: 4px solid #333; overflow: hidden; }
+        /* 戰鬥舞台與能量池 */
+        .battle-stage { height: 220px; position: relative; background: linear-gradient(#87ceeb 60%, #9cd39c 60%); border-bottom: 4px solid #333; overflow: hidden; }
+        .pool-ui { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 10; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 20px; color: white; font-size: 12px; }
+        .pool-bar { height: 6px; background: #444; border-radius: 3px; margin-top: 4px; overflow: hidden; }
+        #poolFill { height: 100%; background: var(--accent); width: 0%; transition: 0.3s; }
+
         .buddy-box { position: absolute; bottom: 20px; left: 30px; width: 100px; transition: 0.3s; }
-        .enemy-box { position: absolute; top: 30px; right: 30px; width: 100px; text-align: center; }
-        #ballOverlay { position: absolute; width: 40px; display: none; z-index: 100; }
+        .enemy-box { position: absolute; top: 40px; right: 30px; width: 100px; text-align: center; }
+        #ballOverlay { position: absolute; width: 40px; display: none; z-index: 100; pointer-events: none; }
+        
         .hp-bar { width: 100%; height: 8px; background: #333; border-radius: 4px; overflow: hidden; margin-top: 5px; }
         #hpFill { height: 100%; background: #2ecc71; width: 100%; transition: 0.5s; }
 
-        .dex-container { display: flex; height: calc(100vh - 140px); margin: 10px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .dex-sidebar { width: 40%; overflow-y: auto; background: #e0e0e0; }
-        .dex-main { width: 60%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 15px; }
-        .dex-item { padding: 15px 10px; border-bottom: 1px solid #ccc; font-size: 14px; text-align: center; cursor: pointer; }
+        /* 圖鑑佈局 (側邊清單+中央大圖) */
+        .dex-container { display: flex; height: calc(100vh - 150px); margin-top: 10px; }
+        .dex-sidebar { width: 35%; overflow-y: auto; background: #e0e0e0; border-right: 1px solid #ccc; }
+        .dex-main { width: 65%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; }
+        .dex-item { padding: 12px 8px; border-bottom: 1px solid #bbb; font-size: 13px; text-align: center; cursor: pointer; }
         .dex-item.active { background: var(--p); color: white; }
 
+        /* 統計與元件 */
         .card { background: var(--white); border-radius: 12px; padding: 15px; margin: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .msg-box { height: 40px; background: #fff; padding: 8px 15px; font-weight: bold; border-bottom: 1px solid #ddd; color: var(--p); overflow: hidden; }
+        .msg-box { height: 40px; background: #fff; padding: 8px 15px; font-weight: bold; border-bottom: 1px solid #ddd; color: var(--p); line-height: 24px; }
         
         .control-panel { 
             display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: #222; 
             height: 120px; position: fixed; bottom: 0; width: 100%; padding: 5px; box-sizing: border-box; 
         }
-        .btn-nav { background: #333; color: white; border: none; font-size: 12px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .btn-back { background: var(--danger); color: white; width: calc(100% - 20px); padding: 15px; margin: 10px; border: none; border-radius: 10px; font-weight: bold; }
+        .btn-nav { background: #333; color: white; border: none; font-size: 11px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .btn-back { background: var(--danger); color: white; width: calc(100% - 20px); padding: 15px; margin: 10px; border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; }
 
-        .ball-throw { display: block !important; animation: ballCurve 0.8s forwards; }
+        /* 動畫效果 */
+        .ball-throw { display: block !important; animation: ballCurve 0.8s forwards linear; }
         .ball-shake { display: block !important; animation: ballShake 0.5s 3; }
-        @keyframes ballCurve { 0% { left: 40px; bottom: 40px; } 100% { left: 210px; bottom: 140px; transform: scale(0.7) rotate(360deg); } }
-        @keyframes ballShake { 0%, 100% { transform: translate(210px, -140px) rotate(0deg); } 25% { transform: translate(210px, -140px) rotate(15deg); } 75% { transform: translate(210px, -140px) rotate(-15deg); } }
+        @keyframes ballCurve { 
+            0% { left: 40px; bottom: 40px; transform: rotate(0deg); }
+            50% { bottom: 180px; }
+            100% { left: 215px; bottom: 100px; transform: scale(0.7) rotate(720deg); } 
+        }
+        @keyframes ballShake { 0%, 100% { transform: translate(215px, -120px) rotate(0deg); } 25% { transform: translate(215px, -120px) rotate(15deg); } 75% { transform: translate(215px, -120px) rotate(-15deg); } }
+        .gotcha-text { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: gold; font-size: 40px; font-weight: 900; text-shadow: 2px 2px #000; z-index: 200; display: none; animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { from { scale: 0; } to { scale: 1; } }
         .mega-fx { filter: drop-shadow(0 0 10px var(--mega)); animation: pulse 1.5s infinite; }
-        .gotcha-text { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); color: gold; font-size: 40px; font-weight: 900; text-shadow: 2px 2px #000; z-index: 200; display: none; }
-        .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; text-align: center; }
-        .res-icon { width: 35px; height: 35px; object-fit: contain; }
     </style>
 </head>
 <body>
 
 <div id="mainPage">
     <div class="battle-stage">
+        <div class="pool-ui">
+            冒險能量: $<span id="poolTxt">0</span> / $500
+            <div class="pool-bar"><div id="poolFill"></div></div>
+        </div>
         <div id="gotcha" class="gotcha-text">GOTCHA!</div>
         <div class="buddy-box"><img id="buddyImg" src="" style="width:100%; height:90px; object-fit:contain;"></div>
         <div class="enemy-box" id="enemyArea" style="display:none;">
@@ -62,7 +79,7 @@
         <img id="ballOverlay" src="">
     </div>
 
-    <div id="msg" class="msg-box">系統初始化...</div>
+    <div id="msg" class="msg-box">系統就緒...</div>
 
     <div id="inputArea" class="card">
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
@@ -70,57 +87,85 @@
             <select id="recCat"><option>飲食</option><option>交通</option><option>娛樂</option><option>購物</option><option>其他</option></select>
         </div>
         <div style="display:flex; gap:8px; margin-bottom:8px;">
-            <input id="recNote" type="text" placeholder="備註" style="flex:1; padding:8px;">
-            <input id="recAmt" type="number" placeholder="金額" style="width:80px; padding:8px;">
+            <input id="recNote" type="text" placeholder="備註內容" style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;">
+            <input id="recAmt" type="number" placeholder="金額" style="width:80px; padding:8px; border:1px solid #ddd; border-radius:4px;">
         </div>
-        <button onclick="record()" style="background:var(--p); color:white; width:100%; padding:12px; border:none; border-radius:8px; font-weight:bold;">記帳並探索冒險</button>
+        <button onclick="record()" style="background:var(--p); color:white; width:100%; padding:12px; border:none; border-radius:8px; font-weight:bold;">同步探索與記帳</button>
     </div>
 
     <div id="battleActions" class="card" style="border:2px solid var(--p); display:none;">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-            <button onclick="attack()" style="background:#e74c3c; color:white; padding:10px; border:none; border-radius:5px;">⚔️ 攻擊</button>
-            <button onclick="tryMega()" style="background:var(--mega); color:white; padding:10px; border:none; border-radius:5px;">🧬 MEGA進化</button>
+            <button onclick="attack()" style="background:#e74c3c; color:white; padding:10px; border:none; border-radius:5px; font-weight:bold;">⚔️ 攻擊</button>
+            <button onclick="tryMega()" style="background:var(--mega); color:white; padding:10px; border:none; border-radius:5px; font-weight:bold;">🧬 MEGA進化</button>
         </div>
         <div style="display:flex; gap:5px;">
-            <select id="ballSelect" style="flex:1;"></select>
-            <button onclick="throwBall()" style="background:var(--p); color:white; padding:0 20px; border:none; border-radius:5px;">投球</button>
+            <select id="ballSelect" style="flex:1; padding:8px;"></select>
+            <button onclick="throwBall()" style="background:var(--p); color:white; padding:0 15px; border:none; border-radius:5px;">投球</button>
         </div>
     </div>
 
     <div class="control-panel">
-        <button class="btn-nav" onclick="openPage('chartPage')">📈<br>報表</button>
+        <button class="btn-nav" onclick="openPage('chartPage')">📊<br>統計</button>
         <button class="btn-nav" onclick="openPage('dexPage')">📖<br>圖鑑</button>
-        <button class="btn-nav" onclick="openPage('statusPage')">👤<br>玩家</button>
         <button class="btn-nav" onclick="openPage('shopPage')">💰<br>商店</button>
+        <button class="btn-nav" onclick="openPage('statusPage')">👤<br>狀態</button>
         <button class="btn-nav" onclick="openPage('historyPage')">📜<br>紀錄</button>
         <button class="btn-nav" onclick="openPage('taskPage')">🎯<br>任務</button>
         <button class="btn-nav" onclick="openPage('adminPage')">⚙️<br>管理</button>
-        <button class="btn-nav" onclick="location.reload()">🔄<br>重新整理</button>
+        <button class="btn-nav" onclick="location.reload()">🔄<br>刷新</button>
     </div>
+</div>
+
+<div id="chartPage" class="page">
+    <div class="card"><h3>🍕 分類支出佔比</h3><canvas id="chartCat"></canvas></div>
+    <div class="card"><h3>📈 年度支出趨勢</h3><canvas id="chartTrend"></canvas></div>
+    <button class="btn-back" onclick="back()">⬅ 返回冒險</button>
 </div>
 
 <div id="dexPage" class="page">
     <div class="dex-container">
         <div class="dex-sidebar" id="dexNav"></div>
-        <div class="dex-main" id="dexView">
-            <h3 id="dexTitle">載入中</h3>
-            <img id="dexImg" src="" style="width:130px; height:130px; object-fit:contain;">
-            <div id="dexCtrl" style="margin-top:10px; text-align:center;">
-                <button onclick="setDexShiny(false)">一般</button>
-                <button onclick="setDexShiny(true)">✨ 閃光</button>
-                <button onclick="assignBuddy()" style="background:var(--p); color:white; padding:10px; display:block; margin:10px auto;">就決定是你了</button>
+        <div class="dex-main">
+            <h3 id="dexTitle">???</h3>
+            <img id="dexImg" src="" style="width:140px; height:140px; object-fit:contain;">
+            <div id="dexCtrl" style="margin-top:15px; text-align:center;">
+                <button onclick="setDexShiny(false)" style="padding:5px 10px;">一般</button>
+                <button onclick="setDexShiny(true)" style="padding:5px 10px;">✨ 閃光</button>
+                <button onclick="assignBuddy()" style="display:block; margin-top:10px; background:var(--p); color:white; border:none; padding:10px 20px; border-radius:20px;">就決定是你了</button>
             </div>
         </div>
     </div>
-    <button class="btn-back" onclick="back()">✖ 關閉</button>
+    <button class="btn-back" onclick="back()">⬅ 返回冒險</button>
+</div>
+
+<div id="statusPage" class="page">
+    <div class="card">
+        <h3>👤 訓練家進度</h3>
+        <p>累計消費獎勵：<b id="st-achieve">0</b> / 5000 (滿額送大師球)</p>
+        <p>進化石進度 (<span id="p-evo-txt">0</span>/5)</p>
+        <div class="hp-bar"><div id="p-evo-bar" style="height:100%; background:var(--accent); width:0%;"></div></div>
+        <p>Mega石進度 (<span id="p-mega-txt">0</span>/5)</p>
+        <div class="hp-bar"><div id="p-mega-bar" style="height:100%; background:var(--mega); width:0%;"></div></div>
+        <div id="st-items" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top:15px; text-align:center;"></div>
+        <button onclick="performEvolve()" style="background:#e67e22; color:white; width:100%; padding:15px; margin-top:15px; border:none; border-radius:10px; font-weight:bold;">🧬 消耗進化石使夥伴進化</button>
+    </div>
+    <button class="btn-back" onclick="back()">⬅ 返回冒險</button>
+</div>
+
+<div id="shopPage" class="page">
+    <div class="card">
+        <h3>💰 精靈商店 (可用 P$: <span id="shop-bal">0</span>)</h3>
+        <div id="shopList"></div>
+    </div>
+    <button class="btn-back" onclick="back()">⬅ 返回冒險</button>
 </div>
 
 <div id="historyPage" class="page">
     <div class="card">
-        <h3>📜 歷史紀錄</h3>
-        <div id="historyList" style="max-height:65vh; overflow-y:auto;"></div>
+        <h3>📜 歷史紀錄 (7天內)</h3>
+        <div id="historyList" style="max-height:60vh; overflow-y:auto;"></div>
     </div>
-    <button class="btn-back" onclick="back()">✖ 關閉</button>
+    <button class="btn-back" onclick="back()">⬅ 返回冒險</button>
 </div>
 
 <div id="taskPage" class="page">
@@ -128,213 +173,290 @@
         <h3>🎯 任務板</h3>
         <div id="taskList"></div>
     </div>
-    <button class="btn-back" onclick="back()">✖ 關閉</button>
+    <button class="btn-back" onclick="back()">⬅ 返回冒險</button>
+</div>
+
+<div id="adminPage" class="page">
+    <div class="card">
+        <h3>⚙️ 系統管理</h3>
+        <button onclick="exportData()" style="background:#2980b9; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">💾 匯出全存檔 (JSON)</button>
+        <button onclick="document.getElementById('importFile').click()" style="background:#27ae60; color:white; width:100%; padding:12px; border:none; border-radius:5px;">📂 匯入存檔 (JSON)</button>
+        <input type="file" id="importFile" style="display:none" onchange="importData(event)">
+        <hr>
+        <button onclick="document.getElementById('csvFile').click()" style="background:var(--p); color:white; width:100%; padding:12px; border:none; border-radius:5px;">📑 匯入財政部 CSV</button>
+        <input type="file" id="csvFile" style="display:none" onchange="handleCSV(event)">
+        <hr>
+        <h4>🧹 資料輕量化 (匯出並清理明細)</h4>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:10px;">
+            <input type="date" id="lightStart"> <input type="date" id="lightEnd">
+        </div>
+        <button onclick="lightenData()" style="background:var(--mega); color:white; width:100%; padding:10px; border:none; border-radius:5px;">清理所選區間明細 (保留統計)</button>
+        <hr>
+        <button onclick="if(confirm('確定重置所有資料？')){localStorage.clear();location.reload();}" style="background:var(--danger); color:white; width:100%; padding:10px; border:none; border-radius:5px;">🔥 重設系統</button>
+    </div>
+    <button class="btn-back" onclick="back()">⬅ 返回冒險</button>
 </div>
 
 <script>
-// --- [ 1. 核心數據修復 ] ---
-const NAMES = ["妙蛙種子","妙蛙草","妙蛙花","小火龍","火恐龍","噴火龍","傑尼龜","卡咪龜","水箭龜","綠毛蟲","鐵甲蛹","巴大蝶","獨角蟲","鐵殼蛹","大針蜂","波波","比比鳥","比雕","小拉達","拉達","烈雀","大嘴雀","阿柏蛇","阿柏怪","皮卡丘","雷丘","穿山鼠","穿山王","尼多蘭","尼多娜","尼多后","尼多朗","尼多力諾","尼多王","皮皮","皮可西","六尾","九尾","胖丁","胖丁丁","超音蝠","大嘴蝠","走路草","臭臭花","霸王花","派拉斯","派拉斯特","毛球","末入蛾","地鼠","三地鼠","喵喵","貓老大","可達鴨","哥達鴨","猴怪","火爆猴","卡蒂狗","風速狗","蚊香蝌蚪","蚊香蛙","快泳蛙","凱西","勇吉拉","胡地","腕力","豪力","怪力","喇叭芽","口呆花","大食花","瑪瑙水母","毒刺水母","小拳石","隆隆石","隆隆岩","小火馬","烈焰馬","呆呆獸","呆殼獸","小磁怪","三合一磁怪","大蔥鴨","嘟嘟","嘟嘟利","小海獅","白海獅","臭泥","臭臭泥","大舌貝","刺甲貝","鬼斯","鬼斯通","耿鬼","大岩蛇","催眠貘","引夢貘人","大鉗蟹","巨鉗蟹","霹靂電球","頑皮雷彈","蛋蛋","椰蛋樹","卡拉卡拉","嘎啦嘎啦","飛腿郎","快拳郎","大舌頭","瓦斯彈","雙彈瓦斯","獨角犀牛","鑽角犀獸","吉利蛋","蔓藤怪","袋獸","墨海馬","海刺龍","角金魚","金魚王","海星星","寶石海星","魔牆人偶","飛天螳螂","迷唇姐","電擊獸","鴨嘴火獸","凱羅斯","肯泰羅","鯉魚王","暴鯉龍","拉普拉斯","百變怪","伊布","水伊布","雷伊布","火伊布","多邊獸","菊石獸","多刺菊石獸","化石盔","鐮刀盔","化石翼龍","卡比獸","急凍鳥","閃電鳥","火焰鳥","迷你龍","哈克龍","快龍","超夢","夢幻"];
-const EVO_MAP = {1:2, 2:3, 4:5, 5:6, 7:8, 8:9, 10:11, 11:12, 13:14, 14:15, 16:17, 17:18, 19:20, 25:26, 129:130, 147:148, 148:149};
-const MEGA_LIST = {3:1, 6:1, 9:1, 94:1, 130:1, 150:1};
+// --- [ 1. 核心名單與進化數據 (1-4代縮略版範例，實際開發可擴充) ] ---
+const NAMES = ["妙蛙種子","妙蛙草","妙蛙花","小火龍","火恐龍","噴火龍","傑尼龜","卡咪龜","水箭龜","綠毛蟲","鐵甲蛹","巴大蝶","獨角蟲","鐵殼蛹","大針蜂","波波","比比鳥","比雕","小拉達","拉達","烈雀","大嘴雀","阿柏蛇","阿柏怪","皮卡丘","雷丘","穿山鼠","穿山王","尼多蘭","尼多娜","尼多后","尼多朗","尼多力諾","尼多王","皮皮","皮可西","六尾","九尾","胖丁","胖可丁","超音蝠","大嘴蝠","走路草","臭臭花","霸王花","派拉斯","派拉斯特","毛球","末入蛾","地鼠","三地鼠","喵喵","貓老大","可達鴨","哥達鴨","猴怪","火爆猴","卡蒂狗","風速狗","蚊香蝌蚪","蚊香蛙","快泳蛙","凱西","勇吉拉","胡地","腕力","豪力","怪力","喇叭芽","口呆花","大食花","瑪瑙水母","毒刺水母","小拳石","隆隆石","隆隆岩","小火馬","烈焰馬","呆呆獸","呆殼獸","小磁怪","三合一磁怪","大蔥鴨","嘟嘟","嘟嘟利","小海獅","白海獅","臭泥","臭臭泥","大舌貝","刺甲貝","鬼斯","鬼斯通","耿鬼","大岩蛇","催眠貘","引夢貘人","大鉗蟹","巨鉗蟹","霹靂電球","頑皮雷彈","蛋蛋","椰蛋樹","卡拉卡拉","嘎啦龜","飛腿郎","快拳郎","大舌頭","瓦斯彈","雙彈瓦斯","獨角犀牛","鑽角犀獸","吉利蛋","蔓藤怪","袋獸","墨海馬","海刺龍","角金魚","金魚王","海星星","寶石海星","魔牆人偶","飛天螳螂","迷唇姐","電擊獸","鴨嘴火獸","凱羅斯","肯泰羅","鯉魚王","暴鯉龍","拉普拉斯","百變怪","伊布","水伊布","雷伊布","火伊布","多邊獸","菊石獸","多刺菊石獸","化石盔","鐮刀盔","化石翼龍","卡比獸","急凍鳥","閃電鳥","火焰鳥","迷你龍","哈克龍","快龍","超夢","夢幻"]; 
 const API = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites";
+const EVO_CHAIN = {1:2, 2:3, 4:5, 5:6, 7:8, 8:9, 10:11, 11:12, 129:130, 147:148, 148:149}; // 簡化版
+const MEGA_LIST = [3, 6, 9, 65, 94, 130]; 
 
 let s = {
     bal: 1000, pool: 0, items: {poke:10, great:5, ultra:0, master:1, stone:0, mstone:0},
     prog: {evo:0, mega:0}, buddyId: 25, isShinyBuddy: false, 
     owned: [25], shinyOwned: [], 
     buddy: {megaUntil: 0},
-    hist: [], yearSums: {}, achieveBal: 0,
-    tasks: {lastDate: "", lastWeek: -1, lastMonth: -1, dRec: 0, dCatch: 0, wRec: 0, wCatch: 0, mRec: 0, mCatch: 0}
+    hist: [], yearSums: {}, catSums: {}, achieveBal: 0,
+    tasks: {lastDate: "", dRec: 0, dCatch: 0, wRec: 0, wCatch: 0}
 };
 
 let curE = null;
 let currentDexId = 1;
 let currentDexShiny = false;
+let battleQueue = 0;
 
+// --- [ 2. 核心邏輯 ] ---
 window.onload = () => {
-    const saved = localStorage.getItem('pokemaster_v55.2');
+    const saved = localStorage.getItem('pokemaster_v56');
     if(saved) s = JSON.parse(saved);
     checkTaskReset();
     document.getElementById('recDate').valueAsDate = new Date();
     updateUI();
 };
 
-// --- [ 2. 任務與統計修復 ] ---
-function checkTaskReset() {
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    const week = Math.floor(now.getTime() / (7*24*60*60*1000));
-    const month = now.getMonth();
+function updateUI() {
+    localStorage.setItem('pokemaster_v56', JSON.stringify(s));
+    
+    // 能量池
+    document.getElementById('poolTxt').innerText = Math.floor(s.pool);
+    document.getElementById('poolFill').style.width = (s.pool / 500 * 100) + "%";
+    
+    // 狀態
+    document.getElementById('st-achieve').innerText = s.achieveBal;
+    document.getElementById('p-evo-txt').innerText = s.prog.evo;
+    document.getElementById('p-evo-bar').style.width = (s.prog.evo/5*100) + "%";
+    document.getElementById('p-mega-txt').innerText = s.prog.mega;
+    document.getElementById('p-mega-bar').style.width = (s.prog.mega/5*100) + "%";
+    document.getElementById('shop-bal').innerText = s.bal;
 
-    if(s.tasks.lastDate !== today) { s.tasks.dRec = 0; s.tasks.dCatch = 0; s.tasks.lastDate = today; }
-    if(s.tasks.lastWeek !== week) { s.tasks.wRec = 0; s.tasks.wCatch = 0; s.tasks.lastWeek = week; }
-    if(s.tasks.lastMonth !== month) { s.tasks.mRec = 0; s.tasks.mCatch = 0; s.tasks.lastMonth = month; }
-}
+    // 夥伴圖片
+    const isMega = Date.now() < s.buddy.megaUntil;
+    const bImg = `${API}/pokemon/${s.isShinyBuddy?'shiny/':''}${s.buddyId}.png`;
+    const bEl = document.getElementById('buddyImg');
+    bEl.src = bImg;
+    isMega ? bEl.classList.add('mega-fx') : bEl.classList.remove('mega-fx');
 
-function deleteHistory(id) {
-    const idx = s.hist.findIndex(h => h.id === id);
-    if(idx !== -1) {
-        const item = s.hist[idx];
-        const month = item.date.substring(0, 7);
-        if(s.yearSums[month]) s.yearSums[month] -= item.amt;
-        s.hist.splice(idx, 1);
-        renderHistory();
-        updateUI();
+    // 球種下拉選單 (官方圖示提示)
+    const balls = [
+        {id:'poke', n:'精靈球'},{id:'great', n:'超級球'},
+        {id:'ultra', n:'高級球'},{id:'master', n:'大師球'}
+    ];
+    let bHtml = "";
+    balls.forEach(b => { bHtml += `<option value="${b.id}">${b.n} (剩餘 ${s.items[b.id]})</option>`; });
+    document.getElementById('ballSelect').innerHTML = bHtml;
+
+    // 狀態頁道具
+    let iHtml = "";
+    balls.forEach(b => { iHtml += `<div><img src="${API}/items/${b.id}-ball.png" width="30"><br>${s.items[b.id]}</div>`; });
+    iHtml += `<div><img src="${API}/items/sun-stone.png" width="30"><br>${s.items.stone}</div>`;
+    iHtml += `<div><img src="${API}/items/key-stone.png" width="30"><br>${s.items.mstone}</div>`;
+    document.getElementById('st-items').innerHTML = iHtml;
+
+    // 商店清單
+    const prices = {poke: 100, great: 300, ultra: 600};
+    let sHtml = "";
+    for(let k in prices) {
+        sHtml += `<div style="display:flex; align-items:center; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
+            <span><img src="${API}/items/${k}-ball.png" width="24"> ${k}球 (P$ ${prices[k]})</span>
+            <button onclick="buy('${k}', ${prices[k]})" style="background:var(--p); color:white; border:none; padding:5px 15px; border-radius:4px;">購買</button>
+        </div>`;
     }
+    document.getElementById('shopList').innerHTML = sHtml;
 }
 
-// --- [ 3. 戰鬥動畫與 Mega 修復 ] ---
+// --- [ 3. 記帳與能量邏輯 ] ---
+function record() {
+    const amt = parseInt(document.getElementById('recAmt').value);
+    const date = document.getElementById('recDate').value;
+    const cat = document.getElementById('recCat').value;
+    if(!amt || !date) return;
+
+    // 成就累計 (無上限循環)
+    s.achieveBal += amt;
+    while(s.achieveBal >= 5000) {
+        s.achieveBal -= 5000;
+        s.items.master++;
+        alert("🏆 累計消費滿 $5000：獲得大師球一顆！");
+    }
+
+    // 獎勵與統計
+    s.bal += Math.floor(amt * 0.1);
+    const mon = date.substring(0, 7);
+    s.yearSums[mon] = (s.yearSums[mon] || 0) + amt;
+    s.catSums[cat] = (s.catSums[cat] || 0) + amt;
+    
+    s.hist.push({id: Date.now(), date, cat, amt, note: document.getElementById('recNote').value});
+    
+    // 能量池與連環遇敵
+    s.pool += amt;
+    checkTaskReset();
+    s.tasks.dRec++;
+    
+    document.getElementById('recAmt').value = "";
+    document.getElementById('msg').innerText = `獲得 P$ ${Math.floor(amt*0.1)}，能量增加！`;
+    
+    if(s.pool >= 500) {
+        battleQueue = Math.floor(s.pool / 500);
+        s.pool %= 500;
+        spawnEnemy();
+    }
+    updateUI();
+}
+
+function spawnEnemy() {
+    const id = Math.floor(Math.random() * 151) + 1;
+    const shinyRate = (Date.now() < s.buddy.megaUntil) ? 0.15 : 0.05;
+    const isShiny = Math.random() < shinyRate;
+    curE = {id, name: NAMES[id-1], isShiny, hp: 100};
+
+    document.getElementById('enemyImg').src = `${API}/pokemon/${isShiny?'shiny/':''}${id}.png`;
+    document.getElementById('enemyArea').style.display = "block";
+    document.getElementById('battleActions').style.display = "block";
+    document.getElementById('inputArea').style.display = "none";
+    document.getElementById('hpFill').style.width = "100%";
+    document.getElementById('msg').innerText = `野生的 ${curE.name}${isShiny?' ✨':''} 出現了！`;
+}
+
 async function throwBall() {
-    const type = document.getElementById('ballSelect').value;
-    if(s.items[type] <= 0 && type !== 'master') { alert("球不夠了！"); return; }
-    if(type !== 'master') s.items[type]--;
+    const bType = document.getElementById('ballSelect').value;
+    if(s.items[bType] <= 0) { alert("球不夠了！"); return; }
+    s.items[bType]--;
 
     const ball = document.getElementById('ballOverlay');
-    ball.src = `${API}/items/${type}-ball.png`;
+    ball.src = `${API}/items/${bType}-ball.png`;
     ball.className = 'ball-throw';
-    document.getElementById('msg').innerText = `去吧！${type}球！`;
-
+    
+    // 動畫流程
     setTimeout(() => {
         ball.className = 'ball-shake';
         setTimeout(() => {
-            const chance = type === 'master' ? 1 : (type === 'ultra' ? 0.8 : (type === 'great' ? 0.6 : 0.4));
-            if(Math.random() < chance) {
-                catchSuccess();
+            const rates = {poke:0.3, great:0.6, ultra:0.8, master:1.0};
+            if(Math.random() < rates[bType]) {
+                captureDone();
             } else {
-                ball.className = ''; ball.style.display = 'none';
-                document.getElementById('msg').innerText = "哎呀！挣脫了！";
+                document.getElementById('msg').innerText = "哎呀！被逃走了！";
+                resetBattle();
             }
-            updateUI();
         }, 1500);
     }, 800);
 }
 
-function catchSuccess() {
+function captureDone() {
     document.getElementById('gotcha').style.display = "block";
-    document.getElementById('msg').innerText = `成功捕捉 ${curE.name}！`;
-    
     s.owned.push(curE.id);
     if(curE.isShiny) s.shinyOwned.push(curE.id);
     
-    // 任務計數 (包含 Mega 判定)
-    checkTaskReset();
-    s.tasks.dCatch++; s.tasks.wCatch++; s.tasks.mCatch++;
-    
-    // 進化/Mega石進度
+    // 進化石計數
     s.prog.evo++;
-    if(MEGA_LIST[curE.id]) s.prog.mega++;
+    if(MEGA_LIST.includes(curE.id)) s.prog.mega++;
     
-    if(s.prog.evo >= 5) { s.prog.evo = 0; s.items.stone++; }
-    if(s.prog.mega >= 5) { s.prog.mega = 0; s.items.mstone++; }
+    if(s.prog.evo >= 5) { s.prog.evo=0; s.items.stone++; }
+    if(s.prog.mega >= 5) { s.prog.mega=0; s.items.mstone++; }
+
+    s.tasks.dCatch++;
+    updateUI();
 
     setTimeout(() => {
         document.getElementById('gotcha').style.display = "none";
-        document.getElementById('enemyArea').style.display = "none";
-        document.getElementById('battleActions').style.display = "none";
-        document.getElementById('inputArea').style.display = "block";
-        document.getElementById('ballOverlay').className = '';
-        document.getElementById('ballOverlay').style.display = 'none';
+        resetBattle();
+        if(battleQueue > 1) {
+            battleQueue--;
+            spawnEnemy();
+        }
+    }, 1500);
+}
+
+function resetBattle() {
+    document.getElementById('enemyArea').style.display = "none";
+    document.getElementById('battleActions').style.display = "none";
+    document.getElementById('inputArea').style.display = "block";
+    document.getElementById('ballOverlay').className = "";
+}
+
+// --- [ 4. 統計與存檔管理 ] ---
+function openPage(pid) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active'));
+    document.getElementById(pid).classList.add('page-active');
+    if(pid === 'chartPage') renderCharts();
+    if(pid === 'dexPage') renderDex();
+    if(pid === 'historyPage') renderHistory();
+    if(pid === 'taskPage') renderTasks();
+}
+
+function back() { document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active')); }
+
+function renderCharts() {
+    // 圓餅圖
+    new Chart(document.getElementById('chartCat'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(s.catSums),
+            datasets: [{ data: Object.values(s.catSums), backgroundColor: ['#e74c3c','#3498db','#f1c40f','#2ecc71','#9b59b6'] }]
+        }
+    });
+    // 趨勢圖
+    new Chart(document.getElementById('chartTrend'), {
+        type: 'line',
+        data: {
+            labels: Object.keys(s.yearSums).sort(),
+            datasets: [{ label: '月支出', data: Object.values(s.yearSums), borderColor: '#2d5a27', tension: 0.3 }]
+        }
+    });
+}
+
+function lightenData() {
+    const start = document.getElementById('lightStart').value;
+    const end = document.getElementById('lightEnd').value;
+    if(!start || !end) return;
+
+    const toKeep = [];
+    const toClear = [];
+    s.hist.forEach(h => {
+        if(h.date >= start && h.date <= end) toClear.push(h);
+        else toKeep.push(h);
+    });
+
+    if(confirm(`將匯出並清理 ${toClear.length} 筆明細，確定嗎？`)) {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(toClear));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `cleanup_${start}_to_${end}.json`);
+        downloadAnchor.click();
+        
+        s.hist = toKeep; // 移除明細，但 s.yearSums 仍保留統計金額
         updateUI();
-    }, 2000);
+        alert("清理完成！");
+    }
 }
 
-// --- [ 4. CSV 手機載具修復 ] ---
-function handleCSV(event) {
-    const file = event.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const lines = e.target.result.split('\n');
-        let count = 0;
-        lines.forEach(line => {
-            const parts = line.split(',');
-            if(parts.length >= 3) {
-                const date = parts[0].replace(/\//g, '-').trim();
-                const note = parts[1].trim();
-                const amt = parseInt(parts[2]);
-                if(date.length >= 10 && !isNaN(amt)) {
-                    const month = date.substring(0, 7);
-                    s.yearSums[month] = (s.yearSums[month] || 0) + amt;
-                    s.hist.push({id: Date.now() + count, date, cat: "其他", amt, note, reward: 0});
-                    count++;
-                }
-            }
-        });
-        alert(`成功匯入 ${count} 筆載具明細！`);
-        updateUI();
-    };
-    reader.readAsText(file);
-}
-
-// --- [ 5. 其他功能 (進化、圖鑑) ] ---
-function performEvolve() {
-    const nextId = EVO_MAP[s.buddyId];
-    if(!nextId) { alert("此寶可夢無法進化！"); return; }
-    if(s.items.stone < 1) { alert("進化石不足！"); return; }
-    s.items.stone--;
-    s.buddyId = nextId;
-    if(!s.owned.includes(nextId)) s.owned.push(nextId);
-    updateUI();
-    alert(`進化成功！進化為 ${NAMES[nextId-1]}`);
-}
-
+// --- [ 5. 輔助功能 ] ---
 function renderDex() {
     const nav = document.getElementById('dexNav');
     nav.innerHTML = "";
-    NAMES.forEach((name, i) => {
+    NAMES.forEach((n, i) => {
         const id = i + 1;
         const div = document.createElement('div');
         div.className = `dex-item ${currentDexId === id ? 'active' : ''}`;
-        div.innerText = s.owned.includes(id) ? `${id}. ${name}` : `${id}. ???`;
+        div.innerText = s.owned.includes(id) ? `${id}. ${n}` : `${id}. ???`;
         div.onclick = () => { currentDexId = id; renderDex(); };
         nav.appendChild(div);
     });
-    const owned = s.owned.includes(currentDexId);
-    document.getElementById('dexTitle').innerText = owned ? NAMES[currentDexId-1] : "???";
-    document.getElementById('dexImg').src = owned ? `${API}/pokemon/${currentDexShiny?'shiny/':''}${currentDexId}.png` : "";
-}
-
-function record() {
-    const amt = parseInt(document.getElementById('recAmt').value);
-    const date = document.getElementById('recDate').value;
-    if(!amt || !date) return;
-    checkTaskReset();
-    s.tasks.dRec++; s.tasks.wRec++; s.tasks.mRec++;
-    const month = date.substring(0, 7);
-    s.yearSums[month] = (s.yearSums[month] || 0) + amt;
-    s.bal += Math.floor(amt * 0.1);
-    s.pool += amt;
-    s.hist.push({id: Date.now(), date, cat: document.getElementById('recCat').value, amt, note: document.getElementById('recNote').value});
-    if(s.pool >= 500) { s.pool -= 500; spawnEnemy(); }
-    updateUI();
-}
-
-function updateUI() {
-    localStorage.setItem('pokemaster_v55.2', JSON.stringify(s));
-    document.getElementById('st-bal').innerText = s.bal;
-    document.getElementById('st-achieve').innerText = s.achieveBal;
-    document.getElementById('p-evo-bar').style.width = (s.prog.evo/5*100) + "%";
-    document.getElementById('p-mega-bar').style.width = (s.prog.mega/5*100) + "%";
-    document.getElementById('buddyImg').src = `${API}/pokemon/${s.isShinyBuddy?'shiny/':''}${s.buddyId}.png`;
-    const bs = document.getElementById('ballSelect');
-    bs.innerHTML = `<option value="poke">精靈球(${s.items.poke})</option><option value="great">超級球(${s.items.great})</option><option value="ultra">高級球(${s.items.ultra})</option><option value="master">大師球(${s.items.master})</option>`;
-}
-
-function spawnEnemy() {
-    const id = Math.floor(Math.random()*151)+1;
-    curE = {id, hp: 100, isShiny: Math.random()<0.05, name: NAMES[id-1]};
-    document.getElementById('enemyImg').src = `${API}/pokemon/${curE.isShiny?'shiny/':''}${id}.png`;
-    document.getElementById('enemyArea').style.display = "block";
-    document.getElementById('battleActions').style.display = "block";
-    document.getElementById('inputArea').style.display = "none";
-}
-
-function renderTasks() {
-    const t = s.tasks;
-    document.getElementById('taskList').innerHTML = `
-        <div class="card"><b>每日任務:</b> 記帳 ${t.dRec}/1, 捕捉 ${t.dCatch}/1</div>
-        <div class="card"><b>每週任務:</b> 記帳 ${t.wRec}/5, 捕捉 ${t.wCatch}/3</div>
-        <div class="card"><b>成就任務:</b> 記帳 ${t.mRec}/20, 捕捉 ${t.mCatch}/10</div>
-    `;
+    const isOwned = s.owned.includes(currentDexId);
+    document.getElementById('dexTitle').innerText = isOwned ? NAMES[currentDexId-1] : "???";
+    document.getElementById('dexImg').src = isOwned ? `${API}/pokemon/${currentDexShiny?'shiny/':''}${currentDexId}.png` : "";
 }
 
 function renderHistory() {
@@ -343,21 +465,90 @@ function renderHistory() {
     s.hist.slice().reverse().forEach(h => {
         const div = document.createElement('div');
         div.className = 'card';
-        div.innerHTML = `<div>${h.date} - ${h.note} ($${h.amt})</div><button onclick="deleteHistory(${h.id})" style="color:red; background:none; border:none;">[刪除]</button>`;
+        div.style.fontSize = "13px";
+        div.innerHTML = `<b>${h.date} [${h.cat}]</b> $${h.amt}<br>${h.note} 
+        <button onclick="deleteHist(${h.id})" style="float:right; color:red; border:none; background:none;">刪除</button>`;
         list.appendChild(div);
     });
 }
 
-function openPage(id) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active'));
-    document.getElementById(id).classList.add('page-active');
-    if(id === 'dexPage') renderDex();
-    if(id === 'taskPage') renderTasks();
-    if(id === 'historyPage') renderHistory();
+function deleteHist(id) {
+    const idx = s.hist.findIndex(h => h.id === id);
+    if(idx !== -1) {
+        const h = s.hist[idx];
+        const mon = h.date.substring(0, 7);
+        s.yearSums[mon] -= h.amt;
+        s.catSums[h.cat] -= h.amt;
+        s.hist.splice(idx, 1);
+        renderHistory();
+        updateUI();
+    }
 }
-function back() { document.querySelectorAll('.page').forEach(p=>p.classList.remove('page-active')); }
+
+function buy(type, p) {
+    if(s.bal >= p) { s.bal -= p; s.items[type]++; updateUI(); }
+    else { alert("金幣不足！"); }
+}
+
+function performEvolve() {
+    const target = EVO_CHAIN[s.buddyId];
+    if(!target) return alert("該夥伴無法進化或已達最終型態");
+    if(s.items.stone < 1) return alert("需要進化石");
+    s.items.stone--;
+    s.buddyId = target;
+    if(!s.owned.includes(target)) s.owned.push(target);
+    updateUI();
+    alert("恭喜！夥伴進化了！");
+}
+
+function checkTaskReset() {
+    const today = new Date().toISOString().split('T')[0];
+    if(s.tasks.lastDate !== today) {
+        s.tasks.dRec = 0; s.tasks.dCatch = 0;
+        s.tasks.lastDate = today;
+    }
+}
+
+function exportData() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(s));
+    const dl = document.createElement('a');
+    dl.setAttribute("href", dataStr);
+    dl.setAttribute("download", "pokemaster_save.json");
+    dl.click();
+}
+
+function importData(e) {
+    const reader = new FileReader();
+    reader.onload = (event) => { s = JSON.parse(event.target.result); updateUI(); alert("存檔匯入成功！"); };
+    reader.readAsText(e.target.files[0]);
+}
+
+function handleCSV(e) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const lines = event.target.result.split('\n');
+        let count = 0;
+        lines.forEach(l => {
+            const p = l.split(',');
+            if(p.length >= 3) {
+                const date = p[0].trim();
+                const amt = parseInt(p[2]);
+                if(!isNaN(amt)) {
+                    s.pool += amt;
+                    s.hist.push({id: Date.now()+count, date, cat: "其他", amt, note: p[1]});
+                    count++;
+                }
+            }
+        });
+        if(s.pool >= 500) { battleQueue = Math.floor(s.pool/500); s.pool %= 500; spawnEnemy(); }
+        updateUI();
+        alert(`匯入 ${count} 筆載具明細！`);
+    };
+    reader.readAsText(e.target.files[0]);
+}
+
+function assignBuddy() { s.buddyId = currentDexId; s.isShinyBuddy = currentDexShiny; updateUI(); alert("更換夥伴成功！"); }
 function setDexShiny(v) { currentDexShiny = v; renderDex(); }
-function assignBuddy() { s.buddyId = currentDexId; s.isShinyBuddy = currentDexShiny; updateUI(); }
 </script>
 </body>
 </html>
