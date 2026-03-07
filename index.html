@@ -1117,12 +1117,14 @@ function renderCharts() {
     chartInstance = new Chart(ctx, { type: chartType, data: { labels, datasets: [{ label: '支出金額', data, backgroundColor: ['#ff6384','#36a2eb','#cc65fe','#ffce56','#4bc0c0','#f1c40f','#e67e22'], borderColor: '#2d5a27', tension: 0.1 }] }, options: { responsive: true, maintainAspectRatio: false } });
 }
 
-let tempData = []; 
+let tempData = []; // 確保這行在最外面
 
 function handleCSV(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
     const reader = new FileReader();
     reader.onload = function(ev) {
-        // 1. 取得原始內容並初步清洗
         const lines = ev.target.result.split(/\r?\n/).filter(line => line.trim() !== "");
         if (lines.length <= 1) return;
 
@@ -1131,16 +1133,17 @@ function handleCSV(e) {
         previewList.innerHTML = "";
 
         for (let i = 1; i < lines.length; i++) {
-            // 2. 欄位清洗：去空白、去引號
+            // 自動去引號與空白
             const cols = lines[i].split(',').map(c => c.replace(/^["']|["']$/g, '').trim());
+            
+            // 財政部 CSV 格式：日期在第 2 欄 (index 1)，金額在第 4 欄 (index 3)
             const rawDate = cols[1] || "";
             const rawAmt = parseInt(cols[3]);
 
-            // 3. 只有日期與金額同時存在才進入預覽
             if (rawDate && !isNaN(rawAmt)) {
                 let finalDate = "";
 
-                // 強制轉換 YYYYMMDD 為 YYYY-MM-DD
+                // 處理 YYYYMMDD (如 20240501)
                 if (rawDate.length === 8 && !isNaN(rawDate)) {
                     finalDate = `${rawDate.substring(0, 4)}-${rawDate.substring(4, 6)}-${rawDate.substring(6, 8)}`;
                 } else {
@@ -1159,95 +1162,60 @@ function handleCSV(e) {
 
                 const item = {
                     date: finalDate, 
-                    cat: "其他",
-                    note: (cols[7] || "載具消費"),
+                    cat: "其他", // 預設類別
+                    note: (cols[7] || "載具消費").trim(),
                     amt: rawAmt
                 };
                 tempData.push(item);
 
-                // 4. 渲染預覽列表
+                // --- 顯示預覽清單 (整合下拉選單) ---
                 previewList.innerHTML += `
                     <div style="display:flex; gap:5px; margin-bottom:8px; align-items:center; border-bottom:1px solid #eee; padding:5px;">
-                        <input type="date" value="${item.date}" onchange="tempData[${tempData.length-1}].date=this.value" style="width:135px; font-size:12px; border:1px solid #ccc; border-radius:4px;">
-                        <input type="text" value="${item.cat}" onchange="tempData[${tempData.length-1}].cat=this.value" style="width:55px; font-size:12px;">
-                        <input type="text" value="${item.note}" onchange="tempData[${tempData.length-1}].note=this.value" style="flex:1; font-size:12px;">
+                        <input type="date" value="${item.date}" onchange="tempData[${tempData.length-1}].date=this.value" style="width:130px; font-size:12px; border:1px solid #ccc;">
+                        
+                        <select onchange="tempData[${tempData.length-1}].cat=this.value" style="width:70px; font-size:12px; border:1px solid #ccc; padding:2px;">
+                            <option value="其他">其他</option>
+                            <option value="餐飲">餐飲</option>
+                            <option value="交通">交通</option>
+                            <option value="購物">購物</option>
+                            <option value="娛樂">娛樂</option>
+                            <option value="醫療">醫療</option>
+                        </select>
+
+                        <input type="text" value="${item.note}" onchange="tempData[${tempData.length-1}].note=this.value" style="flex:1; font-size:12px; border:1px solid #eee;">
                         <span style="width:50px; text-align:right; font-weight:bold;">$${item.amt}</span>
                     </div>`;
             }
         }
-        // 只有在成功解析出資料時才顯示預覽區域
+
         if (tempData.length > 0) {
             document.getElementById('csvPreviewArea').style.display = "block";
         }
     };
-    if (e.target.files[0]) reader.readAsText(e.target.files[0]);
+    // 讀取檔案
+    reader.readAsText(file);
 }
 
 function confirmImport() {
-    // 如果暫存區沒資料，直接關閉不動作
     if (!tempData || tempData.length === 0) {
         cancelImport();
         return;
     }
 
-    // 開始將預覽區的資料「正式」轉入系統
-    tempData.forEach((item, index) => {
-        const reward = Math.floor(item.amt * 0.1);
-        const monthKey = item.date.substring(0, 7); // 取得 YYYY-MM
-
-        // 1. 更新錢包與戰鬥池
-        s.bal += reward;
-        s.pool += item.amt;
-
-        // 2. 更新統計表 (確保年/月統計圖表抓得到)
-        s.yearSums[monthKey] = (s.yearSums[monthKey] || 0) + item.amt;
-        s.catSums[item.cat] = (s.catSums[item.cat] || 0) + item.amt;
-        
-        // 3. 寫入歷史紀錄 (確保搜尋明細能查到)
-        s.hist.push({
-            id: Date.now() + index + Math.random(), // 唯一ID
-            date: item.date, // 格式已在 handleCSV 轉為 YYYY-MM-DD
-            cat: item.cat,
-            amt: item.amt,
-            note: item.note,
-            reward: reward
-        });
-
-        // 4. 任務進度計數
-        if (s.tasks) {
-            s.tasks.dRec++; s.tasks.wRec++; s.tasks.mRec++;
-        }
-    });
-
-    // 5. 戰鬥判定 (鏡像自你的 record 核心)
-    const encounterCount = Math.floor(s.pool / 500);
-    if (encounterCount > 0) {
-        s.pool %= 500;
-        if (typeof battleQueue !== 'undefined') {
-            battleQueue += encounterCount;
-            if (!isInBattle) {
-                battleQueue--; 
-                isInBattle = true; 
-                if (typeof spawnEnemy === 'function') spawnEnemy(); 
-            }
-        }
-    }
-
-    // 6. 靜默結束：不跳出任何 alert
-    cancelImport();
-    updateUI();
-    if (window.renderCharts) renderCharts();
-}
-
-function confirmImport() {
-    if (tempData.length === 0) return;
     tempData.forEach((item, index) => {
         const reward = Math.floor(item.amt * 0.1);
         const monthKey = item.date.substring(0, 7);
+
+        // 1. 更新統計表
+        s.yearSums[monthKey] = (s.yearSums[monthKey] || 0) + item.amt;
+        if (!s.catSums[item.cat]) s.catSums[item.cat] = 0;
+        s.catSums[item.cat] += item.amt;
+
+        // 2. 更新錢包
         s.bal += reward;
         s.pool += item.amt;
-        s.yearSums[monthKey] = (s.yearSums[monthKey] || 0) + item.amt;
-        s.catSums[item.cat] = (s.catSums[item.cat] || 0) + item.amt;
+        
+        // 3. 寫入歷史紀錄
         s.hist.push({
             id: Date.now() + index + Math.random(),
             date: item.date,
@@ -1256,16 +1224,25 @@ function confirmImport() {
             note: item.note,
             reward: reward
         });
-        s.tasks.dRec++; s.tasks.wRec++; s.tasks.mRec++;
+
+        if (s.tasks) { s.tasks.dRec++; s.tasks.wRec++; s.tasks.mRec++; }
     });
 
+    // 戰鬥判定
     const encounterCount = Math.floor(s.pool / 500);
     if (encounterCount > 0) {
         s.pool %= 500;
-        battleQueue += encounterCount;
-        if (!isInBattle) { battleQueue--; isInBattle = true; spawnEnemy(); }
+        if (typeof battleQueue !== 'undefined') {
+            battleQueue += encounterCount;
+            if (!isInBattle) { 
+                battleQueue--; 
+                isInBattle = true; 
+                if(window.spawnEnemy) spawnEnemy(); 
+            }
+        }
     }
-    cancelImport();
+
+    cancelImport(); 
     updateUI();
     if (window.renderCharts) renderCharts();
 }
@@ -1273,7 +1250,7 @@ function confirmImport() {
 function cancelImport() {
     tempData = [];
     document.getElementById('csvPreviewArea').style.display = "none";
-    document.getElementById('csvFile').value = ""; // 清除檔案選取狀態以便下次上傳
+    document.getElementById('csvFile').value = ""; 
 }
 
 function confirmImport() {
