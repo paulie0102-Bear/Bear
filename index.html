@@ -280,8 +280,8 @@
         <div class="hp-bar"><div id="p-mega-bar" style="height:100%; background:var(--mega); width:0%;"></div></div>
         <hr>
         <div style="font-size:14px; line-height:1.8;">
-            <div>🎯 基礎捕捉率：<b id="st-catch-rate">30%</b></div>
-            <div>✨ 基礎閃光率：<b id="st-shiny-rate">5%</b></div>
+            <div>🎯 綜合捕捉率：<b id="st-catch-rate">30%</b></div>
+            <div>✨ 綜合閃光率：<b id="st-shiny-rate">5%</b></div>
             <div id="mega-timer" style="color:var(--mega); display:none;">🧬 Mega 強化中：<span id="mega-time-left">00:00</span></div>
         </div>
     </div>
@@ -362,7 +362,16 @@
         <h3>📜 紀錄與載入</h3>
         <button onclick="document.getElementById('csvFile').click()" style="background:var(--p); color:white; width:100%; padding:15px; border:none; border-radius:10px; margin-bottom:15px;">📑 導入財政部 CSV 載具資料</button>
         <input type="file" id="csvFile" style="display:none" onchange="handleCSV(event)">
-        <hr>
+        <div id="csvPreviewArea" style="display:none; margin-top:20px; padding:10px; border:2px dashed #ccc; border-radius:10px;">
+    <h3>📋 匯入預覽</h3>
+    <p style="font-size:12px; color:gray;">(在此修改分類後點擊「正式導入」)</p>
+    <div id="previewList" style="max-height:300px; overflow-y:auto; margin-bottom:10px;"></div>
+    <div style="display:flex; gap:10px;">
+        <button onclick="confirmImport()" style="flex:1; background:#28a745; color:white; padding:10px; border:none; border-radius:5px;">✅ 正式導入</button>
+        <button onclick="cancelImport()" style="flex:1; background:#6c757d; color:white; padding:10px; border:none; border-radius:5px;">✖ 取消</button>
+    </div>
+</div>
+<hr>
         <p style="font-size:13px; color:gray;">手動紀錄查詢 (限30天內，單次區間7天)</p>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:10px;">
             <input type="date" id="hStart"> <input type="date" id="hEnd">
@@ -1108,36 +1117,241 @@ function renderCharts() {
     chartInstance = new Chart(ctx, { type: chartType, data: { labels, datasets: [{ label: '支出金額', data, backgroundColor: ['#ff6384','#36a2eb','#cc65fe','#ffce56','#4bc0c0','#f1c40f','#e67e22'], borderColor: '#2d5a27', tension: 0.1 }] }, options: { responsive: true, maintainAspectRatio: false } });
 }
 
+let tempData = []; 
+
 function handleCSV(e) {
     const reader = new FileReader();
     reader.onload = function(ev) {
-        const lines = ev.target.result.split('\n');
-        let count = 0;
-        lines.forEach(line => {
-            const cols = line.split(',');
-            if(cols.length >= 4 && !isNaN(parseInt(cols[3]))) {
-                const date = cols[0].replace(/\//g, '-');
-                const amt = parseInt(cols[3]);
-                s.hist.push({id: Date.now()+count, date, cat: "其他", amt, note: cols[2], reward: Math.floor(amt*0.1)});
-                s.yearSums[date.substring(0,7)] = (s.yearSums[date.substring(0,7)] || 0) + amt;
-                s.catSums["其他"] = (s.catSums["其他"] || 0) + amt;
-                count++;
+        // 1. 取得原始內容並初步清洗
+        const lines = ev.target.result.split(/\r?\n/).filter(line => line.trim() !== "");
+        if (lines.length <= 1) return;
+
+        tempData = []; 
+        const previewList = document.getElementById('previewList');
+        previewList.innerHTML = "";
+
+        for (let i = 1; i < lines.length; i++) {
+            // 2. 欄位清洗：去空白、去引號
+            const cols = lines[i].split(',').map(c => c.replace(/^["']|["']$/g, '').trim());
+            const rawDate = cols[1] || "";
+            const rawAmt = parseInt(cols[3]);
+
+            // 3. 只有日期與金額同時存在才進入預覽
+            if (rawDate && !isNaN(rawAmt)) {
+                let finalDate = "";
+
+                // 強制轉換 YYYYMMDD 為 YYYY-MM-DD
+                if (rawDate.length === 8 && !isNaN(rawDate)) {
+                    finalDate = `${rawDate.substring(0, 4)}-${rawDate.substring(4, 6)}-${rawDate.substring(6, 8)}`;
+                } else {
+                    let dStr = rawDate.replace(/\//g, '-');
+                    let parts = dStr.split('-');
+                    if (parts.length === 3) {
+                        let y = parts[0].padStart(4, '0');
+                        let m = parts[1].padStart(2, '0');
+                        let d = parts[2].padStart(2, '0');
+                        if (parseInt(y) < 1000) y = (parseInt(y) + 1911).toString();
+                        finalDate = `${y}-${m}-${d}`;
+                    } else {
+                        finalDate = new Date().toISOString().split('T')[0];
+                    }
+                }
+
+                const item = {
+                    date: finalDate, 
+                    cat: "其他",
+                    note: (cols[7] || "載具消費"),
+                    amt: rawAmt
+                };
+                tempData.push(item);
+
+                // 4. 渲染預覽列表
+                previewList.innerHTML += `
+                    <div style="display:flex; gap:5px; margin-bottom:8px; align-items:center; border-bottom:1px solid #eee; padding:5px;">
+                        <input type="date" value="${item.date}" onchange="tempData[${tempData.length-1}].date=this.value" style="width:135px; font-size:12px; border:1px solid #ccc; border-radius:4px;">
+                        <input type="text" value="${item.cat}" onchange="tempData[${tempData.length-1}].cat=this.value" style="width:55px; font-size:12px;">
+                        <input type="text" value="${item.note}" onchange="tempData[${tempData.length-1}].note=this.value" style="flex:1; font-size:12px;">
+                        <span style="width:50px; text-align:right; font-weight:bold;">$${item.amt}</span>
+                    </div>`;
             }
-        });
-        updateUI(); alert(`成功導入 ${count} 筆紀錄！`);
+        }
+        // 只有在成功解析出資料時才顯示預覽區域
+        if (tempData.length > 0) {
+            document.getElementById('csvPreviewArea').style.display = "block";
+        }
     };
-    reader.readAsText(e.target.files[0]);
+    if (e.target.files[0]) reader.readAsText(e.target.files[0]);
+}
+
+function confirmImport() {
+    // 如果暫存區沒資料，直接關閉不動作
+    if (!tempData || tempData.length === 0) {
+        cancelImport();
+        return;
+    }
+
+    // 開始將預覽區的資料「正式」轉入系統
+    tempData.forEach((item, index) => {
+        const reward = Math.floor(item.amt * 0.1);
+        const monthKey = item.date.substring(0, 7); // 取得 YYYY-MM
+
+        // 1. 更新錢包與戰鬥池
+        s.bal += reward;
+        s.pool += item.amt;
+
+        // 2. 更新統計表 (確保年/月統計圖表抓得到)
+        s.yearSums[monthKey] = (s.yearSums[monthKey] || 0) + item.amt;
+        s.catSums[item.cat] = (s.catSums[item.cat] || 0) + item.amt;
+        
+        // 3. 寫入歷史紀錄 (確保搜尋明細能查到)
+        s.hist.push({
+            id: Date.now() + index + Math.random(), // 唯一ID
+            date: item.date, // 格式已在 handleCSV 轉為 YYYY-MM-DD
+            cat: item.cat,
+            amt: item.amt,
+            note: item.note,
+            reward: reward
+        });
+
+        // 4. 任務進度計數
+        if (s.tasks) {
+            s.tasks.dRec++; s.tasks.wRec++; s.tasks.mRec++;
+        }
+    });
+
+    // 5. 戰鬥判定 (鏡像自你的 record 核心)
+    const encounterCount = Math.floor(s.pool / 500);
+    if (encounterCount > 0) {
+        s.pool %= 500;
+        if (typeof battleQueue !== 'undefined') {
+            battleQueue += encounterCount;
+            if (!isInBattle) {
+                battleQueue--; 
+                isInBattle = true; 
+                if (typeof spawnEnemy === 'function') spawnEnemy(); 
+            }
+        }
+    }
+
+    // 6. 靜默結束：不跳出任何 alert
+    cancelImport();
+    updateUI();
+    if (window.renderCharts) renderCharts();
+}
+
+function confirmImport() {
+    if (tempData.length === 0) return;
+    tempData.forEach((item, index) => {
+        const reward = Math.floor(item.amt * 0.1);
+        const monthKey = item.date.substring(0, 7);
+        s.bal += reward;
+        s.pool += item.amt;
+        s.yearSums[monthKey] = (s.yearSums[monthKey] || 0) + item.amt;
+        s.catSums[item.cat] = (s.catSums[item.cat] || 0) + item.amt;
+        s.hist.push({
+            id: Date.now() + index + Math.random(),
+            date: item.date,
+            cat: item.cat,
+            amt: item.amt,
+            note: item.note,
+            reward: reward
+        });
+        s.tasks.dRec++; s.tasks.wRec++; s.tasks.mRec++;
+    });
+
+    const encounterCount = Math.floor(s.pool / 500);
+    if (encounterCount > 0) {
+        s.pool %= 500;
+        battleQueue += encounterCount;
+        if (!isInBattle) { battleQueue--; isInBattle = true; spawnEnemy(); }
+    }
+    cancelImport();
+    updateUI();
+    if (window.renderCharts) renderCharts();
+}
+
+function cancelImport() {
+    tempData = [];
+    document.getElementById('csvPreviewArea').style.display = "none";
+    document.getElementById('csvFile').value = ""; // 清除檔案選取狀態以便下次上傳
+}
+
+function confirmImport() {
+    if (tempData.length === 0) return;
+
+    tempData.forEach((item, index) => {
+        const reward = Math.floor(item.amt * 0.1);
+        const monthKey = item.date.substring(0, 7);
+
+        // 1. 同步全域數值 (s 為你的狀態物件)
+        s.bal += reward;
+        s.pool += item.amt;
+        s.yearSums[monthKey] = (s.yearSums[monthKey] || 0) + item.amt;
+        s.catSums[item.cat] = (s.catSums[item.cat] || 0) + item.amt;
+
+        // 2. 存入歷史紀錄
+        s.hist.push({
+            id: Date.now() + index + Math.random(),
+            date: item.date,
+            cat: item.cat,
+            amt: item.amt,
+            note: item.note,
+            reward: reward
+        });
+
+        // 3. 任務計數
+        s.tasks.dRec++; s.tasks.wRec++; s.tasks.mRec++;
+    });
+
+    // 4. 戰鬥觸發邏輯 (直接沿用你的 record 核心)
+    const encounterCount = Math.floor(s.pool / 500);
+    if (encounterCount > 0) {
+        s.pool %= 500;
+        battleQueue += encounterCount;
+        if (!isInBattle) {
+            battleQueue--; isInBattle = true; spawnEnemy();
+        }
+    }
+
+    // 關閉預覽並重新整理
+    cancelImport();
+    updateUI();
+    if (window.renderCharts) renderCharts(); 
+    alert(`正式導入成功！共 ${tempData.length} 筆資料。`);
+}
+
+function cancelImport() {
+    tempData = [];
+    document.getElementById('csvPreviewArea').style.display = "none";
 }
 
 function searchHistory() {
-    const start = document.getElementById('hStart').value;
-    const end = document.getElementById('hEnd').value;
+    const start = document.getElementById('hStart').value; // 格式: YYYY-MM-DD
+    const end = document.getElementById('hEnd').value;     // 格式: YYYY-MM-DD
     if(!start || !end) return;
+
     const list = document.getElementById('historyList');
     list.innerHTML = "";
-    s.hist.filter(h => h.date >= start && h.date <= end).forEach(h => { list.innerHTML += `<div style="font-size:12px; padding:5px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;"><span>${h.date} | ${h.cat} | $${h.amt}</span><button onclick="delHist(${h.id})" style="color:red; border:none; background:none;">刪除</button></div>`; });
-}
 
+    // 進行字串比較篩選
+    const filtered = s.hist.filter(h => h.date >= start && h.date <= end);
+
+    if (filtered.length === 0) {
+        list.innerHTML = "<div style='text-align:center; padding:20px; color:gray;'>區間內無資料</div>";
+        return;
+    }
+
+    filtered.forEach(h => { 
+        list.innerHTML += `
+            <div style="font-size:12px; padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; flex-direction:column;">
+                    <span style="font-weight:bold;">${h.date} | ${h.cat} | $${h.amt}</span>
+                    <span style="color:#666;">📝 ${h.note || '無備註'}</span>
+                </div>
+                <button onclick="delHist(${h.id})" style="color:red; border:none; background:none; cursor:pointer;">刪除</button>
+            </div>`; 
+    });
+}
 function delHist(id) {
     if(!confirm("確定刪除？這會影響統計結果。")) return;
     const idx = s.hist.findIndex(h => h.id === id);
