@@ -5,80 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PokeMaster v60.0 - 終極記帳冒險</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-    
-    <style>
-    :root { 
-        --p: #2d5a27; --bg: #f0f2f5; --text: #2c3e50; --accent: #f1c40f;
-        --mega: #9b59b6; --danger: #e74c3c; --white: #ffffff; --dark: #222;
-    }
-    body { font-family: -apple-system, "Noto Sans TC", sans-serif; background: #000; margin: 0; color: var(--text); overflow: hidden; }
-
-    /* 頁面層級 */
-    .page { display: none; width: 100vw; height: 100vh; background: var(--bg); position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; }
-    .page-active { display: block; animation: slideUp 0.3s ease-out; }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-    /* 戰鬥舞台 */
-    .battle-stage { height: 260px; position: relative; background: linear-gradient(#87ceeb 60%, #9cd39c 60%); border-bottom: 4px solid #333; overflow: hidden; }
-    .buddy-box { position: absolute; bottom: 30px; left: 40px; width: 110px; transition: 0.3s; z-index: 5; }
-    .enemy-box { position: absolute; top: 40px; right: 40px; width: 100px; text-align: center; }
-    #ballOverlay { position: absolute; width: 40px; display: none; z-index: 100; }
-    .hp-bar { 
-        width: 100%; 
-        height: 12px; 
-        background: #222 !important; 
-        border-radius: 6px; 
-        overflow: hidden; 
-        margin-top: 8px; 
-        border: 1px solid #000;
-        position: relative;
-        z-index: 20;
-    }
-
-    #hpFill { 
-        height: 100%; 
-        background-color: #4caf50 !important; 
-        width: 100%; 
-        display: block !important;
-        transition: width 0.5s ease; 
-    }
-
-    .encounter-progress { position: absolute; top: 10px; left: 10px; width: 120px; font-size: 10px; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 5px; }
-
-    /* 圖鑑佈局 */
-    .dex-container { display: flex; height: calc(100vh - 80px); }
-    .dex-sidebar { width: 35%; overflow-y: auto; background: #ddd; border-right: 1px solid #bbb; }
-    .dex-main { width: 65%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 20px; }
-    .dex-item { padding: 12px 5px; border-bottom: 1px solid #ccc; font-size: 13px; text-align: center; cursor: pointer; }
-    .dex-item.active { background: var(--p); color: white; }
-
-    /* 底部控制面板 (2列4欄) */
-    .control-panel { 
-        display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr);
-        gap: 2px; background: #111; height: 140px; position: fixed; bottom: 0; width: 100%; padding: 5px; box-sizing: border-box; 
-    }
-    .btn-nav { background: #333; color: white; border: none; font-size: 12px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.2s; }
-    .btn-nav:active { background: #555; }
-    .btn-nav i { font-size: 20px; margin-bottom: 4px; }
-
-    /* 通用元件 */
-    .card { background: var(--white); border-radius: 12px; padding: 15px; margin: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .msg-box { height: 45px; background: #fff; padding: 10px 15px; font-weight: bold; border-bottom: 1px solid #ddd; color: var(--p); display: flex; align-items: center; margin-bottom: 12px; } /* 文字列與下一個區塊距離 */
-    .btn-back { background: var(--dark); color: white; width: calc(100% - 20px); padding: 15px; margin: 10px; border: none; border-radius: 10px; font-weight: bold; }
-    .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; text-align: center; }
-    .res-icon { width: 30px; height: 30px; object-fit: contain; }
-
-    /* 記帳區 */
-    #inputArea {
-        margin-bottom: 12px; /* 記帳列與功能列間距 */
-    }
-
-    /* 功能列 */
-    .control-panel {
-        margin-top: 12px; /* 調整功能列間距，與上方區塊保持一致 */
-    }
-</style>
-    
     <style>
         :root { 
             --p: #2d5a27; --bg: #f0f2f5; --text: #2c3e50; --accent: #f1c40f;
@@ -249,18 +175,18 @@
     <div id="msg" class="msg-box">記錄生活的每一刻，同時踏上寶可夢訓練家的旅程！</div>
 
     <div id="inputArea" class="card">
-    <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:8px; margin-bottom:8px;">
-        <input type="date" id="recDate" style="padding:8px; border:1px solid #ccc; border-radius:5px;">
-        <select id="recCat" style="padding:8px; border:1px solid #ccc; border-radius:5px;">
-            <option>飲食</option><option>交通</option><option>娛樂</option><option>購物</option><option>居家</option><option>醫療</option><option>其他</option>
-        </select>
+        <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:8px; margin-bottom:8px;">
+            <input type="date" id="recDate" style="padding:8px; border:1px solid #ccc; border-radius:5px;">
+            <select id="recCat" style="padding:8px; border:1px solid #ccc; border-radius:5px;">
+                <option>飲食</option><option>交通</option><option>娛樂</option><option>購物</option><option>居家</option><option>醫療</option><option>其他</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <input id="recNote" type="text" placeholder="消費備註..." style="flex:1; padding:10px; border:1px solid #ccc; border-radius:5px;">
+            <input id="recAmt" type="number" placeholder="金額" style="width:90px; padding:10px; border:1px solid #ccc; border-radius:5px;">
+        </div>
+        <button onclick="record()" style="background:var(--p); color:white; width:100%; padding:14px; border:none; border-radius:8px; font-weight:bold; font-size:16px;">記帳並探索冒險</button>
     </div>
-    <div style="display:grid; grid-template-columns: 1fr 90px; gap:8px; margin-bottom:8px;">
-        <input id="recNote" type="text" placeholder="消費備註..." style="padding:10px; border:1px solid #ccc; border-radius:5px;">
-        <input id="recAmt" type="number" placeholder="金額" style="padding:10px; border:1px solid #ccc; border-radius:5px;">
-    </div>
-    <button onclick="record()" style="background:var(--p); color:white; width:100%; padding:14px; border:none; border-radius:8px; font-weight:bold; font-size:16px;">記帳並探索冒險</button>
-</div>
 
     <div id="battleActions" class="card" style="display:none; border:2px solid var(--p);">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
@@ -417,6 +343,21 @@
 
 <div id="historyPage" class="page">
     <div class="card">
+        <h3>📱 我的手機載具</h3>
+        <div style="background: white; padding: 15px; border-radius: 10px; text-align: center; border: 1px dashed #ccc;">
+            <div id="barcodeContainer" style="display: none; margin-bottom: 10px;">
+                <img id="barcodeImg" style="max-width: 100%; height: 80px;">
+                <div id="barcodeText" style="font-family: monospace; font-weight: bold; letter-spacing: 2px;"></div>
+            </div>
+            
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="carrierInput" placeholder="範例: /ABC+123" 
+                       style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; text-transform: uppercase;">
+                <button onclick="saveCarrier()" style="background: var(--p); color: white; border: none; padding: 0 15px; border-radius: 5px;">儲存</button>
+            </div>
+        </div>
+
+        <hr style="margin: 20px 0;">
         <h3>📜 紀錄與載入</h3>
         <button onclick="document.getElementById('csvFile').click()" style="background:var(--p); color:white; width:100%; padding:15px; border:none; border-radius:10px; margin-bottom:15px;">📑 導入財政部 CSV 載具資料</button>
         <input type="file" id="csvFile" style="display:none" onchange="handleCSV(event)">
@@ -618,6 +559,71 @@ window.onload = () => {
     updateUI();
     setInterval(tickMega, 1000);
 };
+// 這是對應的檢查函式，建議放在 window.onload 下方
+function checkDailyReset() {
+    const today = new Date().toDateString();
+    if(s.tasks.dailyDate !== today) {
+        s.tasks.dailyDate = today;
+        s.tasks.dRec = 0;      // 重置每日記帳數
+        s.tasks.dCatch = 0;    // 重置每日捕捉數
+        // 清除已領取清單中的每日任務標籤
+        s.tasks.claimed = s.tasks.claimed.filter(id => !id.includes('daily'));
+        localStorage.setItem('pokemaster_v60', JSON.stringify(s));
+    }
+}
+
+// 1. 修改 window.onload，加入載具初始化
+window.onload = () => {
+    const saved = localStorage.getItem('pokemaster_v60');
+    if(saved) {
+        const loaded = JSON.parse(saved);
+        s = { ...s, ...loaded }; 
+    }
+    document.getElementById('recDate').valueAsDate = new Date();
+    document.getElementById('chartMonthPicker').value = new Date().toISOString().substring(0, 7);
+    
+    updateUI();
+    initCarrier(); // <-- 這裡新增：初始化載具條碼
+    setInterval(tickMega, 1000);
+};
+
+// 2. 在 updateUI 附近加入這三個載具專用函式
+function initCarrier() {
+    const savedCarrier = localStorage.getItem('user_carrier');
+    if (savedCarrier) {
+        document.getElementById('carrierInput').value = savedCarrier;
+        renderBarcode(savedCarrier);
+    }
+}
+
+function saveCarrier() {
+    let code = document.getElementById('carrierInput').value.trim().toUpperCase();
+    
+    // 驗證格式：/ 開頭，後面 7 碼英數，總共 8 碼
+    const carrierReg = /^\/[A-Z0-9.+-]{7}$/;
+    if (!carrierReg.test(code)) {
+        alert("載具格式錯誤！請輸入 '/' 開頭的 8 碼字串 (例如 /ABC+123)");
+        return;
+    }
+    
+    localStorage.setItem('user_carrier', code);
+    renderBarcode(code);
+    showMsg("載具條碼已成功儲存！");
+}
+
+function renderBarcode(code) {
+    const img = document.getElementById('barcodeImg');
+    const container = document.getElementById('barcodeContainer');
+    const text = document.getElementById('barcodeText');
+
+    // 這裡是生成條碼的關鍵
+    // 使用 bwip-js API 生成標準 Code 39 條碼
+    const apiUrl = `https://bwipjs-api.metafloor.com/?bcid=code39&text=${encodeURIComponent(code)}&includetext=false&scale=3&height=10`;
+    
+    img.src = apiUrl;
+    text.innerText = code;
+    container.style.display = "block";
+}
 
 // --- [ 等級加成計算 ] ---
 function getLvlBonus() {
@@ -878,6 +884,11 @@ async function throwBall() {
         if(s.prog.mega >= 5) { s.prog.mega=0; s.items.mstone++; }
         s.tasks.dCatch++; s.tasks.wCatch++; s.tasks.mCatch++;
 
+        // 2. 核心調整：加入任務進度累積 (複製以下三行)
+        s.tasks.dCatch += 1; // 每日捕捉次數 +1
+        s.tasks.wCatch += 1; // 每週捕捉次數 +1
+        s.tasks.mCatch += 1; // 成就捕捉總數 +1
+
         // --- [ 個人式修正：給予經驗值 ] ---
         gainExp(10); // 👈 捕捉成功獲得 10 經驗
 
@@ -1036,15 +1047,33 @@ function buy(type, price) {
 }
 
 function renderTasks() {
-    const today = new Date().toDateString();
-    if(s.tasks.dailyDate !== today) { s.tasks.dailyDate = today; s.tasks.dRec = 0; s.tasks.dCatch = 0; s.tasks.claimed = s.tasks.claimed.filter(c => !c.includes('daily')); }
     const list = document.getElementById('taskList');
     const buildTask = (title, cur1, goal1, cur2, goal2, reward, id) => {
-        const done = cur1 >= goal1 && cur2 >= goal2;
+        // 判斷是否達成：如果目標是 0 視為自動達成該項，否則需 cur >= goal
+        const cond1 = goal1 === 0 ? true : cur1 >= goal1;
+        const cond2 = goal2 === 0 ? true : cur2 >= goal2;
+        const done = cond1 && cond2;
         const claimed = s.tasks.claimed.includes(id);
-        return `<div class="card" style="border-left:5px solid ${done?'#2ecc71':'#ccc'}"><b>${title}</b><br><small>記帳: ${cur1}/${goal1} | 捕捉: ${cur2}/${goal2}</small><br><button onclick="claimTask('${id}')" style="margin-top:5px; width:100%;" ${done && !claimed?'':'disabled'}>${claimed?'已領取':'領取 '+reward}</button></div>`;
+
+        return `
+            <div class="card" style="border-left:5px solid ${done ? (claimed ? '#95a5a6' : '#2ecc71') : '#ccc'}">
+                <b style="${claimed ? 'color:gray;' : ''}">${title}</b><br>
+                <small>進度 - 記帳: ${cur1}/${goal1} | 捕捉: ${cur2}/${goal2}</small><br>
+                <button onclick="claimTask('${id}')" 
+                        style="margin-top:5px; width:100%; height:35px; border-radius:5px; border:none; 
+                        background:${done && !claimed ? 'var(--p)' : '#eee'}; 
+                        color:${done && !claimed ? 'white' : '#666'};" 
+                        ${done && !claimed ? '' : 'disabled'}>
+                    ${claimed ? '已領取獎勵' : (done ? '領取 ' + reward : '尚未達成')}
+                </button>
+            </div>`;
     };
-    list.innerHTML = buildTask('每日任務', s.tasks.dRec, 1, s.tasks.dCatch, 1, '超級球 x2', 'daily_1') + buildTask('每週挑戰', s.tasks.wRec, 5, s.tasks.wCatch, 5, '進化石 x1 + 高級球 x3', 'weekly_1') + buildTask('記帳達人 (成就)', s.tasks.mRec, 50, 0, 0, '大師球 x1', 'ach_1') + buildTask('捕捉大師 (成就)', 0, 0, s.tasks.mCatch, 50, 'Mega石 x1', 'ach_2');
+
+    list.innerHTML = 
+        buildTask('每日任務', s.tasks.dRec, 1, s.tasks.dCatch, 1, '超級球 x2', 'daily_1') + 
+        buildTask('每週挑戰', s.tasks.wRec, 5, s.tasks.wCatch, 5, '進化石 x1 + 高級球 x3', 'weekly_1') + 
+        buildTask('記帳達人 (成就)', s.tasks.mRec, 50, 0, 0, '大師球 x1', 'ach_1') + 
+        buildTask('捕捉大師 (成就)', 0, 0, s.tasks.mCatch, 50, 'Mega石 x1', 'ach_2');
 }
 
 function claimTask(id) {
