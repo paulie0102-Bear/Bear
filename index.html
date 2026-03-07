@@ -197,7 +197,7 @@
             <select id="ballSelect" style="flex:1; padding:10px;"></select>
             <button onclick="throwBall()" style="background:var(--p); color:white; padding:0 25px; border:none; border-radius:8px; font-weight:bold;">投球</button>
         </div>
-        <div id="turnInfo" style="font-size:11px; color:gray; margin-top:8px; text-align:center;">剩餘回合：7 (在此之前不會逃跑)</div>
+        <div id="turnInfo" style="font-size:11px; color:gray; margin-top:8px; text-align:center;">最大回合：7 (在此之前不會逃跑)</div>
     </div>
 
     <div class="control-panel">
@@ -271,6 +271,7 @@
     <div class="card">
         <h3>👤 訓練家資訊</h3>
         <p>當前稱號：<b id="st-title" style="color:var(--mega);">初出茅廬</b></p>
+        <p>訓練家等級：<b id="st-level" style="color:var(--accent);">Lv. 1</b></p>
         <p>圖鑑進度：<span id="st-dex-count">0</span> / 493</p>
         <hr>
         <p>進化石進度 (<span id="p-evo-txt">0</span>/5)</p>
@@ -279,8 +280,8 @@
         <div class="hp-bar"><div id="p-mega-bar" style="height:100%; background:var(--mega); width:0%;"></div></div>
         <hr>
         <div style="font-size:14px; line-height:1.8;">
-            <div>🎯 綜合捕捉率：<b id="st-catch-rate">30%</b></div>
-            <div>✨ 綜合閃光率：<b id="st-shiny-rate">5%</b></div>
+            <div>🎯 基礎捕捉率：<b id="st-catch-rate">30%</b></div>
+            <div>✨ 基礎閃光率：<b id="st-shiny-rate">5%</b></div>
             <div id="mega-timer" style="color:var(--mega); display:none;">🧬 Mega 強化中：<span id="mega-time-left">00:00</span></div>
         </div>
     </div>
@@ -469,52 +470,52 @@ function getLvlBonus() {
 // --- [ 核心數據結構 ] ---
 const API = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites";
 const MEGA_ABLE = [
-    3,   // 妙蛙花
-    6,   // 噴火龍 (X/Y)
-    9,   // 水箭龜
-    15,  // 大針蜂
-    18,  // 比雕
-    65,  // 胡地
-    80,  // 呆河馬
-    94,  // 耿鬼
-    115, // 袋獸
-    127, // 大甲
-    130, // 暴鯉龍
-    142, // 化石翼龍
-    150, // 超夢 (X/Y)
-    181, // 電龍
-    208, // 大鋼蛇
-    212, // 巨鉗螳螂
-    214, // 赫拉克羅斯
-    229, // 黑魯加
-    248, // 班基拉斯
-    254, // 蜥蜴王
-    257, // 火雞戰士
-    260, // 巨沼怪
-    282, // 沙奈朵
-    302, // 勾魂眼
-    303, // 大嘴娃
-    306, // 波士可多拉
-    308, // 恰雷姆
-    310, // 雷電獸
-    319, // 巨牙鯊
-    323, // 噴火駝
-    334, // 七夕青鳥
-    354, // 詛咒娃娃
-    359, // 阿勃梭魯
-    362, // 冰鬼護
-    373, // 暴飛龍
-    376, // 巨金怪
-    380, // 拉帝亞斯
-    381, // 拉帝歐斯
-    382, // 蓋歐卡 (原始回歸)
-    383, // 固拉多 (原始回歸)
-    384, // 烈空坐
-    428, // 長耳兔
-    445, // 烈咬陸鯊
-    448, // 路卡利歐
-    460, // 暴雪王
-    475  // 艾路雷朵
+    1, 2, 3,     // 妙蛙種子、妙蛙草、妙蛙花
+    4, 5, 6,     // 小火龍、火恐龍、噴火龍
+    7, 8, 9,     // 傑尼龜、卡米龜、水箭龜
+    13, 14, 15,  // 獨角蟲、鐵殼蛹、大針蜂
+    16, 17, 18,  // 波波、比比鳥、大比鳥
+    63, 64, 65,  // 凱西、勇基拉、胡地
+    79, 80,      // 呆呆獸、呆殼獸
+    92, 93, 94,  // 鬼斯、鬼斯通、耿鬼
+    95, 208,     // 大岩蛇、大鋼蛇
+    115,         // 袋獸
+    123, 212,    // 飛天螳螂、巨鉗螳螂
+    127,         // 大甲 (凱羅斯)
+    129, 130,    // 鯉魚王、暴鯉龍
+    142,         // 化石翼龍
+    150,         // 超夢
+    179, 180, 181, // 咩利羊、茸茸羊、電龍
+    214,         // 赫拉克羅斯
+    228, 229,    // 戴魯比、黑魯加
+    246, 247, 248, // 幼基拉斯、沙基拉斯、班基拉斯
+    252, 253, 254, // 木守宮、森林蜥蜴、蜥蜴王
+    255, 256, 257, // 火稚雞、力壯雞、火焰雞
+    258, 259, 260, // 水躍魚、沼躍魚、巨沼怪
+    280, 281, 282, // 拉魯拉絲、奇魯莉安、沙奈朵
+    302,         // 勾魂眼
+    303,         // 大嘴娃
+    304, 305, 306, // 可可多拉、可多拉、波士可多拉
+    307, 308,    // 瑪沙那、恰雷姆
+    309, 310,    // 落雷獸、雷電獸
+    318, 319,    // 利牙魚、巨牙鯊
+    322, 323,    // 呆火駝、噴火駝
+    333, 334,    // 青綿鳥、七夕青鳥
+    353, 354,    // 怨影娃娃、詛咒娃娃
+    359,         // 阿勃梭魯
+    361, 362,    // 雪童子、冰鬼護
+    371, 372, 373, // 寶貝龍、甲殼龍、暴飛龍
+    374, 375, 376, // 鐵啞鈴、金屬怪、巨金怪
+    380,         // 拉帝亞斯
+    381,         // 拉帝歐斯
+    382,         // 蓋歐卡
+    383,         // 固拉多
+    384,         // 烈空坐
+    427, 428,    // 卷卷耳、長耳兔
+    443, 444, 445, // 圓陸鯊、尖牙陸鯊、烈咬陸鯊
+    447, 448,    // 利歐路、路卡利歐
+    459, 460,    // 雪笠怪、暴雪王
+    475          // 艾路雷朵
 ];
 // 分支進化字典
 const EVO_BRANCHES = {
@@ -631,20 +632,27 @@ function getLvlBonus() {
     return Math.floor((s.lvl - 1) * 1.5); 
 }
 // --- [ 經驗值與升級系統 ] ---
-function gainExp(amt) {
-    s.exp += amt;
-    // 如果經驗值超過門檻就升級
-    while (s.exp >= s.nextExp) {
-        s.exp -= s.nextExp;
-        s.lvl++;
-        s.nextExp = Math.floor(s.nextExp * 1.2); // 每級提升 20% 難度
-        alert(`🎊 恭喜！你升級到了 Lv.${s.lvl}！\n基礎捕捉率提升了！`);
+function gainExp(amount) {
+    s.exp += amount;
+    // 假設 100 經驗升一級
+    if (s.exp >= 100) {
+        s.exp -= 100;
+        s.lv = (s.lv || 1) + 1;
+        showMsg(`🌟 訓練家等級提升至 Lv.${s.lv}！`);
+        updateUI(); // 👈 這裡呼叫，畫面才會跳動
     }
-    updateUI(); // 確保玩家頁面數字會跳動
 }
 function updateUI() {
     localStorage.setItem('pokemaster_v60', JSON.stringify(s));
-    
+    const stLevel = document.getElementById('st-level');
+
+    if (stLevel) stLevel.innerText = `Lv. ${s.lv || 1}`;
+
+
+
+    const stDex = document.getElementById('st-dex-count');
+
+    if (stDex) stDex.innerText = s.owned.length;
     document.getElementById('shop-bal').innerText = s.bal;
     document.getElementById('enc-prog').innerText = s.pool;
     document.getElementById('st-dex-count').innerText = s.owned.length;
@@ -840,7 +848,7 @@ function spawnEnemy() {
 
     const displayName = `No.${String(id).padStart(3, '0')} ${curE.name}`;
     document.getElementById('enemyName').innerText = `${displayName}${isShiny ? ' (✨閃光)' : ''}`;
-    document.getElementById('turnInfo').innerText = "剩餘回合：7 (在此之前不會逃跑)";
+    document.getElementById('turnInfo').innerText = "最大回合：7 (在此之前不會逃跑)";
     document.getElementById('msg').innerText = `✨ 野生的 ${curE.name} 出現了！`;
 
     // 延遲撥開草叢，之後恢復動畫
@@ -879,7 +887,10 @@ async function throwBall() {
         if(curE.isShiny && !s.shinyOwned.includes(curE.id)) s.shinyOwned.push(curE.id);
         
         s.prog.evo++;
-        if(MEGA_ABLE.includes(curE.id)) s.prog.mega++;
+        if (MEGA_ABLE.includes(Number(curE.id))) {
+        s.prog.mega++; 
+        console.log(`✅ 成功累積 Mega 能量：No.${curE.id}，目前進度：${s.prog.mega}/5`);
+    }
         if(s.prog.evo >= 5) { s.prog.evo=0; s.items.stone++; }
         if(s.prog.mega >= 5) { s.prog.mega=0; s.items.mstone++; }
         s.tasks.dCatch++; s.tasks.wCatch++; s.tasks.mCatch++;
