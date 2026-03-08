@@ -34,13 +34,22 @@
     z-index: 20;
 }
 
+/* 基礎設定：移除原本的背景色，保留動畫 */
 #hpFill { 
     height: 100%; 
-    background-color: #4caf50 !important; 
     width: 100%; 
     display: block !important;
-    transition: width 0.5s ease; 
+    transition: width 0.5s ease, background-color 0.3s ease; /* 增加顏色過渡動畫 */
 }
+
+/* 狀態 1：健康 (50% 以上) */
+.hp-green { background-color: #4caf50 !important; }
+
+/* 狀態 2：虛弱 (25% ~ 50%) */
+.hp-yellow { background-color: #ffeb3b !important; }
+
+/* 狀態 3：瀕死 (25% 以下) */
+.hp-red { background-color: #f44336 !important; }
         .encounter-progress { position: absolute; top: 10px; left: 10px; width: 120px; font-size: 10px; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 5px; }
 
         /* 圖鑑佈局 */
@@ -951,6 +960,8 @@ function spawnEnemy() {
     const img = document.getElementById('enemyImg');
     const hpFill = document.getElementById('hpFill');
 
+
+
     // 1. 先顯示區域 (關鍵：區域不顯示，寬度計算就可能失敗)
     document.getElementById('enemyArea').style.display = "block";
     document.getElementById('battleActions').style.display = "block";
@@ -960,7 +971,8 @@ function spawnEnemy() {
     if (hpFill) {
         hpFill.style.transition = "none"; 
         hpFill.style.width = "100%";
-        hpFill.style.backgroundColor = "#4caf50";
+        hpFill.classList.remove('hp-yellow', 'hp-red');
+        hpFill.classList.add('hp-green');
         void hpFill.offsetWidth; // 觸發重繪，解決黑色 0% 渲染錯誤
     }
 
@@ -1077,6 +1089,15 @@ function attack() {
     curE.hp = Math.max(0, curE.hp - 25); 
     document.getElementById('hpFill').style.width = curE.hp + "%";
     
+hpFill.classList.remove('hp-green', 'hp-yellow', 'hp-red');
+    if (curE.hp > 50) {
+        hpFill.classList.add('hp-green');
+    } else if (curE.hp > 25) {
+        hpFill.classList.add('hp-yellow');
+    } else {
+        hpFill.classList.add('hp-red');
+    }
+
     // --- [ 個人式修正：判定打倒邏輯 ] ---
     if(curE.hp <= 0) {
         // HP 歸零，判定為打倒！
