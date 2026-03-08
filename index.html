@@ -451,7 +451,7 @@
     </div>
 </div>
 <hr>
-        <p style="font-size:13px; color:gray;">手動紀錄查詢 (限30天內，單次區間7天)</p>
+        <p style="font-size:13px; color:gray;">手動紀錄查詢)</p>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:10px;">
             <input type="date" id="hStart"> <input type="date" id="hEnd">
         </div>
@@ -648,19 +648,41 @@ window.onload = () => {
     updateUI();
     setInterval(tickMega, 1000);
 };
-// 這是對應的檢查函式，建議放在 window.onload 下方
-function checkDailyReset() {
-    const today = new Date().toDateString();
-    if(s.tasks.dailyDate !== today) {
+// 任務重置檢查函式 (含每日與每週)
+function checkTaskReset() {
+    const now = new Date();
+    const today = now.toDateString();
+    
+    // 計算「本週」標籤 (以該週週一為基準)
+    const day = now.getDay(); // 0(日) 到 6(六)
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1); // 調整至週一
+    const mondayDate = new Date(now.setDate(diff)).toDateString();
+
+    let hasChanged = false;
+
+    // 1. 每日重置判定
+    if (s.tasks.dailyDate !== today) {
         s.tasks.dailyDate = today;
-        s.tasks.dRec = 0;      // 重置每日記帳數
-        s.tasks.dCatch = 0;    // 重置每日捕捉數
-        // 清除已領取清單中的每日任務標籤
+        s.tasks.dRec = 0;   
+        s.tasks.dCatch = 0; 
         s.tasks.claimed = s.tasks.claimed.filter(id => !id.includes('daily'));
+        hasChanged = true;
+    }
+
+    // 2. 每週重置判定 (每週一重置)
+    if (s.tasks.weeklyDate !== mondayDate) {
+        s.tasks.weeklyDate = mondayDate;
+        s.tasks.wRec = 0;   
+        s.tasks.wCatch = 0; 
+        s.tasks.claimed = s.tasks.claimed.filter(id => !id.includes('weekly'));
+        hasChanged = true;
+    }
+
+    // 如果有變動，立即存檔
+    if (hasChanged) {
         localStorage.setItem('pokemaster_v60', JSON.stringify(s));
     }
 }
-
 // 1. 修改 window.onload，加入載具初始化
 window.onload = () => {
     const saved = localStorage.getItem('pokemaster_v60');
@@ -1229,7 +1251,7 @@ function renderTasks() {
         buildTask('每日任務', s.tasks.dRec, 1, s.tasks.dCatch, 1, '超級球 x2', 'daily_1') + 
         buildTask('每週挑戰', s.tasks.wRec, 5, s.tasks.wCatch, 5, '進化石 x1 + 高級球 x3', 'weekly_1') + 
         buildTask('記帳達人 (成就)', s.tasks.mRec, 50, 0, 0, '大師球 x1', 'ach_1') + 
-        buildTask('捕捉大師 (成就)', 0, 0, s.tasks.mCatch, 50, 'Mega石 x1', 'ach_2');
+        buildTask('捕捉大師 (成就)', 0, 0, s.tasks.mCatch, 30, 'Mega石 x1', 'ach_2');
 }
 
 function claimTask(id) {
@@ -1249,11 +1271,21 @@ function claimTask(id) {
         }
     }
     else if (id === 'ach_2') { 
-        s.items.mstone++; 
+        // --- 捕捉大師 (每 30 隻換 1 Mega石) ---
+        // 比照 ach_1 的邏輯：計算可領取次數
+        const claimCount = Math.floor(s.tasks.mCatch / 30); 
+        
+        if (claimCount > 0) {
+            s.items.mstone += claimCount;  // 增加 Mega 石數量
+            s.tasks.mCatch -= claimCount * 30; // 🔴 關鍵：扣除已使用的捕捉數量
+            alert(`🎉 恭喜！消耗 ${claimCount * 30} 隻捕捉進度，獲得 Mega石 x ${claimCount}！`);
+        }
     }
 
-    s.tasks.claimed.push(id);
-    updateUI(); renderTasks();
+    // 🔴 存檔與 UI 更新 (確保數據不會丟失)
+    if (typeof saveData === 'function') saveData(); 
+    updateUI(); 
+    renderTasks();
 }
 
 let chartInstance = null;
