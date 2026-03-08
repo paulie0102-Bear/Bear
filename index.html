@@ -51,41 +51,14 @@
         .dex-item.active { background: var(--p); color: white; }
 
         /* 底部控制面板 (2列4欄) */
-.control-panel { 
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 2px;
-    background: #111;
-    height: 140px;
-    position: fixed;
-    bottom: 20px;      /* 與瀏覽器底部的距離 */
-    width: 100%;
-    padding: 5px;
-    box-sizing: border-box;
-}
+        .control-panel { 
+            display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr);
+            gap: 2px; background: #111; height: 140px; position: fixed; bottom: 0; width: 100%; padding: 5px; box-sizing: border-box; 
+        }
+        .btn-nav { background: #333; color: white; border: none; font-size: 12px; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-nav:active { background: #555; }
+        .btn-nav i { font-size: 20px; margin-bottom: 4px; }
 
-/* 按鈕樣式 */
-.btn-nav { 
-    background: #333; 
-    color: white; 
-    border: none; 
-    font-size: 12px; 
-    border-radius: 4px; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    transition: 0.2s; 
-}
-
-.btn-nav:active { background: #555; }
-.btn-nav i { font-size: 20px; margin-bottom: 4px; }
-
-/* 中間內容底部留白，避免被控制面板蓋住 */
-#mainContent {
-    margin-bottom: 160px; /* 至少比控制面板高度 + bottom 的距離大 */
-}
         /* 通用元件 */
         .card { background: var(--white); border-radius: 12px; padding: 15px; margin: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .msg-box { height: 45px; background: #fff; padding: 10px 15px; font-weight: bold; border-bottom: 1px solid #ddd; color: var(--p); display: flex; align-items: center; }
@@ -567,6 +540,10 @@ let currentChartType = 'year';
 function getPkmnName(id) {
     return POKEMON_NAMES[id] || `No.${id}`;
 }
+function getLvlBonus() {
+    // 每升 1 級，基礎捕捉率增加 1.5%
+    return Math.floor((s.lvl - 1) * 1.5);
+}
 
 
 // --- [ 核心數據結構 ] ---
@@ -632,9 +609,9 @@ let s = {
     pool: 0, 
     items: {poke:10, great:5, ultra:0, master:1, stone:0, mstone:0},
     prog: {evo:0, mega:0}, 
-    buddyId: 25, 
+    buddyId: 25,
     isShinyBuddy: false, 
-    owned: [25], 
+    owned: [25,133], 
     shinyOwned: [], 
     megaUntil: 0, 
     currentMegaType: "",
@@ -731,7 +708,7 @@ function renderBarcode(code) {
 // --- [ 等級加成計算 ] ---
 function getLvlBonus() {
     // 每升 1 級，基礎捕捉率增加 1.5%
-    return Math.floor((s.lv - 1) * 1.5); 
+    return Math.floor((s.lvl - 1) * 1.5); 
 }
 // --- [ 經驗值與升級系統 ] ---
 function gainExp(amount) {
@@ -739,8 +716,8 @@ function gainExp(amount) {
     // 假設 100 經驗升一級
     if (s.exp >= 100) {
         s.exp -= 100;
-        s.lv = (s.lv || 1) + 1;
-        showMsg(`🌟 訓練家等級提升至 Lv.${s.lv}！`);
+        s.lvl = (s.lvl || 1) + 1;
+        showMsg(`🌟 訓練家等級提升至 Lv.${s.lvl}！`);
         updateUI(); // 👈 這裡呼叫，畫面才會跳動
     }
 }
@@ -753,7 +730,7 @@ function updateUI() {
     localStorage.setItem('pokemaster_v60', JSON.stringify(s));
     const stLevel = document.getElementById('st-level');
 
-    if (stLevel) stLevel.innerText = `Lv. ${s.lv || 1}`;
+    if (stLevel) stLevel.innerText = `Lv. ${s.lvl || 1}`;
 
 
 
@@ -778,19 +755,59 @@ function updateUI() {
     document.getElementById('st-shiny-rate').innerText = finalShiny + "%";
 
     // 夥伴圖片渲染邏輯 (含 Mega 分支)
-    let bImg;
-    if(isMega) {
-        let suffix = s.currentMegaType ? `-mega-${s.currentMegaType}` : "-mega";
-        bImg = `${API}/pokemon/other/official-artwork/${s.buddyId}${suffix}.png`;
-    } else {
-        bImg = `${API}/pokemon/${s.isShinyBuddy?'shiny/':''}${s.buddyId}.png`;
-    }
-    const bEl = document.getElementById('buddyImg');
-    bEl.src = bImg;
-    bEl.onerror = () => { if(isMega) bEl.src = `${API}/pokemon/${s.buddyId}${s.currentMegaType?'-mega-'+s.currentMegaType:'-mega'}.png`; };
-    isMega ? bEl.classList.add('mega-fx') : bEl.classList.remove('mega-fx');
+// --- 夥伴圖片渲染邏輯 (支援特殊 ID 映射版) ---
+const isMegaActive = Date.now() < s.megaUntil; 
+const bEl = document.getElementById('buddyImg');
 
-    renderBag();
+// 1~493 完整 Mega 對照表
+const megaMapping = {
+    3: 10001, 9: 10002, 15: 10003, 18: 10004, 65: 10005, 80: 10071, 94: 10006, 
+    115: 10007, 127: 10008, 130: 10009, 142: 10010, 181: 10012, 208: 10013, 
+    212: 10014, 214: 10015, 229: 10016, 248: 10017, 254: 10019, 257: 10020, 
+    260: 10021, 282: 10022, 302: 10066, 303: 10023, 306: 10024, 308: 10025, 
+    310: 10026, 319: 10070, 323: 10069, 334: 10067, 354: 10027, 359: 10028, 
+    362: 10068, 373: 10029, 376: 10030, 380: 10031, 381: 10032, 384: 10033, 
+    428: 10073, 445: 10036, 448: 10037, 460: 10038, 475: 10079
+};
+
+let bImg;
+if (isMegaActive) {
+    let displayId = s.buddyId;
+
+    // A. 處理特殊分支 (噴火龍 6, 超夢 150)
+    if (s.buddyId === 6) {
+        displayId = (s.currentMegaType === 'x') ? 10034 : 10035;
+    } else if (s.buddyId === 150) {
+        displayId = (s.currentMegaType === 'x') ? 10043 : 10044;
+    } 
+    // B. 處理清單中其他的 Mega (查表)
+    else if (megaMapping[s.buddyId]) {
+        displayId = megaMapping[s.buddyId];
+    }
+
+    // 使用官方藝術圖路徑 (Official Artwork)
+    bImg = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${displayId}.png`;
+    bEl.classList.add('mega-fx');
+} else {
+    // 一般狀態 (含閃光判定)
+    bImg = `${API}/pokemon/${s.isShinyBuddy ? 'shiny/' : ''}${s.buddyId}.png`;
+    bEl.classList.remove('mega-fx');
+}
+
+bEl.src = bImg;
+
+// 備援機制：如果 Official Artwork 讀取失敗，回退到普通圖片
+bEl.onerror = () => { 
+    if (isMegaActive) {
+        // 如果連特殊的 ID 都抓不到，最後才嘗試你原本的 -mega 命名法
+        let suffix = s.currentMegaType ? `-mega-${s.currentMegaType}` : "-mega";
+        bEl.src = `${API}/pokemon/${s.buddyId}${suffix}.png`; 
+    } else {
+        bEl.src = `${API}/pokemon/${s.buddyId}.png`;
+    }
+};
+
+renderBag();
 }
 
 function getTitle(count) {
@@ -1000,7 +1017,7 @@ async function throwBall() {
     }
         if(s.prog.evo >= 5) { s.prog.evo=0; s.items.stone++; }
         if(s.prog.mega >= 5) { s.prog.mega=0; s.items.mstone++; }
-        s.tasks.dCatch++; s.tasks.wCatch++; s.tasks.mCatch++;
+    
 
         // 2. 核心調整：加入任務進度累積 (複製以下三行)
         s.tasks.dCatch += 1; // 每日捕捉次數 +1
