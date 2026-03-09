@@ -1297,27 +1297,11 @@ function renderTasks() {
 
 function claimTask(id) {
     if (id === 'daily_1') { 
-        // 檢查進度是否達標 (假設 5 筆) 且 尚未領取過
-        if (s.tasks.dRec >= 5 && !s.tasks.dClaimed) {
-            s.items.great += 2; 
-            s.tasks.dClaimed = true; // 🔴 標記為已領取
-            alert("🎉 領取每日獎勵：超級球 x2！");
-        } else if (s.tasks.dClaimed) {
-            alert("今天已經領過囉！");
-            return;
-        }
+        s.items.great += 2; 
     }
     else if (id === 'weekly_1') { 
-        // 檢查每週進度是否達標 (假設 50 筆) 且 尚未領取過
-        if (s.tasks.wRec >= 50 && !s.tasks.wClaimed) {
-            s.items.stone++; 
-            s.items.ultra += 3; 
-            s.tasks.wClaimed = true; // 🔴 標記為已領取
-            alert("🎉 領取每週獎勵：進化石 x1、高級球 x3！");
-        } else if (s.tasks.wClaimed) {
-            alert("本週已經領過囉！");
-            return;
-        }
+        s.items.stone++; 
+        s.items.ultra += 3; 
     }
     else if (id === 'ach_1') { 
         // 根據 mRec 每達到 50 就領取一次大師球
