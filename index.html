@@ -830,65 +830,53 @@ function updateUI() {
     document.getElementById('st-shiny-rate').innerText = finalShiny + "%";
 
     // 夥伴圖片渲染邏輯 (含 Mega 分支)
-// --- 夥伴圖片渲染邏輯 (支援特殊 ID 映射版) ---
+// --- 夥伴圖片渲染邏輯 (引用本地資料夾版) ---
 const isMegaActive = Date.now() < s.megaUntil; 
 const bEl = document.getElementById('buddyImg');
 
-// 根據是否 Mega 進化來決定大小
+// 根據是否 Mega 進化決定大小與樣式
 if (isMegaActive) {
-    bEl.style.width = "200px";  // Mega 進化後的大小
+    bEl.style.width = "200px"; 
     bEl.style.height = "200px";
+    bEl.classList.add('mega-fx');
 } else {
-    bEl.style.width = "150px";   // 平時的大小
+    bEl.style.width = "150px";
     bEl.style.height = "150px";
+    bEl.classList.remove('mega-fx');
 }
-
-// 1~493 完整 Mega 對照表
-const megaMapping = {
-    3: 10001, 9: 10002, 15: 10003, 18: 10004, 65: 10005, 80: 10071, 94: 10006, 
-    115: 10007, 127: 10008, 130: 10009, 142: 10010, 181: 10012, 208: 10013, 
-    212: 10014, 214: 10015, 229: 10016, 248: 10017, 254: 10019, 257: 10020, 
-    260: 10021, 282: 10022, 302: 10066, 303: 10023, 306: 10024, 308: 10025, 
-    310: 10026, 319: 10070, 323: 10069, 334: 10067, 354: 10027, 359: 10028, 
-    362: 10068, 373: 10029, 376: 10030, 380: 10031, 381: 10032, 384: 10033, 
-    428: 10073, 445: 10036, 448: 10037, 460: 10038, 475: 10079
-};
 
 let bImg;
 if (isMegaActive) {
-    let displayId = s.buddyId;
+    // 確定資料夾 (一般或閃光)
+    const folder = s.isShinyBuddy ? 'shiny' : 'normal';
+    
+    // 確定檔案名稱
+    let fileName = s.buddyId; 
 
     // A. 處理特殊分支 (噴火龍 6, 超夢 150)
-    if (s.buddyId === 6) {
-        displayId = (s.currentMegaType === 'x') ? 10034 : 10035;
-    } else if (s.buddyId === 150) {
-        displayId = (s.currentMegaType === 'x') ? 10043 : 10044;
-    } 
-    // B. 處理清單中其他的 Mega (查表)
-    else if (megaMapping[s.buddyId]) {
-        displayId = megaMapping[s.buddyId];
+    if (s.buddyId === 6 || s.buddyId === 150) {
+        // 取得字尾 x 或 y (預設為 x)
+        const suffix = s.currentMegaType || 'x';
+        fileName = `${s.buddyId}${suffix}`;
     }
 
-    // 使用官方藝術圖路徑 (Official Artwork)
-    bImg = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${displayId}.png`;
-    bEl.classList.add('mega-fx');
+    // 引用你上傳到 GitHub 的本地資料夾路徑
+    // 假設你的路徑是 img/mega/normal/384.png
+    bImg = `./img/mega/${folder}/${fileName}.png`;
+
 } else {
-    // 一般狀態 (含閃光判定)
-    bImg = `${API}/pokemon/${s.isShinyBuddy ? 'shiny/' : ''}${s.buddyId}.png`;
-    bEl.classList.remove('mega-fx');
+    // 一般狀態 (維持原樣或也改用本地圖)
+    // 如果一般狀態也想用本地圖，可以改為 `./img/pokemon/${s.isShinyBuddy ? 'shiny' : 'normal'}/${s.buddyId}.png`
+    const apiPath = s.isShinyBuddy ? 'shiny/' : '';
+    bImg = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${apiPath}${s.buddyId}.png`;
 }
 
 bEl.src = bImg;
 
-// 備援機制：如果 Official Artwork 讀取失敗，回退到普通圖片
+// 備援機制：如果本地圖載入失敗，回退到官方 API 的一般圖片
 bEl.onerror = () => { 
-    if (isMegaActive) {
-        // 如果連特殊的 ID 都抓不到，最後才嘗試你原本的 -mega 命名法
-        let suffix = s.currentMegaType ? `-mega-${s.currentMegaType}` : "-mega";
-        bEl.src = `${API}/pokemon/${s.buddyId}${suffix}.png`; 
-    } else {
-        bEl.src = `${API}/pokemon/${s.buddyId}.png`;
-    }
+    bEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${s.buddyId}.png`;
+    console.warn(`無法載入本地圖片: ${bImg}，已切換至備援路徑。`);
 };
 
 renderBag();
