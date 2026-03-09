@@ -1033,35 +1033,36 @@ function updateGiftButtons() {
 }
 
 
-// 計算記帳天數
+// --- [ 1. 核心邏輯：計算記帳天數 ] ---
 function getAccountAge() {
+    // 如果沒有起始日，則初始化
     if (!s.firstDate) {
-        s.firstDate = new Date().toISOString().split('T')[0]; // 記錄第一天
+        s.firstDate = new Date().toISOString().split('T')[0];
+        
+        // 🔴 安全存檔：檢查 saveData 是否存在，不存在則手動寫入 localStorage
+        if (typeof saveData === 'function') {
+            saveData();
+        } else {
+            localStorage.setItem('pokemaster_v60', JSON.stringify(s));
+        }
         return 0;
     }
-    const diffTime = Math.abs(new Date() - new Date(s.firstDate));
+
+    const start = new Date(s.firstDate);
+    const today = new Date();
+    // 計算毫秒差並轉為天數
+    const diffTime = Math.abs(today - start);
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
 }
 
-// 渲染冠軍按鈕時的判斷
-function checkChampionUnlock(key) {
-    const days = getAccountAge();
-    if (days < 100) {
-        alert(`🔒 這是冠軍的認可。你需要持續記帳滿 100 天才能領取！（目前：${days}/100 天）`);
-        return false;
-    }
-    return true;
-}
-    
-// 冠軍按鈕點擊事件範例
-function onChampionBtnClick(key) {
-    if (checkChampionUnlock(key)) {
-        openGiftSelector(key, true); // 第二個參數 true 代表是冠軍模式
-    }
-}
-
+// --- [ 2. UI 處理：鎖定已領取的禮物 ] ---
 function lockClaimedGifts() {
     if (!s.claimedGifts) return;
+    
+    // 同時檢查天數，更新冠軍按鈕狀態
+    const days = getAccountAge();
+    const champions = ['red', 'lance', 'steven', 'cynthia'];
+
     s.claimedGifts.forEach(docKey => {
         const btn = document.getElementById(`btn-gift-${docKey}`);
         if (btn) {
@@ -1070,23 +1071,35 @@ function lockClaimedGifts() {
             btn.style.opacity = "0.5";
         }
     });
+
+    // 額外處理：若未滿 100 天，自動鎖定冠軍按鈕並顯示剩餘天數
+    champions.forEach(key => {
+        const btn = document.getElementById(`btn-gift-${key}`);
+        if (btn && !s.claimedGifts.includes(key) && days < 100) {
+            btn.disabled = true;
+            btn.innerText = `🔒 剩餘 ${100 - days} 天`;
+        }
+    });
 }
 
-function getAccountAge() {
-    if (!s.firstDate) {
-        // 如果是新玩家或沒紀錄，就以今天為起始日
-        s.firstDate = new Date().toDateString();
-        saveData();
-        return 0;
+// --- [ 3. 冠軍按鈕點擊判定 ] ---
+function checkChampionUnlock(key) {
+    const days = getAccountAge();
+    if (days < 100) {
+        alert(`🔒 這是冠軍的認可。\n你需要持續記帳滿 100 天才能領取！（目前：${days}/100 天）`);
+        return false;
     }
-    const start = new Date(s.firstDate);
-    const today = new Date();
-    // 計算毫秒差並轉為天數
-    const diffTime = Math.abs(today - start);
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    return true;
 }
 
+function onChampionBtnClick(key) {
+    if (checkChampionUnlock(key)) {
+        // 確認 unlock 後才開啟選擇器，並帶入 true (冠軍模式)
+        if (typeof openGiftSelector === 'function') {
+            openGiftSelector(key, true);
+        }
+    }
+}
 
 
 
