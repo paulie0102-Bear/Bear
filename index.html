@@ -1296,12 +1296,16 @@ function renderTasks() {
 }
 
 function claimTask(id) {
-    if (id === 'daily_1') { 
-        s.items.great += 2; 
+    if (id === 'daily_1') {
+        if (s.dailyClaimed) return; // 🔴 檢查鎖
+        s.items.great += 2;
+        s.dailyClaimed = true;      // 🔴 加上鎖
     }
-    else if (id === 'weekly_1') { 
-        s.items.stone++; 
-        s.items.ultra += 3; 
+    else if (id === 'weekly_1') {
+        if (s.weeklyClaimed) return; // 🔴 檢查鎖
+        s.items.stone++;
+        s.items.ultra += 3;
+        s.weeklyClaimed = true;      // 🔴 加上鎖
     }
     else if (id === 'ach_1') { 
         // 根據 mRec 每達到 50 就領取一次大師球
