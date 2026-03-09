@@ -1296,16 +1296,19 @@ function renderTasks() {
 }
 
 function claimTask(id) {
+    // 1. 統一檢查鎖：如果已經領取過（且不是成就型任務），直接跳出
+    if (s.tasks.claimed.includes(id)) return;
+
     if (id === 'daily_1') {
-        if (s.dailyClaimed) return; // 🔴 檢查鎖
         s.items.great += 2;
-        s.dailyClaimed = true;      // 🔴 加上鎖
+        // 🔴 關鍵：必須推入陣列，renderTasks 才會知道已領取
+        s.tasks.claimed.push(id); 
     }
     else if (id === 'weekly_1') {
-        if (s.weeklyClaimed) return; // 🔴 檢查鎖
         s.items.stone++;
         s.items.ultra += 3;
-        s.weeklyClaimed = true;      // 🔴 加上鎖
+        // 🔴 關鍵：必須推入陣列
+        s.tasks.claimed.push(id);
     }
     else if (id === 'ach_1') { 
         // 根據 mRec 每達到 50 就領取一次大師球
