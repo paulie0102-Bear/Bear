@@ -389,6 +389,19 @@
     <button class="btn-back" onclick="back()">✖ 關閉圖鑑</button>
 </div>
 
+<div style="background: #2d2d2d; border-radius: 15px; padding: 20px; margin-bottom: 20px; border-left: 5px solid var(--p); box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+    <h3 style="margin-top: 0; color: var(--p); font-size: 1.2em;">🌟 冒險導引：啟程，從研究所開始</h3>
+    <p style="color: #bbb; font-size: 0.9em; margin-bottom: 15px;">每一筆帳單都是一場修行，記錄生活，培育你的最強隊伍。</p>
+    
+    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
+        <ul style="padding-left: 20px; line-height: 2; margin: 0; color: #eee;">
+            <li>訓練回饋：<span style="color: #4caf50;">捕捉</span> 或 <span style="color: #ffeb3b;">打倒</span> 寶可夢皆能累積經驗值。</li>
+            <li>成長之道：<span style="color: var(--p); font-weight: bold;">提升等級</span> 與 <span style="color: #ff5252;">降低對手 HP</span>，是成功捕捉的不二法門。</li>
+            <li>訓練家等級：Lv.<span id="guideLvl">1</span> (每級永久增加 <span style="color: var(--p);">1.5%</span> 捕捉率)。</li>
+        </ul>
+    </div>
+</div>
+
 <div id="guidePage" class="page" style="background: #1a1a1a; color: white;">
     <div style="padding: 25px;">
         <div style="display: flex; align-items: center; margin-bottom: 25px;">
@@ -397,26 +410,32 @@
         </div>
 
         <div style="background: #2d2d2d; border-radius: 15px; padding: 20px; margin-bottom: 20px; border-left: 5px solid var(--p); box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-            <h3 style="margin-top: 0; color: var(--p); font-size: 1.2em;">⭐ 訓練家等級 Lv.<span id="guideLvl">1</span></h3>
-            <p style="color: #bbb; font-size: 0.9em; margin-bottom: 15px;">提升等級可永久增加基礎捕捉成功率！</p>
-            
-            <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
-                <ul style="padding-left: 20px; line-height: 2; margin: 0; color: #eee;">
-                    <li>捕捉成功：<span style="color: #4caf50; font-weight: bold;">+10 EXP</span></li>
-                    <li>打倒寶可夢：<span style="color: #ffeb3b; font-weight: bold;">+20 EXP</span> (2倍!)</li>
-                    <li>等級獎勵：每級增加 <span style="color: var(--p); font-weight: bold;">1.5%</span> 捕捉率</li>
-                </ul>
-            </div>
-        </div>
+    <h3 style="margin-top: 0; color: var(--p); font-size: 1.2em;">🌟 冒險導引：啟程，從研究所開始</h3>
+    <p style="color: #bbb; font-size: 0.9em; margin-bottom: 15px;">每一筆帳單都是一場修行，記錄生活，培育你的最強隊伍。</p>
+    
+    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
+        <ul style="padding-left: 20px; line-height: 2; margin: 0; color: #eee;">
+            <li>訓練回饋：<span style="color: #4caf50;">捕捉</span> 或 <span style="color: #ffeb3b;">打倒</span> 寶可夢皆能累積經驗值。</li>
+            <li>成長之道：<span style="color: var(--p); font-weight: bold;">提升等級</span> 與 <span style="color: #ff5252;">降低對手 HP</span>，是成功捕捉的不二法門。</li>
+            <li>訓練家等級：Lv.<span id="guideLvl">1</span> (每級永久增加 <span style="color: var(--p);">1.5%</span> 捕捉率)。</li>
+        </ul>
+    </div>
+</div>
 
-        <div style="background: #2d2d2d; border-radius: 15px; padding: 20px; border-left: 5px solid #666; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-            <h3 style="margin-top: 0; color: #eee;">💰 記帳戰鬥機制</h3>
-            <ul style="padding-left: 20px; line-height: 1.8; margin: 0; color: #ccc;">
-                <li>消費每滿 <span style="color: white;">200 元</span> 遭遇一次戰鬥。</li>
-                <li>單次滿 <span style="color: white;">1000 元</span> 以上觸發連戰系統。</li>
-                <li>寶可夢剩餘 <span style="color: #ff5252;">HP 越低</span>，捕捉率越高。</li>
-            </ul>
-        </div>
+<div style="background: #2d2d2d; border-radius: 15px; padding: 20px; border-left: 5px solid #666; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+    <h3 style="margin-top: 0; color: #eee;">💰 記帳戰鬥機制</h3>
+    <ul style="padding-left: 20px; line-height: 1.8; margin: 0; color: #ccc;">
+        <li>消費感應：每累積消費滿 <span style="color: white; font-weight: bold;">200 元</span>，觸發一次戰鬥。</li>
+        <li style="color: #ff8dfb;">
+            ✨ <span style="font-weight: bold;">Mega 進化的神祕磁場：</span>進化期間，隱藏的<span style="text-shadow: 0 0 5px #ff8dfb; color: white;">閃光寶可夢</span>將更容易現身！
+        </li>
+        <li style="margin-top: 10px; border-top: 1px dashed #555; padding-top: 10px; color: #f1c40f;">
+            <strong>🏆 終極認可：</strong><br>
+            努力是值得的，時間會證明一切。<br>
+            持續記帳滿 <span style="color: white; font-weight: bold;">100 天</span>，將獲得來自冠軍的認可。
+        </li>
+    </ul>
+</div>
         
         <button onclick="back()" style="width: 100%; margin-top: 30px; padding: 16px; background: var(--p); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1em; box-shadow: 0 4px 10px rgba(0,0,0,0.4); cursor: pointer;">我瞭解了，開始冒險！</button>
     </div>
@@ -481,7 +500,7 @@
     </div>
 
     <div class="card" style="margin-top:15px; border: 2px solid #3498db; background: #fdfefe; padding: 15px; border-radius: 12px;">
-    <h3 style="color:#2980b9; margin-bottom:12px;">🎓 博士的啟程小禮物 (免費)</h3>
+    <h3 style="color:#2980b9; margin-bottom:12px;">🎓 冒險，從研究所開始</h3>
     <p style="font-size:12px; color:#7f8c8d; margin-bottom:10px;">領取後可獲得 5 顆精靈球並開啟御三家捕捉戰鬥</p>
     
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
@@ -2052,10 +2071,10 @@ function updateGiftButtons() {
     
     // 2. 定義解鎖後的祝福語
     const championNames = {
-        'red': '🔥 關都地區｜赤紅的傳記祝福',
-        'lance': '🐲 城都地區｜阿渡的龍之覺醒',
-        'steven': '💎 豐緣地區｜大吾的鋼鐵意志',
-        'cynthia': '🔱 神奧地區｜竹蘭的遺跡之魂'
+        'red': ' 關都地區｜赤紅的傳記祝福',
+        'lance': ' 城都地區｜阿渡的龍之覺醒',
+        'steven': ' 豐緣地區｜大吾的鋼鐵意志',
+        'cynthia': ' 神奧地區｜竹蘭的遺跡之魂'
     };
 
     [...doctorKeys, ...championKeys].forEach(key => {
@@ -2066,7 +2085,7 @@ function updateGiftButtons() {
         const imgUrl = isChamp ? `${API}/pokemon/${aceMap[key]}.png` : "";
 
         if (s.claimedGifts.includes(key)) {
-            // ● 已領取狀態 (觸發虛線封印感)
+            // ● A. 已領取狀態：變灰、顯示勳章灰階 (觸發虛線封印感)
             btn.disabled = true;
             if (isChamp) {
                 btn.innerHTML = `
@@ -2077,14 +2096,12 @@ function updateGiftButtons() {
                 btn.innerText = "✅ 已領取";
             }
         } else if (isChamp && days < 100) {
-            // ● 冠軍未解鎖 (觸發虛線封印感 + 鎖頭)
-            btn.disabled = true;
-            btn.innerHTML = `
-                <div class="champion-medal">🔒</div>
-                <div class="champion-text">🔒 剩餘 ${100 - days} 天解鎖</div>
-            `;
+            // ★ B. 關鍵修改：冠軍未解鎖
+            // 不去改 innerHTML，它就會顯示你在 HTML 寫的「來自...的認可」
+            // 只設定 disabled = true，讓它套用你的灰色虛線 CSS
+            btn.disabled = true; 
         } else {
-            // ★ 解鎖狀態
+            // ★ C. 已解鎖狀態
             btn.disabled = false;
             btn.style.opacity = "1";
             
@@ -2095,8 +2112,8 @@ function updateGiftButtons() {
                     <div class="champion-text">${championNames[key]}</div>
                 `;
             } else {
-                // 🎓 博士按鈕維持原樣文字 (如果有需要也可以加框)
-                btn.innerText = "博士的贈禮"; 
+                // 🎓 博士按鈕
+                btn.innerText = "博士的起程禮"; 
             }
         }
     });
