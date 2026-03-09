@@ -389,19 +389,6 @@
     <button class="btn-back" onclick="back()">✖ 關閉圖鑑</button>
 </div>
 
-<div style="background: #2d2d2d; border-radius: 15px; padding: 20px; margin-bottom: 20px; border-left: 5px solid var(--p); box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-    <h3 style="margin-top: 0; color: var(--p); font-size: 1.2em;">🌟 冒險導引：啟程，從研究所開始</h3>
-    <p style="color: #bbb; font-size: 0.9em; margin-bottom: 15px;">每一筆帳單都是一場修行，記錄生活，培育你的最強隊伍。</p>
-    
-    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
-        <ul style="padding-left: 20px; line-height: 2; margin: 0; color: #eee;">
-            <li>訓練回饋：<span style="color: #4caf50;">捕捉</span> 或 <span style="color: #ffeb3b;">打倒</span> 寶可夢皆能累積經驗值。</li>
-            <li>成長之道：<span style="color: var(--p); font-weight: bold;">提升等級</span> 與 <span style="color: #ff5252;">降低對手 HP</span>，是成功捕捉的不二法門。</li>
-            <li>訓練家等級：Lv.<span id="guideLvl">1</span> (每級永久增加 <span style="color: var(--p);">1.5%</span> 捕捉率)。</li>
-        </ul>
-    </div>
-</div>
-
 <div id="guidePage" class="page" style="background: #1a1a1a; color: white;">
     <div style="padding: 25px;">
         <div style="display: flex; align-items: center; margin-bottom: 25px;">
@@ -409,37 +396,48 @@
             <h2 style="margin: 0; flex: 1; text-align: center; color: var(--p); letter-spacing: 2px;">📖 遊戲規則導引</h2>
         </div>
 
-        <div style="background: #2d2d2d; border-radius: 15px; padding: 20px; margin-bottom: 20px; border-left: 5px solid var(--p); box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-    <h3 style="margin-top: 0; color: var(--p); font-size: 1.2em;">🌟 冒險導引：啟程，從研究所開始</h3>
-    <p style="color: #bbb; font-size: 0.9em; margin-bottom: 15px;">每一筆帳單都是一場修行，記錄生活，培育你的最強隊伍。</p>
-    
-    <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
-        <ul style="padding-left: 20px; line-height: 2; margin: 0; color: #eee;">
-            <li>訓練回饋：<span style="color: #4caf50;">捕捉</span> 或 <span style="color: #ffeb3b;">打倒</span> 寶可夢皆能累積經驗值。</li>
-            <li>成長之道：<span style="color: var(--p); font-weight: bold;">提升等級</span> 與 <span style="color: #ff5252;">降低對手 HP</span>，是成功捕捉的不二法門。</li>
-            <li>訓練家等級：Lv.<span id="guideLvl">1</span> (每級永久增加 <span style="color: var(--p);">1.5%</span> 捕捉率)。</li>
-        </ul>
-    </div>
-</div>
+        <div style="background: #2d2d2d; border-radius: 15px; margin-bottom: 20px; border-left: 5px solid var(--p); box-shadow: 0 4px 15px rgba(0,0,0,0.3); overflow: hidden;">
+            <div onclick="const content = this.nextElementSibling; content.style.display = content.style.display === 'none' ? 'block' : 'none';" 
+                 style="padding: 18px 20px; cursor: pointer;">
+                <h3 style="margin: 0; color: var(--p); font-size: 1.1em;">🌟 冒險導引：啟程，從研究所開始</h3>
+            </div>
+            
+            <div style="display: none; padding: 0 20px 20px 20px;">
+                <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;">
+                    <ul style="padding-left: 20px; line-height: 2; margin: 0; color: #eee; font-size: 0.95em;">
+                        <li>訓練回饋：<span style="color: #4caf50;">捕捉</span> 或 <span style="color: #ffeb3b;">打倒</span> 寶可夢皆能累積經驗值。</li>
+                        <li>成長之道：<span style="color: var(--p); font-weight: bold;">提升等級</span> 與 <span style="color: #ff5252;">降低對手 HP</span>，是成功捕捉的不二法門。</li>
+                        <li>訓練家等級：Lv.<span id="guideLvl">1</span> (每級永久增加 <span style="color: var(--p);">1.5%</span> 捕捉率)。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
 
-<div style="background: #2d2d2d; border-radius: 15px; padding: 20px; border-left: 5px solid #666; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-    <h3 style="margin-top: 0; color: #eee;">💰 記帳戰鬥機制</h3>
-    <ul style="padding-left: 20px; line-height: 1.8; margin: 0; color: #ccc;">
-        <li>消費感應：每累積消費滿 <span style="color: white; font-weight: bold;">200 元</span>，觸發一次戰鬥。</li>
-        <li style="color: #ff8dfb;">
-            ✨ <span style="font-weight: bold;">Mega 進化的神祕磁場：</span>進化期間，隱藏的<span style="text-shadow: 0 0 5px #ff8dfb; color: white;">閃光寶可夢</span>將更容易現身！
-        </li>
-        <li style="margin-top: 10px; border-top: 1px dashed #555; padding-top: 10px; color: #f1c40f;">
-            <strong>🏆 終極認可：</strong><br>
-            努力是值得的，時間會證明一切。<br>
-            持續記帳滿 <span style="color: white; font-weight: bold;">100 天</span>，將獲得來自冠軍的認可。
-        </li>
-    </ul>
-</div>
+        <div style="background: #2d2d2d; border-radius: 15px; border-left: 5px solid #666; box-shadow: 0 4px 15px rgba(0,0,0,0.3); overflow: hidden;">
+            <div onclick="const content = this.nextElementSibling; content.style.display = content.style.display === 'none' ? 'block' : 'none';" 
+                 style="padding: 18px 20px; cursor: pointer;">
+                <h3 style="margin: 0; color: #eee; font-size: 1.1em;">⚔️ 記帳戰鬥機制</h3>
+            </div>
+
+            <div style="display: none; padding: 0 20px 20px 20px;">
+                <ul style="padding-left: 20px; line-height: 1.8; margin: 0; color: #ccc; font-size: 0.95em;">
+                    <li>消費感應：每累積消費滿 <span style="color: white; font-weight: bold;">200 元</span>，觸發一次戰鬥。</li>
+                    <li style="color: #ff8dfb;">
+                        ✨ <span style="font-weight: bold;">Mega 進化的神祕磁場：</span>進化期間，隱藏的<span style="text-shadow: 0 0 5px #ff8dfb; color: white;">閃光寶可夢</span>將更容易現身！
+                    </li>
+                    <li style="margin-top: 10px; border-top: 1px dashed #555; padding-top: 10px; color: #f1c40f;">
+                        <strong>🏆 終極認可：</strong><br>
+                        努力是值得的，時間會證明一切。<br>
+                        持續記帳滿 <span style="color: white; font-weight: bold;">100 天</span>，將獲得來自冠軍的認可。
+                    </li>
+                </ul>
+            </div>
+        </div>
         
         <button onclick="back()" style="width: 100%; margin-top: 30px; padding: 16px; background: var(--p); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 1.1em; box-shadow: 0 4px 10px rgba(0,0,0,0.4); cursor: pointer;">我瞭解了，開始冒險！</button>
     </div>
 </div>
+
 
 <div id="statusPage" class="page">
     <div class="card">
