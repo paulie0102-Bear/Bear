@@ -267,7 +267,7 @@
 
         <div id="gotcha" class="gotcha-text">GOTCHA!</div>
 
-        <div class="encounter-progress">遭遇進度: <span id="enc-prog">0</span> / 500</div>
+        <div class="encounter-progress">遭遇進度: <span id="enc-prog">0</span> / 200</div>
 
         <div class="buddy-box"><img id="buddyImg" src="" style="width:100%; height:100px; object-fit:contain;"></div>
 
@@ -380,7 +380,7 @@
         <div style="background: #2d2d2d; border-radius: 15px; padding: 20px; border-left: 5px solid #666; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
             <h3 style="margin-top: 0; color: #eee;">💰 記帳戰鬥機制</h3>
             <ul style="padding-left: 20px; line-height: 1.8; margin: 0; color: #ccc;">
-                <li>消費每滿 <span style="color: white;">500 元</span> 遭遇一次戰鬥。</li>
+                <li>消費每滿 <span style="color: white;">200 元</span> 遭遇一次戰鬥。</li>
                 <li>單次滿 <span style="color: white;">1000 元</span> 以上觸發連戰系統。</li>
                 <li>寶可夢剩餘 <span style="color: #ff5252;">HP 越低</span>，捕捉率越高。</li>
             </ul>
@@ -443,7 +443,7 @@
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/ultra-ball.png" style="vertical-align:middle"> 高級球 (P$ 500)</span>
-                <button onclick="buy('ultra', 600)" style="background:var(--p); color:white; border:none; padding:8px 15px; border-radius:5px;">購買</button>
+                <button onclick="buy('ultra', 500)" style="background:var(--p); color:white; border:none; padding:8px 15px; border-radius:5px;">購買</button>
             </div>
         </div>
     </div>
@@ -834,6 +834,15 @@ function updateUI() {
 const isMegaActive = Date.now() < s.megaUntil; 
 const bEl = document.getElementById('buddyImg');
 
+// 根據是否 Mega 進化來決定大小
+if (isMegaActive) {
+    bEl.style.width = "120px";  // Mega 進化後的大小
+    bEl.style.height = "120px";
+} else {
+    bEl.style.width = "80px";   // 平時的大小
+    bEl.style.height = "80px";
+}
+
 // 1~493 完整 Mega 對照表
 const megaMapping = {
     3: 10001, 9: 10002, 15: 10003, 18: 10004, 65: 10005, 80: 10071, 94: 10006, 
@@ -977,7 +986,7 @@ function record() {
     const cat = document.getElementById('recCat').value;
     if(!amt || !date) { alert("請輸入金額與日期"); return; }
 
-    const reward = Math.floor(amt * 0.1);
+    const reward = Math.floor(amt * 0.5);
     s.bal += reward;
     s.pool += amt;
     
@@ -989,10 +998,10 @@ function record() {
     s.tasks.dRec++; s.tasks.wRec++; s.tasks.mRec++;
 
     // --- 【關鍵修正：定義變數】 ---
-    const encounterCount = Math.floor(s.pool / 500); // 👈 補上這一行定義
+    const encounterCount = Math.floor(s.pool / 200); // 👈 補上這一行定義
     
     if (encounterCount > 0) {
-        s.pool %= 500; 
+        s.pool %= 200; 
         battleQueue += encounterCount; // 把次數存進排隊清單
         
         // 如果目前沒有在戰鬥，就啟動隊列中的第一場
@@ -1004,7 +1013,7 @@ function record() {
         
         document.getElementById('msg').innerText = `獲得 P$ ${reward}！觸發了 ${encounterCount} 場遭遇！`;
     } else {
-        document.getElementById('msg').innerText = `獲得 P$ ${reward}！遭遇進度: ${s.pool}/500`;
+        document.getElementById('msg').innerText = `獲得 P$ ${reward}！遭遇進度: ${s.pool}/200`;
     }
 
     document.getElementById('recAmt').value = "";
@@ -1486,7 +1495,7 @@ function confirmImport() {
     if(!tempData || tempData.length===0){ cancelImport(); return; }
 
     tempData.forEach((item,index)=>{
-        const reward = Math.floor(item.amt*0.1);
+        const reward = Math.floor(item.amt*0.5);
         const monthKey = item.date.substring(0,7);
 
         s.yearSums[monthKey] = (s.yearSums[monthKey]||0)+item.amt;
@@ -1503,9 +1512,9 @@ function confirmImport() {
     });
 
     // 戰鬥判定
-    const encounterCount = Math.floor(s.pool/500);
+    const encounterCount = Math.floor(s.pool/200);
     if(encounterCount>0){ 
-        s.pool %= 500; 
+        s.pool %= 200; 
         if(typeof battleQueue!=='undefined'){ 
             battleQueue+=encounterCount; 
             if(!isInBattle){ battleQueue--; isInBattle=true; if(window.spawnEnemy) spawnEnemy(); } 
@@ -1528,7 +1537,7 @@ function confirmImport() {
     if (tempData.length === 0) return;
 
     tempData.forEach((item, index) => {
-        const reward = Math.floor(item.amt * 0.1);
+        const reward = Math.floor(item.amt * 0.5);
         const monthKey = item.date.substring(0, 7);
 
         // 1. 同步全域數值 (s 為你的狀態物件)
@@ -1552,9 +1561,9 @@ function confirmImport() {
     });
 
     // 4. 戰鬥觸發邏輯 (直接沿用你的 record 核心)
-    const encounterCount = Math.floor(s.pool / 500);
+    const encounterCount = Math.floor(s.pool / 200);
     if (encounterCount > 0) {
-        s.pool %= 500;
+        s.pool %= 200;
         battleQueue += encounterCount;
         if (!isInBattle) {
             battleQueue--; isInBattle = true; spawnEnemy();
