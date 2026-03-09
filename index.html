@@ -35,6 +35,8 @@
     z-index: 20;
 }
 
+
+
 /* 基礎設定：移除原本的背景色，保留動畫 */
 #hpFill { 
     height: 100%; 
@@ -77,7 +79,7 @@
         .res-icon { width: 30px; height: 30px; object-fit: contain; }
 
         /* 進化選擇對話框專用樣式 */
-        #evoDialog { border: none; border-radius: 20px; padding: 20px; box-shadow: 0 10px 50px rgba(0,0,0,0.4); width: 85%; max-width: 350px; }
+        #evoDialog { border: none; border-radius: 20px; padding: 20px; box-shadow: 0 10px 50px rgba(0,0,0,0.4); width: 85%; max-width: 350px;z-index: 2000 !important; /* 🔴 加上這一行，確保它在商店頁面 (1000) 之上 */ }
         #evoDialog::backdrop { background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
         .evo-flex { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 15px 0; }
         .evo-card { border: 2px solid #eee; border-radius: 15px; padding: 10px; text-align: center; cursor: pointer; width: 80px; }
@@ -256,7 +258,37 @@
 }
 
 </style>
+<style>
+    /* -------------------------------------------
+   這一段請直接貼在 <style> 的最後面 
+------------------------------------------- */
+#evoDialog {
+    z-index: 2000 !important; 
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: none;
+    padding: 20px;
+    margin: 0; 
+    border-radius: 15px;
+    box-shadow: 0 5px 30px rgba(0,0,0,0.5);
+    background: white; 
+    pointer-events: auto !important;
+}
 
+.btn-doc {
+    position: relative;
+    z-index: 1001; 
+    pointer-events: auto !important;
+    cursor: pointer !important; 
+}
+
+#evoDialog::backdrop {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
+}
+</style>
 
 </head>
 <body>
@@ -447,8 +479,114 @@
             </div>
         </div>
     </div>
+
+    <div class="card" style="margin-top:15px; border: 2px solid #3498db; background: #fdfefe; padding: 15px; border-radius: 12px;">
+    <h3 style="color:#2980b9; margin-bottom:12px;">🎓 博士的啟程小禮物 (免費)</h3>
+    <p style="font-size:12px; color:#7f8c8d; margin-bottom:10px;">領取後可獲得 5 顆精靈球並開啟御三家捕捉戰鬥</p>
+    
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <button id="btn-gift-oak" onclick="openGiftSelector('oak', false)" class="btn-doc">
+            關都地區｜大木博士啟程禮
+        </button>
+        <button id="btn-gift-elm" onclick="openGiftSelector('elm', false)" class="btn-doc">
+            城都地區｜空木博士啟程禮
+        </button>
+        <button id="btn-gift-birch" onclick="openGiftSelector('birch', false)" class="btn-doc">
+            豐緣地區｜小田卷博士啟程禮
+        </button>
+        <button id="btn-gift-rowan" onclick="openGiftSelector('rowan', false)" class="btn-doc">
+            神奧地區｜山梨博士啟程禮
+        </button>
+    </div>
+</div>
+
+<div class="card" style="margin-top:15px; border: 2px solid #f1c40f; background: #fffdf5; padding: 15px; border-radius: 12px;">
+    <h3 style="color:#d4af37; margin-bottom:12px;">🏆 冠軍的認可 (記帳第 100 天解鎖)</h3>
+    <p style="font-size:12px; color:#7f8c8d; margin-bottom:10px;">獲得 5 顆高級球，並開啟**必閃**傳奇寶可夢戰鬥</p>
+    
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <button id="btn-gift-red" onclick="onChampionBtnClick('red')" class="btn-champion">
+            關都地區｜來自赤紅的認可
+        </button>
+        <button id="btn-gift-lance" onclick="onChampionBtnClick('lance')" class="btn-champion">
+            城都地區｜來自阿渡的認可
+        </button>
+        <button id="btn-gift-steven" onclick="onChampionBtnClick('steven')" class="btn-champion">
+            豐緣地區｜來自大吾的認可
+        </button>
+        <button id="btn-gift-cynthia" onclick="onChampionBtnClick('cynthia')" class="btn-champion">
+            神奧地區｜來自竹蘭的認可
+        </button>
+    </div>
+</div>
+
     <button class="btn-back" onclick="back()">✖ 關閉</button>
 </div>
+
+<style>
+/* 博士按鈕美化樣式 */
+.btn-doc {
+    background: #ffffff;
+    border: 1px solid #3498db;
+    color: #2980b9;
+    padding: 12px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 1.4;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.btn-doc:hover:not(:disabled) {
+    background: #e1f5fe;
+    border-color: #0288d1;
+    transform: translateY(-1px);
+}
+.btn-doc:disabled {
+    background: #f5f5f5;
+    border-color: #dcdcdc;
+    color: #aaaaaa;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* 🏆 冠軍按鈕美化樣式 (金色尊榮感) */
+.btn-champion {
+    background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%); /* 淺金底色 */
+    border: 1.5px solid #f1c40f;
+    color: #b8860b; /* 暗金色文字 */
+    padding: 12px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 1.4;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(241, 196, 15, 0.2);
+}
+
+.btn-champion:hover:not(:disabled) {
+    background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+    color: #ffffff;
+    border-color: #d4af37;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);
+}
+
+/* 🔒 冠軍專屬：未解鎖或已領取的禁用樣式 */
+.btn-champion:disabled {
+    background: #f9f9f9;
+    border: 1px dashed #cccccc; /* 未解鎖時用虛線框更有「封印」感 */
+    color: #bbbbbb;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+    filter: grayscale(1); /* 強制灰階化 */
+}
+
+</style>
 
 <div id="chartPage" class="page">
     <div class="card">
@@ -678,20 +816,46 @@ let s = {
     nextExp: 100      // 升級門檻
 };
 
+const DOCTOR_DATA = {
+    'oak':   { name: '關都地區｜大木博士啟程禮', ids: [1, 4, 7] },
+    'elm':   { name: '城都地區｜空木博士啟程禮', ids: [152, 155, 158] },
+    'birch': { name: '豐緣地區｜小田卷博士啟程禮', ids: [252, 255, 258] },
+    'rowan': { name: '神奧地區｜山梨博士啟程禮', ids: [387, 390, 393] }
+};
+
+const CHAMPION_DATA = {
+    'red':    { name: '關都地區｜赤紅冠軍的認可', ids: [131, 143, 149] }, // 拉普拉斯、卡比獸、快龍
+    'lance':  { name: '城都地區｜阿渡冠軍的認可', ids: [230, 248, 212] }, // 刺龍王、班基拉斯、巨鉗螳螂
+    'steven': { name: '豐緣地區｜大吾冠軍的認可', ids: [376, 373, 306] }, // 巨金怪、暴飛龍、波士可多拉
+    'cynthia':{ name: '神奧地區｜竹蘭冠軍的認可', ids: [445, 448, 350] }  // 烈咬陸鯊、路卡利歐、美納斯
+};
 
 // --- [ 初始化與存檔讀取 ] ---
 window.onload = () => {
     const saved = localStorage.getItem('pokemaster_v60');
     if(saved) {
         const loaded = JSON.parse(saved);
-        // 確保舊玩家讀檔後也能獲得等級屬性
-        s = { ...s, ...loaded }; 
+        // [修改點 1] 使用展開運算子合併，並額外確保新屬性 claimedGifts 存在
+        s = { 
+            ...s, 
+            ...loaded, 
+            claimedGifts: (loaded.claimedGifts || []) 
+        }; 
+    } else {
+        // 如果是全新玩家，初始化該陣列
+        if (!s.claimedGifts) s.claimedGifts = [];
     }
+
     document.getElementById('recDate').valueAsDate = new Date();
     document.getElementById('chartMonthPicker').value = new Date().toISOString().substring(0, 7);
+    
+    // [修改點 2] 讀檔後立即執行一次按鈕鎖定，不影響其他 UI 更新
+    lockClaimedGifts(); 
+
     updateUI();
     setInterval(tickMega, 1000);
 };
+
 // 任務重置檢查函式 (含每日與每週)
 function checkTaskReset() {
     const now = new Date();
@@ -712,8 +876,7 @@ function checkTaskReset() {
         s.tasks.claimed = s.tasks.claimed.filter(id => !id.includes('daily'));
         hasChanged = true;
     }
-
-    // 2. 每週重置判定 (每週一重置)
+// 2. 每週重置判定 (每週一重置)
     if (s.tasks.weeklyDate !== mondayDate) {
         s.tasks.weeklyDate = mondayDate;
         s.tasks.wRec = 0;   
@@ -726,7 +889,207 @@ function checkTaskReset() {
     if (hasChanged) {
         localStorage.setItem('pokemaster_v60', JSON.stringify(s));
     }
+};
+
+function openGiftSelector(docKey) {
+    console.log("偵測到點擊，博士金鑰:", docKey); // 👈 測試按鈕是否有觸發
+
+    // 1. 安全檢查：如果領過了，就直接結束不反應
+    if (s.claimedGifts && s.claimedGifts.includes(docKey)) {
+        console.log("此禮物已領取過");
+        return;
+    }
+
+    // 2. 取得資料
+    const gift = DOCTOR_DATA[docKey];
+    if (!gift) {
+        console.error("找不到對應的資料，請檢查 DOCTOR_DATA 定義！");
+        return;
+    }
+
+    // 3. 取得 DOM 元素
+    const dialog = document.getElementById('evoDialog');
+    const container = document.getElementById('evoOptions');
+    
+    if (!dialog || !container) {
+        console.error("找不到 HTML 中的對話框或容器元素！");
+        return;
+    }
+
+    // 4. 更改對話框標題 (讓它看起來不像進化)
+    const title = dialog.querySelector('h3');
+    if (title) title.innerText = gift.name;
+
+    // 5. 清空舊內容並產生新卡片
+    container.innerHTML = ""; 
+    gift.ids.forEach(id => {
+        const name = (typeof getPkmnName === 'function') ? getPkmnName(id) : "No." + id;
+        const card = document.createElement('div');
+        card.className = 'evo-card'; // 沿用你原本進化的樣式
+        card.style.cursor = "pointer";
+        card.innerHTML = `
+            <img src="${API}/pokemon/${id}.png" style="width:80px">
+            <p>${name}</p>
+        `;
+        
+        card.onclick = () => {
+            if(confirm(`確定要選擇 ${name} 嗎？`)) {
+                executeClaimGift(docKey, id);
+                dialog.close();
+            }
+        };
+        container.appendChild(card);
+    });
+
+    // 6. 顯示視窗
+    dialog.showModal();
+};
+
+// 3. 執行領取與鎖定
+// 注意：參數新增了 isChampion，預設為 false
+function executeClaimGift(docKey, pokemonId, isChampion = false) {
+    // 1. 安全檢查：確保儲存陣列存在
+    if (!s.claimedGifts) s.claimedGifts = [];
+
+    // 2. [新增判定] 檢查冠軍領取門檻 (第 100 天)
+    if (isChampion) {
+        const diffTime = Math.abs(new Date() - new Date(s.firstDate));
+        const days = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        if (days < 100) {
+            alert(`🔒 冠軍的認可尚未解鎖！\n你需要持續記帳滿 100 天。(目前：${days}/100)`);
+            return; // 門檻沒到，直接結束
+        }
+    }
+
+    // 3. 開啟標記：100% 捕捉 與 冠軍專屬閃光
+    s.isGiftBattle = true; 
+    s.forceShiny = isChampion; // 🔴 傳入 true 時，觸發 spawnEnemy 的必閃邏輯
+
+    // 4. [修正獎勵] 冠軍送 5 顆高級球，博士送 5 顆普通球
+    if (isChampion) {
+        s.items.ultra = (s.items.ultra || 0) + 5; 
+        console.log("🏆 獲得冠軍贈送的高級球 x5");
+    } else {
+        s.items.poke += 5;
+    }
+    
+    // 5. 記錄領取狀態 (避免重複領取)
+    if (!s.claimedGifts.includes(docKey)) {
+        s.claimedGifts.push(docKey);
+    }
+    
+    // 6. 即時更新按鈕 UI
+    const btn = document.getElementById(`btn-gift-${docKey}`);
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "✅ 已領取";
+        btn.style.opacity = "0.5";
+        btn.style.cursor = "not-allowed";
+    }
+
+    // 7. 存檔與 UI 更新
+    if (typeof saveData === 'function') {
+        saveData();
+    } else {
+        localStorage.setItem('pokemaster_v60', JSON.stringify(s));
+    }
+    
+    if (typeof updateUI === 'function') updateUI();
+    if (typeof back === 'function') back(); 
+
+    // 8. 觸發戰鬥
+    if (typeof spawnEnemy === 'function') {
+        spawnEnemy(pokemonId);
+    } else {
+        console.error("找不到 spawnEnemy 函式！");
+    }
 }
+
+function updateGiftButtons() {
+    const days = getAccountAge();
+    const champions = ['red', 'lance', 'steven', 'cynthia'];
+
+    champions.forEach(key => {
+        const btn = document.getElementById(`btn-gift-${key}`);
+        if (!btn) return;
+
+        const isClaimed = s.claimedGifts && s.claimedGifts.includes(key);
+        
+        if (isClaimed) {
+            btn.disabled = true;
+            btn.innerText = "✅ 已領取認可";
+        } else if (days < 100) {
+            btn.disabled = true;
+            // 動態顯示還剩幾天，增加期待感
+            btn.innerText = `🔒 剩餘 ${100 - days} 天解鎖`;
+        } else {
+            btn.disabled = false;
+            // 滿 100 天後恢復原本的名稱（從 CHAMPION_DATA 抓取）
+            if (CHAMPION_DATA[key]) {
+                btn.innerText = CHAMPION_DATA[key].name.split('｜')[1]; 
+            }
+        }
+    });
+}
+
+
+// 計算記帳天數
+function getAccountAge() {
+    if (!s.firstDate) {
+        s.firstDate = new Date().toISOString().split('T')[0]; // 記錄第一天
+        return 0;
+    }
+    const diffTime = Math.abs(new Date() - new Date(s.firstDate));
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+}
+
+// 渲染冠軍按鈕時的判斷
+function checkChampionUnlock(key) {
+    const days = getAccountAge();
+    if (days < 100) {
+        alert(`🔒 這是冠軍的認可。你需要持續記帳滿 100 天才能領取！（目前：${days}/100 天）`);
+        return false;
+    }
+    return true;
+}
+    
+// 冠軍按鈕點擊事件範例
+function onChampionBtnClick(key) {
+    if (checkChampionUnlock(key)) {
+        openGiftSelector(key, true); // 第二個參數 true 代表是冠軍模式
+    }
+}
+
+function lockClaimedGifts() {
+    if (!s.claimedGifts) return;
+    s.claimedGifts.forEach(docKey => {
+        const btn = document.getElementById(`btn-gift-${docKey}`);
+        if (btn) {
+            btn.disabled = true;
+            btn.innerText = "✅ 已領取";
+            btn.style.opacity = "0.5";
+        }
+    });
+}
+
+function getAccountAge() {
+    if (!s.firstDate) {
+        // 如果是新玩家或沒紀錄，就以今天為起始日
+        s.firstDate = new Date().toDateString();
+        saveData();
+        return 0;
+    }
+    const start = new Date(s.firstDate);
+    const today = new Date();
+    // 計算毫秒差並轉為天數
+    const diffTime = Math.abs(today - start);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+}
+
+
+
+
 // 1. 修改 window.onload，加入載具初始化
 window.onload = () => {
     const saved = localStorage.getItem('pokemaster_v60');
@@ -953,8 +1316,21 @@ function tryMega() {
     s.items.mstone--;
     s.megaUntil = Date.now() + 7200000;
     s.currentMegaType = type;
+
+    // 🔴 3. 額外效果：觸發 5 場戰鬥
+    const bonusBattles = 5;
+    battleQueue += bonusBattles; 
+
+    // 🔴 4. 立即檢查是否需要啟動戰鬥 (如果當前沒在打，就開打)
+    if (!isInBattle) {
+        battleQueue--;   // 從隊列中取出 1 場
+        isInBattle = true; 
+        spawnEnemy();    // 呼叫你的戰鬥啟動函式
+    }
+
+    // 5. 更新介面
     updateUI();
-    alert(`🧬 Mega 進化${type?type.toUpperCase():""}！2 小時內捕捉率與閃光率大幅提升！`);
+    alert(`🧬 Mega 進化${type?type.toUpperCase():""}！\n✨ 2 小時內捕捉率與閃光率大幅提升！\n⚔️ 強大的能量吸引了 ${bonusBattles} 隻寶可夢！`);
 }
 
 // --- [ 介面控制與導航 ] ---
@@ -1011,8 +1387,8 @@ function record() {
 
 // --- [ 戰鬥核心 ] ---
 // --- [ 戰鬥核心：修正版 ] ---
-function spawnEnemy() {
-    const id = Math.floor(Math.random() * 493) + 1;
+function spawnEnemy(targetId) { // 🔴 增加參數
+    const id = targetId || Math.floor(Math.random() * 493) + 1; // 🔴 若有指定 ID 就用指定的
     const isMega = (typeof s !== 'undefined') ? (Date.now() < s.megaUntil) : false;
     const isShiny = Math.random() < (isMega ? 0.15 : 0.05);
     
@@ -1060,9 +1436,12 @@ function spawnEnemy() {
 async function throwBall() {
     const type = document.getElementById('ballSelect').value;
     if(s.items[type] <= 0) { alert("沒球了！"); return; }
+    
+    // 1. 扣除消耗與增加回合
     s.items[type]--;
     turn++;
 
+    // 2. 播放動畫
     const ball = document.getElementById('ballOverlay');
     ball.src = `${API}/items/${type}-ball.png`;
     ball.className = 'ball-throw';
@@ -1071,46 +1450,67 @@ async function throwBall() {
     ball.className = 'ball-shake';
     await new Promise(r => setTimeout(r, 1500));
 
-    // --- [ 個人式修正：計算機率 ] ---
+    // 3. 計算各項機率加成
     const titleBonus = getTitle(s.owned.length).bonus;
-    const lvlBonus = getLvlBonus(); // 👈 這裡讀取你剛才寫的 1.5% 加成
+    const lvlBonus = getLvlBonus(); // 讀取 1.5% 加成
     const megaBonus = (Date.now() < s.megaUntil ? 20 : 0);
     const baseRate = {poke:30, great:40, ultra:50, master:100}[type];
     
-    // 在公式中加入 lvlBonus，等級越高，抓捕機率越高
+    // 計算一般捕捉率
     const catchChance = (baseRate + titleBonus + megaBonus + lvlBonus) * (1.5 - curE.hp/100) / 100;
 
-    if(Math.random() < catchChance || type === 'master') {
+    // 4. [判定結果]：博士祝福 vs 一般機率 vs 大師球
+    let isSuccess = false;
+
+    if (s.isGiftBattle) {
+        // 🔴 博士禮物：100% 成功
+        isSuccess = true; 
+        s.isGiftBattle = false; // 捕捉後關閉神力，避免影響之後戰鬥
+        console.log("博士的祝福：捕捉成功！");
+    } else if (Math.random() < catchChance || type === 'master') {
+        // 🟢 一般捕捉成功
+        isSuccess = true;
+    }
+
+    // 5. [執行結果]
+    if (isSuccess) {
         document.getElementById('gotcha').style.display = "block";
+        
+        // 更新圖鑑
         if(!s.owned.includes(curE.id)) s.owned.push(curE.id);
         if(curE.isShiny && !s.shinyOwned.includes(curE.id)) s.shinyOwned.push(curE.id);
         
+        // 累積進化與 Mega 能量
         s.prog.evo++;
-        if (MEGA_ABLE.includes(Number(curE.id))) {
-        s.prog.mega++; 
-        console.log(`✅ 成功累積 Mega 能量：No.${curE.id}，目前進度：${s.prog.mega}/5`);
-    }
+        if (typeof MEGA_ABLE !== 'undefined' && MEGA_ABLE.includes(Number(curE.id))) {
+            s.prog.mega++; 
+            console.log(`✅ Mega 能量：No.${curE.id}，進度：${s.prog.mega}/5`);
+        }
+
+        // 檢查道具獎勵
         if(s.prog.evo >= 5) { s.prog.evo=0; s.items.stone++; }
         if(s.prog.mega >= 5) { s.prog.mega=0; s.items.mstone++; }
-    
 
-        // 2. 核心調整：加入任務進度累積 (複製以下三行)
-        s.tasks.dCatch += 1; // 每日捕捉次數 +1
-        s.tasks.wCatch += 1; // 每週捕捉次數 +1
-        s.tasks.mCatch += 1; // 成就捕捉總數 +1
+        // 任務進度累積
+        s.tasks.dCatch += 1;
+        s.tasks.wCatch += 1;
+        s.tasks.mCatch += 1;
 
-        // --- [ 個人式修正：給予經驗值 ] ---
-        gainExp(10); // 👈 捕捉成功獲得 10 經驗
+        // 給予經驗值
+        if (typeof gainExp === 'function') gainExp(10);
 
         setTimeout(() => {
             document.getElementById('gotcha').style.display = "none";
-            endBattle(`成功捕捉了寶可夢！獲得 10 EXP`);
+            endBattle(`成功捕捉了 ${curE.name}！獲得 10 EXP`);
         }, 1500);
-            } else {
+
+    } else {
+        // ⚪ 捕捉失敗
         ball.style.display = "none";
         ball.className = "";
         document.getElementById('msg').innerText = "哎呀！寶可夢掙脫了！";
 
+        // 逃跑判定
         if(turn >= 7 && Math.random() < 0.3) {
             endBattle("寶可夢逃跑了！");
         }
