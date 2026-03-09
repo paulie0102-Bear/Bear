@@ -211,6 +211,49 @@
         text-align: right;
     }
 }
+
+/* 每一筆資料的外容器 */
+.csv-item-mobile {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px; /* 每一筆資料間的間隔 */
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* 兩排之間的垂直距離 */
+}
+
+/* 每排內部的佈局 */
+.csv-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* 調整輸入框比例 */
+.csv-date, .csv-cat {
+    flex: 1; /* 平分空間 */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.csv-note {
+    flex: 3; /* 讓商家備註長一點 */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.csv-amt {
+    flex: 1;
+    text-align: right;
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #e67e22; /* 給金額一個明顯的顏色 */
+}
+
 </style>
 
 
@@ -1389,19 +1432,25 @@ function handleCSV(e) {
 
                 // 顯示暫存區資料
                 previewList.innerHTML += `
-                    <div class="csv-item">
-                        <input type="date" value="${item.date}" onchange="tempData[${tempData.length-1}].date=this.value" class="csv-date">
-                        <select onchange="tempData[${tempData.length-1}].cat=this.value" class="csv-cat">
-                            <option value="其他" ${item.cat==="其他"?"selected":""}>其他</option>
-                            <option value="餐飲" ${item.cat==="餐飲"?"selected":""}>餐飲</option>
-                            <option value="交通" ${item.cat==="交通"?"selected":""}>交通</option>
-                            <option value="購物" ${item.cat==="購物"?"selected":""}>購物</option>
-                            <option value="娛樂" ${item.cat==="娛樂"?"selected":""}>娛樂</option>
-                            <option value="醫療" ${item.cat==="醫療"?"selected":""}>醫療</option>
-                        </select>
-                        <input type="text" value="${item.note}" onchange="tempData[${tempData.length-1}].note=this.value" class="csv-note">
-                        <span class="csv-amt">$${item.amt}</span>
-                    </div>`;
+    <div class="csv-item-mobile">
+        <div class="csv-row">
+            <input type="date" value="${item.date}" 
+                   onchange="tempData[${tempData.length-1}].date=this.value" class="csv-date">
+            <select onchange="tempData[${tempData.length-1}].cat=this.value" class="csv-cat">
+                <option value="其他" ${item.cat==="其他"?"selected":""}>其他</option>
+                <option value="餐飲" ${item.cat==="餐飲"?"selected":""}>餐飲</option>
+                <option value="交通" ${item.cat==="交通"?"selected":""}>交通</option>
+                <option value="購物" ${item.cat==="購物"?"selected":""}>購物</option>
+                <option value="娛樂" ${item.cat==="娛樂"?"selected":""}>娛樂</option>
+                <option value="醫療" ${item.cat==="醫療"?"selected":""}>醫療</option>
+            </select>
+        </div>
+        <div class="csv-row">
+            <input type="text" value="${item.note}" 
+                   onchange="tempData[${tempData.length-1}].note=this.value" class="csv-note" placeholder="備註">
+            <span class="csv-amt">$${item.amt}</span>
+        </div>
+    </div>`;
             }
         }
 
