@@ -388,10 +388,16 @@
     </div>
 </div>
 
-<dialog id="evoDialog">
-    <h3 style="margin:0; text-align:center; color:var(--p);">🔮 選擇進化目標</h3>
-    <div id="evoOptions" class="evo-flex"></div>
-    <button onclick="document.getElementById('evoDialog').close()" style="width:100%; padding:10px; background:#eee; border:none; border-radius:10px;">取消</button>
+<dialog id="evoDialog" style="border:none; border-radius:20px; padding:20px; background:#2d2d2d; color:white; box-shadow:0 10px 30px rgba(0,0,0,0.5); max-width: 90vw;">
+    <h3 id="evoTitle" style="margin:0 0 20px 0; text-align:center; color:var(--p); letter-spacing:2px;">🔮 選擇進化目標</h3>
+    
+    <div id="evoOptions" class="evo-flex" style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap; margin-bottom:20px;">
+        </div>
+    
+    <button onclick="document.getElementById('evoDialog').close()" 
+            style="width:100%; padding:12px; background:rgba(255,255,255,0.1); color:#ccc; border:none; border-radius:12px; cursor:pointer; font-weight:bold;">
+        取消
+    </button>
 </dialog>
 
 <div id="dexPage" class="page">
@@ -1296,13 +1302,23 @@ function performEvolve() {
     if (targets[0] > 493) { alert("已達目前圖鑑上限"); return; }
 
     if (targets.length > 1) {
+        // 強制更新標題，避免博士啟程禮字樣殘留
+        document.getElementById('evoTitle').innerText = `🧬 請選擇 No.${curId} 的進化分支`;
+        
         const container = document.getElementById('evoOptions');
         container.innerHTML = "";
+        
         targets.forEach(id => {
             const card = document.createElement('div');
             card.className = 'evo-card';
-            card.innerHTML = `<img src="${API}/pokemon/${id}.png"><p style="margin:5px 0 0; font-size:10px;">No.${id}</p>`;
-            card.onclick = () => { if(confirm(`確定進化為 No.${id}？`)) executeEvolve(id); document.getElementById('evoDialog').close(); };
+            card.innerHTML = `
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" style="width:70px; height:70px;">
+                <p style="margin:5px 0 0; font-size:12px; color:white;">No.${id}</p>
+            `;
+            card.onclick = () => { 
+                if(confirm(`確定進化為 No.${id}？`)) executeEvolve(id); 
+                document.getElementById('evoDialog').close(); 
+            };
             container.appendChild(card);
         });
         document.getElementById('evoDialog').showModal();
@@ -1321,36 +1337,85 @@ function executeEvolve(targetId) {
 
 // --- [ Mega 邏輯優化: X/Y 分支 ] ---
 function tryMega() {
-    if(s.items.mstone <= 0) { alert("需要 1 顆 Mega 石！"); return; }
-    if(Date.now() < s.megaUntil) { alert("已經在 Mega 狀態了！"); return; }
-    
-    // 噴火龍與超夢分支判定
-    const dual = [6, 150];
-    let type = "";
-    if (dual.includes(s.buddyId)) {
-        type = confirm("🧬 偵測到雙重 Mega 能量！\n【確定】選擇 X 型態\n【取消】選擇 Y 型態") ? "x" : "y";
+    if (s.items.mstone <= 0) { alert("需要 1 顆 Mega 石！"); return; }
+    if (Date.now() < s.megaUntil) { alert("已經在 Mega 狀態了！"); return; }
+
+    const curId = s.buddyId;
+    const dual = [6, 150]; // 噴火龍與超夢
+
+    if (dual.includes(curId)) {
+        // 修改標題
+        document.getElementById('evoTitle').innerText = `✨ 請選擇 Mega 進化型態`;
+        
+        const container = document.getElementById('evoOptions');
+        container.innerHTML = "";
+
+        ['x', 'y'].forEach(type => {
+            const card = document.createElement('div');
+            card.className = 'evo-card';
+            
+            // 對應你的 GitHub 圖片路徑邏輯
+            const statusFolder = s.isShinyBuddy ? 'shiny' : 'normal';
+            const fileName = `${curId}${type}`;
+            const bImg = `https://paulie0102-bear.github.io/Bear/img/mega/${statusFolder}/${fileName}.png`;
+
+            card.innerHTML = `
+                <img src="${bImg}" style="width:80px; height:80px;">
+                <p style="margin:5px 0 0; font-size:12px; color:var(--p); font-weight:bold;">Mega ${type.toUpperCase()}</p>
+            `;
+
+            // 圖片報錯備援
+            const imgEl = card.querySelector('img');
+            imgEl.onerror = () => {
+                imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${curId}.png`;
+                imgEl.onerror = null;
+            };
+
+            card.onclick = () => {
+                if (confirm(`確定進行 Mega 進化 ${type.toUpperCase()} 嗎？`)) {
+                    executeMega(type);
+                }
+                document.getElementById('evoDialog').close();
+            };
+            container.appendChild(card);
+        });
+        document.getElementById('evoDialog').showModal();
+    } else {
+        // 單一路線 Mega 直接執行
+        if (confirm(`消耗 1 顆 Mega 石讓夥伴進化？`)) executeMega("");
     }
-
-    s.items.mstone--;
-    s.megaUntil = Date.now() + 7200000;
-    s.currentMegaType = type;
-
-    // 🔴 3. 額外效果：觸發 5 場戰鬥
-    const bonusBattles = 5;
-    battleQueue += bonusBattles; 
-
-    // 🔴 4. 立即檢查是否需要啟動戰鬥 (如果當前沒在打，就開打)
-    if (!isInBattle) {
-        battleQueue--;   // 從隊列中取出 1 場
-        isInBattle = true; 
-        spawnEnemy();    // 呼叫你的戰鬥啟動函式
-    }
-
-    // 5. 更新介面
-    updateUI();
-    alert(`🧬 Mega 進化${type?type.toUpperCase():""}！\n✨ 2 小時內捕捉率與閃光率大幅提升！\n⚔️ 強大的能量吸引了 ${bonusBattles} 隻寶可夢！`);
 }
 
+function executeMega(type) {
+    // 1. 消耗道具與設定狀態
+    s.items.mstone--;
+    s.megaUntil = Date.now() + 7200000; // 2 小時有效期
+    s.currentMegaType = type;
+
+    // 2. 核心邏輯：觸發能量吸引效果 (吸怪機制)
+    const bonusBattles = 5;
+    // 假設你的全域變數叫做 battleQueue，這裡幫它累加
+    if (typeof battleQueue !== 'undefined') {
+        battleQueue += bonusBattles; 
+    }
+
+    // 3. UI 渲染 (更新圖片、特效、機率顯示)
+    updateUI(); 
+
+    // 4. 立即檢查並啟動戰鬥 (如果當前沒在戰鬥中)
+    // 這裡判斷 isInBattle 是否為 false，若是則啟動第一場
+    if (typeof isInBattle !== 'undefined' && !isInBattle) {
+        if (battleQueue > 0) {
+            battleQueue--;    // 從隊列取出一場
+            isInBattle = true; 
+            if (typeof spawnEnemy === 'function') spawnEnemy(); // 啟動戰鬥
+        }
+    }
+
+    // 5. 噴出華麗的提示訊息
+    const typeName = type ? type.toUpperCase() : "";
+    alert(`🧬 Mega 進化 ${typeName} 成功！\n✨ 2 小時內捕捉率與閃光率大幅提升！\n⚔️ 強大的能量吸引了 ${bonusBattles} 隻寶可夢出沒！`);
+}
 // --- [ 介面控制與導航 ] ---
 function openPage(id) {
     const target = document.getElementById(id);
