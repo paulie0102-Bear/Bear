@@ -14,9 +14,32 @@
         body { font-family: -apple-system, "Noto Sans TC", sans-serif; background: #000; margin: 0; color: var(--text); overflow: hidden; }
         
         /* 頁面層級 */
-        .page { display: none; width: 100vw; height: 100vh; background: var(--bg); position: fixed; top: 0; left: 0; z-index: 1000; overflow-y: auto; }
-        .page-active { display: block; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        /* 基礎頁面設定 */
+.page { 
+    display: none; 
+    width: 100vw; 
+    height: 100vh; 
+    background: var(--bg); 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    z-index: 1000; 
+    overflow-y: auto; 
+    box-sizing: border-box; /* 確保 padding 不會撐破寬度 */
+}
+
+/* 啟動狀態：將 .page-active 改為 .page.active */
+/* 使用 .active 是為了匹配 JS 的 classList.add('active') */
+.page.active { 
+    display: block !important; 
+    animation: slideUp 0.3s ease-out; 
+}
+
+/* 進場動畫 */
+@keyframes slideUp { 
+    from { transform: translateY(20px); opacity: 0; } 
+    to { transform: translateY(0); opacity: 1; } 
+}
 
         /* 戰鬥舞台 */
         .battle-stage { height: 260px; position: relative; background: linear-gradient(#87ceeb 60%, #9cd39c 60%); border-bottom: 4px solid #333; overflow: hidden; }
