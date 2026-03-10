@@ -1301,29 +1301,45 @@ function performEvolve() {
 
     if (targets[0] > 493) { alert("已達目前圖鑑上限"); return; }
 
+    // --- 內部小工具：安全獲取名字 ---
+    const getPName = (id) => POKEMON_NAMES[id] || `No.${id}`;
+
     if (targets.length > 1) {
-        // 強制更新標題，避免博士啟程禮字樣殘留
-        document.getElementById('evoTitle').innerText = `🧬 請選擇 No.${curId} 的進化分支`;
-        
+        // 1. 動態修改標題為：「請選擇 [目前名字] 的進化分支」
+        const titleEl = document.getElementById('evoTitle');
+        if (titleEl) {
+            titleEl.innerText = `🧬 請選擇 ${getPName(curId)} 的進化分支`;
+        }
+
         const container = document.getElementById('evoOptions');
         container.innerHTML = "";
         
         targets.forEach(id => {
             const card = document.createElement('div');
             card.className = 'evo-card';
+            const targetName = getPName(id); // 獲取目標名字
+
             card.innerHTML = `
                 <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png" style="width:70px; height:70px;">
-                <p style="margin:5px 0 0; font-size:12px; color:white;">No.${id}</p>
+                <p style="margin:5px 0 0; font-size:13px; color:white; font-weight:bold;">${targetName}</p>
             `;
+            
             card.onclick = () => { 
-                if(confirm(`確定進化為 No.${id}？`)) executeEvolve(id); 
-                document.getElementById('evoDialog').close(); 
+                if(confirm(`確定要將夥伴進化為 ${targetName} 嗎？`)) {
+                    executeEvolve(id);
+                    document.getElementById('evoDialog').close();
+                }
             };
             container.appendChild(card);
         });
         document.getElementById('evoDialog').showModal();
     } else {
-        if (confirm(`消耗 1 顆進化石使夥伴進化？`)) executeEvolve(targets[0]);
+        // 單一路線進化
+        const targetId = targets[0];
+        const targetName = getPName(targetId);
+        if (confirm(`消耗 1 顆進化石使夥伴進化為 ${targetName}？`)) {
+            executeEvolve(targetId);
+        }
     }
 }
 
@@ -1342,10 +1358,16 @@ function tryMega() {
 
     const curId = s.buddyId;
     const dual = [6, 150]; // 噴火龍與超夢
+    
+    // 💡 獲取當前夥伴中文名字
+    const curName = POKEMON_NAMES[curId] || `No.${curId}`;
 
     if (dual.includes(curId)) {
-        // 修改標題
-        document.getElementById('evoTitle').innerText = `✨ 請選擇 Mega 進化型態`;
+        // 1. 修改標題為：[夥伴名字] 的 Mega 進化型態
+        const titleEl = document.getElementById('evoTitle');
+        if (titleEl) {
+            titleEl.innerText = `✨ ${curName} 的 Mega 進化`;
+        }
         
         const container = document.getElementById('evoOptions');
         container.innerHTML = "";
@@ -1354,17 +1376,20 @@ function tryMega() {
             const card = document.createElement('div');
             card.className = 'evo-card';
             
-            // 對應你的 GitHub 圖片路徑邏輯
             const statusFolder = s.isShinyBuddy ? 'shiny' : 'normal';
             const fileName = `${curId}${type}`;
             const bImg = `https://paulie0102-bear.github.io/Bear/img/mega/${statusFolder}/${fileName}.png`;
 
+            // 💡 顯示為 "Mega 噴火龍 X" 這種格式
+            const displayName = `Mega ${curName} ${type.toUpperCase()}`;
+
             card.innerHTML = `
-                <img src="${bImg}" style="width:80px; height:80px;">
-                <p style="margin:5px 0 0; font-size:12px; color:var(--p); font-weight:bold;">Mega ${type.toUpperCase()}</p>
+                <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 10px;">
+                    <img src="${bImg}" style="width:80px; height:80px; filter: drop-shadow(0 0 8px var(--p));">
+                </div>
+                <p style="margin:8px 0 0; font-size:13px; color:var(--p); font-weight:bold;">${displayName}</p>
             `;
 
-            // 圖片報錯備援
             const imgEl = card.querySelector('img');
             imgEl.onerror = () => {
                 imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${curId}.png`;
@@ -1372,17 +1397,19 @@ function tryMega() {
             };
 
             card.onclick = () => {
-                if (confirm(`確定進行 Mega 進化 ${type.toUpperCase()} 嗎？`)) {
+                if (confirm(`確定進行 ${displayName} 嗎？`)) {
                     executeMega(type);
+                    document.getElementById('evoDialog').close();
                 }
-                document.getElementById('evoDialog').close();
             };
             container.appendChild(card);
         });
         document.getElementById('evoDialog').showModal();
     } else {
-        // 單一路線 Mega 直接執行
-        if (confirm(`消耗 1 顆 Mega 石讓夥伴進化？`)) executeMega("");
+        // 單一路線 Mega
+        if (confirm(`消耗 1 顆 Mega 石讓 ${curName} 超進化？`)) {
+            executeMega("");
+        }
     }
 }
 
