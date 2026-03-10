@@ -885,22 +885,22 @@ window.onload = () => {
     const saved = localStorage.getItem('pokemaster_v60');
     if(saved) {
         const loaded = JSON.parse(saved);
-        // [修改點 1] 使用展開運算子合併，並額外確保新屬性 claimedGifts 存在
+        // 合併存檔資料
         s = { 
             ...s, 
             ...loaded, 
             claimedGifts: (loaded.claimedGifts || []) 
         }; 
     } else {
-        // 如果是全新玩家，初始化該陣列
         if (!s.claimedGifts) s.claimedGifts = [];
     }
 
     document.getElementById('recDate').valueAsDate = new Date();
     document.getElementById('chartMonthPicker').value = new Date().toISOString().substring(0, 7);
     
-    // [修改點 2] 讀檔後立即執行一次按鈕鎖定，不影響其他 UI 更新
-    lockClaimedGifts(); 
+    // ✅ [核心修改]：將原本的 lockClaimedGifts(); 改為執行 updateGiftButtons();
+    // 這樣重新整理後，JS 才會立即掃描存檔，把博士的土狼犬名場面重新畫上去
+    updateGiftButtons(); 
 
     updateUI();
     setInterval(tickMega, 1000);
