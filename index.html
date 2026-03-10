@@ -2194,10 +2194,7 @@ function updateGiftButtons() {
     const championKeys = Object.keys(CHAMPION_DATA);
     const doctorKeys = Object.keys(DOCTOR_DATA);
 
-    // 1. 定義冠軍代表寶可夢 ID (Ace)
     const aceMap = { 'red': 6, 'lance': 149, 'steven': 376, 'cynthia': 445 };
-    
-    // 2. 定義解鎖後的祝福語
     const championNames = {
         'red': ' 關都地區｜赤紅的傳記祝福',
         'lance': ' 城都地區｜阿渡的龍之覺醒',
@@ -2210,38 +2207,52 @@ function updateGiftButtons() {
         if (!btn) return;
 
         const isChamp = championKeys.includes(key);
-        const imgUrl = isChamp ? `${API}/pokemon/${aceMap[key]}.png` : "";
+        const hasClaimed = s.claimedGifts.includes(key);
 
-        if (s.claimedGifts.includes(key)) {
-            // ● A. 已領取狀態：變灰、顯示勳章灰階 (觸發虛線封印感)
-            btn.disabled = true;
-            if (isChamp) {
-                btn.innerHTML = `
-                    <div class="champion-medal" style="filter:grayscale(1); opacity:0.5;"><img src="${imgUrl}"></div>
-                    <div class="champion-text">✅ 已獲得祝福</div>
-                `;
-            } else {
-                btn.innerText = "✅ 已領取";
-            }
-        } else if (isChamp && days < 100) {
-            // ★ B. 關鍵修改：冠軍未解鎖
-            // 不去改 innerHTML，它就會顯示你在 HTML 寫的「來自...的認可」
-            // 只設定 disabled = true，讓它套用你的灰色虛線 CSS
-            btn.disabled = true; 
-        } else {
-            // ★ C. 已解鎖狀態
-            btn.disabled = false;
-            btn.style.opacity = "1";
+        // --- A. 博士按鈕邏輯 ---
+        if (!isChamp) {
+            const docInfo = DOCTOR_DATA[key];
+            if (!docInfo) return;
+            const sceneImg = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${docInfo.sceneIconId}.png`;
             
-            if (isChamp && days >= 100) {
-                // ✨ 顯示金色勳章與祝福語
+            btn.disabled = hasClaimed;
+            btn.innerHTML = `
+                <div style="display:flex; align-items:center; gap:12px; padding: 4px; opacity: ${hasClaimed ? '0.6' : '1'};">
+                    <div style="width:40px; height:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(255,255,255,0.05); border-radius:50%;">
+                        <img src="${sceneImg}" style="width:110%; height:auto; filter: ${hasClaimed ? 'grayscale(1) brightness(0.5)' : 'drop-shadow(0 0 5px gold)'};">
+                    </div>
+                    <span style="font-weight:bold; font-size:14px; color:white;">${hasClaimed ? '✅ ' : ''}${docInfo.name}</span>
+                </div>
+            `;
+            btn.style.border = hasClaimed ? "1px solid rgba(255,255,255,0.1)" : "1.5px dashed rgba(255, 215, 0, 0.4)";
+            btn.style.background = hasClaimed ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.3)";
+            btn.style.borderRadius = "15px";
+
+        // --- B. 冠軍按鈕邏輯 ---
+        } else {
+            const imgUrl = `${API}/pokemon/${aceMap[key]}.png`;
+            if (hasClaimed) {
+                btn.disabled = true;
                 btn.innerHTML = `
-                    <div class="champion-medal"><img src="${imgUrl}"></div>
-                    <div class="champion-text">${championNames[key]}</div>
+                    <div style="display:flex; align-items:center; gap:12px; padding: 4px; opacity: 0.6;">
+                        <div class="champion-medal" style="filter:grayscale(1) brightness(0.5); width:40px;"><img src="${imgUrl}" style="width:100%"></div>
+                        <div class="champion-text" style="color:white;">✅ 已獲得祝福</div>
+                    </div>
                 `;
+                btn.style.border = "1px solid rgba(255,255,255,0.1)";
+            } else if (days < 100) {
+                btn.disabled = true;
+                // 維持 HTML 原始的「封印」狀態
             } else {
-                // 🎓 博士按鈕
-                btn.innerText = "博士的起程禮"; 
+                btn.disabled = false;
+                btn.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:12px; padding: 4px;">
+                        <div class="champion-medal" style="width:40px;"><img src="${imgUrl}" style="width:100%"></div>
+                        <div class="champion-text">${championNames[key]}</div>
+                    </div>
+                `;
+                btn.style.border = "1.5px solid gold";
+                btn.style.background = "rgba(218, 165, 32, 0.1)";
             }
         }
     });
