@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PokeMaster v60.0 - 終極記帳冒險</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         :root { 
             --p: #2d5a27; --bg: #f0f2f5; --text: #2c3e50; --accent: #f1c40f;
@@ -77,11 +77,12 @@
         .encounter-progress { position: absolute; top: 10px; left: 10px; width: 120px; font-size: 10px; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 5px; }
 
         /* 圖鑑佈局 */
-        .dex-container { display: flex; height: calc(100vh - 80px); }
+        /*.dex-container { display: flex; height: calc(100vh - 80px); }
         .dex-sidebar { width: 35%; overflow-y: auto; background: #ddd; border-right: 1px solid #bbb; }
         .dex-main { width: 65%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: white; padding: 20px; }
         .dex-item { padding: 12px 5px; border-bottom: 1px solid #ccc; font-size: 13px; text-align: center; cursor: pointer; }
-        .dex-item.active { background: var(--p); color: white; }
+        .dex-item.active { background: var(--p); color: white; }*/
+
 
         /* 底部控制面板 (2列4欄) */
         .control-panel { 
@@ -310,7 +311,74 @@
     backdrop-filter: blur(3px);
 }
 </style>
+<style>
+    /* --- 圖鑑整體外框 (經典紅) --- */
+.dex-container {
+    display: flex;
+    background: #e74c3c; /* 經典 Pokedex 紅 */
+    border: 8px solid #c0392b;
+    border-radius: 15px;
+    height: calc(100vh - 140px); /* 扣除底部選單的高度 */
+    overflow: hidden;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+    margin: 5px;
+}
 
+/* --- 左側列表：解決手機下拉重新整理的關鍵 --- */
+.dex-sidebar {
+    width: 40%;
+    background: #2b2b2b; /* 深色背景更有螢幕感 */
+    overflow-y: auto;
+    border-right: 4px solid #c0392b;
+    /* 核心優化：封鎖瀏覽器下拉重新整理，並讓滑動絲滑 */
+    overscroll-behavior-y: contain; 
+    -webkit-overflow-scrolling: touch;
+}
+
+/* --- 右側詳細資訊區 (液晶螢幕感) --- */
+.dex-main {
+    width: 60%;
+    background: #fdfdfd;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 10px;
+    position: relative;
+    overflow-y: auto; /* 防止內容過多時擠壓 */
+}
+
+/* --- 列表項目樣式 --- */
+.dex-item {
+    padding: 12px 8px;
+    border-bottom: 1px solid #3d3d3d;
+    color: #888;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+/* 當前選中的項目 */
+.dex-item.active {
+    background: #444;
+    color: #ffeb3b; /* 選中時文字變黃色 */
+    border-left: 5px solid #ffeb3b;
+    font-weight: bold;
+}
+
+/* 輔助按鈕樣式 (針對圖鑑內的小按鈕) */
+.btn-dex-sm {
+    padding: 8px 4px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #f8f9fa;
+    cursor: pointer;
+}
+.btn-dex-sm:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+</style>
 </head>
 <body>
 
@@ -403,17 +471,31 @@
 <div id="dexPage" class="page">
     <div class="dex-container">
         <div class="dex-sidebar" id="dexNav"></div>
+        
         <div class="dex-main">
-            <h3 id="dexTitle">No.???</h3>
-            <img id="dexImg" src="" style="width:160px; height:160px; object-fit:contain;">
-            <div id="dexCtrl" style="margin-top:15px; display:grid; grid-template-columns:1fr 1fr; gap:5px;">
-                <button onclick="setDexShiny(false)" style="padding:8px;">一般型態</button>
-                <button onclick="setDexShiny(true)" id="shinyBtn" style="padding:8px;">✨ 閃光型態</button>
-                <button onclick="assignBuddy()" style="grid-column: span 2; background:var(--p); color:white; padding:12px; border:none; border-radius:20px; margin-top:10px;">就決定是你了！</button>
+            <h3 id="dexTitle" style="margin: 0 0 10px 0; color: #333; font-size: 18px;">No.???</h3>
+            
+            <div style="background: white; border: 3px solid #ddd; border-radius: 12px; padding: 15px; position: relative;">
+                <img id="dexImg" src="" style="width: 140px; height: 140px; object-fit: contain;">
+                <div id="megaTag" style="position: absolute; top: 5px; right: 8px; font-size: 18px; display: none;">🧬</div>
+            </div>
+
+            <div id="dexCtrl" style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
+                <button onclick="setDexShiny(false)" class="btn-dex-sm">一般型態</button>
+                <button onclick="setDexShiny(true)" id="shinyBtn" class="btn-dex-sm">✨ 閃光型態</button>
+                
+                <div id="megaGroup" style="grid-column: span 2; display: none; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px;">
+                    <button id="mBtnSingle" onclick="toggleMega('')" style="grid-column: span 2; background: #9b59b6; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold;">🧬 Mega 進化</button>
+                    
+                    <button id="mBtnX" onclick="toggleMega('x')" style="background: #3498db; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold;">Mega X</button>
+                    <button id="mBtnY" onclick="toggleMega('y')" style="background: #e67e22; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold;">Mega Y</button>
+                </div>
+
+                <button onclick="assignBuddy()" style="grid-column: span 2; background: var(--p); color: white; padding: 14px; border: none; border-radius: 25px; margin-top: 10px; font-weight: bold; font-size: 16px; box-shadow: 0 4px rgba(0,0,0,0.2);">就決定是你了！</button>
             </div>
         </div>
     </div>
-    <button class="btn-back" onclick="back()">✖ 關閉圖鑑</button>
+    <button class="btn-back" onclick="back()" style="margin-top: 15px;">✖ 關閉圖鑑</button>
 </div>
 
 
@@ -714,27 +796,34 @@
         </div>
 
         <hr style="margin: 20px 0;">
+
         <h3>📜 紀錄與載入</h3>
         <button onclick="document.getElementById('csvFile').click()" style="background:var(--p); color:white; width:100%; padding:15px; border:none; border-radius:10px; margin-bottom:15px;">📑 導入財政部 CSV 載具資料</button>
         <input type="file" id="csvFile" style="display:none" onchange="handleCSV(event)">
+        
         <div id="csvPreviewArea" style="display:none; margin-top:20px; padding:10px; border:2px dashed #ccc; border-radius:10px;">
-    <h3>📋 匯入預覽</h3>
-    <p style="font-size:12px; color:gray;">(在此修改分類後點擊「正式導入」)</p>
-    <div id="previewList" style="max-height:300px; overflow-y:auto; margin-bottom:10px;"></div>
-    <div style="display:flex; gap:10px;">
-        <button onclick="confirmImport()" style="flex:1; background:#28a745; color:white; padding:10px; border:none; border-radius:5px;">✅ 正式導入</button>
-        <button onclick="cancelImport()" style="flex:1; background:#6c757d; color:white; padding:10px; border:none; border-radius:5px;">✖ 取消</button>
-    </div>
-</div>
-<hr>
-        <p style="font-size:13px; color:gray;">手動紀錄查詢)</p>
+            <h3>📋 匯入預覽</h3>
+            <h4 id="importCount" style="margin: 5px 0; color: var(--p); font-size: 14px;">預覽資料數量: 0</h4>
+            <p style="font-size:12px; color:gray;">(在此修改分類後點擊「正式導入」)</p>
+            <div id="previewList" style="max-height:300px; overflow-y:auto; margin-bottom:10px;"></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="confirmImport()" style="flex:1; background:#28a745; color:white; padding:10px; border:none; border-radius:5px;">✅ 正式導入</button>
+                <button onclick="cancelImport()" style="flex:1; background:#6c757d; color:white; padding:10px; border:none; border-radius:5px;">✖ 取消</button>
+            </div>
+        </div>
+
+        <hr>
+
+        <p style="font-size:13px; color:gray; margin-bottom: 5px;">手動紀錄查詢</p>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:10px;">
-            <input type="date" id="hStart"> <input type="date" id="hEnd">
+            <input type="date" id="hStart" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;"> 
+            <input type="date" id="hEnd" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
         </div>
         <button onclick="searchHistory()" style="background:var(--dark); color:white; width:100%; padding:10px; border:none; border-radius:5px;">搜尋明細</button>
-        <div id="historyList" style="margin-top:10px; max-height:200px; overflow-y:auto;"></div>
-    </div>
-    <button class="btn-back" onclick="back()">✖ 關閉</button>
+        
+        <div id="historyList" style="margin-top:10px; max-height:200px; overflow-y:auto; border: 1px solid #eee; border-radius: 5px; background: #fafafa;"></div>
+        
+    </div> <button class="btn-back" onclick="back()" style="margin-top: 15px; width: 100%;">✖ 關閉</button>
 </div>
 
 <div id="adminPage" class="page">
@@ -1817,37 +1906,120 @@ function renderBag() {
     bs.innerHTML = `<option value="poke">精靈球 (${s.items.poke})</option><option value="great">超級球 (${s.items.great})</option><option value="ultra">高級球 (${s.items.ultra})</option><option value="master">大師球 (${s.items.master})</option>`;
 }
 
-let dexId = 25, dexShiny = false;
+
+// --- 🚩 全域狀態控制 ---
+let dexId = 1;        // 當前選中 ID
+let dexShiny = false; // 是否閃光
+let dexMega = "";     // Mega 型態: "", "x", "y"
+
+// 根據官方 493 前的資料預設的 Mega 名單 (可依你的需求增減)
+const MEGA_LIST = [3, 6, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142, 150, 181, 208, 212, 214, 229, 248, 254, 257, 260, 282, 302, 303, 306, 308, 310, 319, 323, 334, 354, 359, 362, 373, 376, 380, 381, 382, 383, 384, 428, 445, 448, 460, 475];
+
+// --- 🎨 核心渲染函式 ---
 function renderDex() {
     const nav = document.getElementById('dexNav');
-    nav.innerHTML = "";
-    for(let i=1; i<=493; i++) {
-        const item = document.createElement('div');
+    if (!nav) return;
+
+    // 1. 局部更新列表 (僅在初次或必要時生成，優化效能)
+    // 這裡我們直接生成 HTML，但透過 class 切換來優化視覺
+    let listHtml = "";
+    for (let i = 1; i <= 493; i++) {
         const caught = s.owned.includes(i);
-        item.className = `dex-item ${i === dexId ? 'active' : ''}`;
-        
-        // [修正點 1] 已捕捉則顯示「編號 + 中文名」，未捕捉則顯示「???」
-        const nameText = caught ? getPkmnName(i) : "???";
-        item.innerText = `No.${String(i).padStart(3,'0')} ${nameText}`;
-        
-        item.onclick = () => { dexId = i; renderDex(); };
-        nav.appendChild(item);
+        const nameText = caught ? (POKEMON_NAMES[i] || "???") : "???";
+        const activeClass = (i === dexId) ? "active" : "";
+        listHtml += `<div class="dex-item ${activeClass}" onclick="selectDex(${i})">
+            No.${String(i).padStart(3, '0')} ${nameText}
+        </div>`;
+    }
+    nav.innerHTML = listHtml;
+
+    // 自動捲動到選中項 (選填)
+    // const activeItem = document.querySelector('.dex-item.active');
+    // if(activeItem) activeItem.scrollIntoView({ block: 'nearest' });
+
+    updateDexDetail();
+}
+
+// --- 🔍 選取寶可夢 ---
+function selectDex(id) {
+    dexId = id;
+    dexMega = ""; // 切換寶可夢時重置 Mega
+    renderDex();
+}
+
+// --- 🖼️ 更新右側詳細資訊 ---
+function updateDexDetail() {
+    const caught = s.owned.includes(dexId);
+    const detailName = caught ? (POKEMON_NAMES[dexId] || "???") : "???";
+    const shinyOwned = s.shinyOwned.includes(dexId);
+
+    // 1. 更新標題 (若 Mega 則顯示名字前綴)
+    let prefix = dexMega ? `Mega ${dexMega.toUpperCase()} ` : "";
+    document.getElementById('dexTitle').innerText = `No.${String(dexId).padStart(3, '0')} ${prefix}${detailName}`;
+
+    // 2. 圖片路徑邏輯 (分流處理)
+    const imgEl = document.getElementById('dexImg');
+    if (!caught) {
+        imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png`;
+    } else if (dexMega !== "") {
+        // 抓你的 GitHub Mega 庫
+        const folder = dexShiny ? 'shiny' : 'normal';
+        const url = `https://paulie0102-bear.github.io/Bear/img/mega/${folder}/${dexId}${dexMega}.png`;
+        imgEl.src = url;
+        // 防破圖：如果 GitHub 沒這張圖，跳回普通版
+        imgEl.onerror = () => { imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${dexShiny ? 'shiny/' : ''}${dexId}.png`; imgEl.onerror = null; };
+    } else {
+        // 抓標準 PokeAPI
+        imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${dexShiny ? 'shiny/' : ''}${dexId}.png`;
+        imgEl.onerror = null;
+    }
+
+    // 3. 按鈕權限控制
+    const shinyBtn = document.getElementById('shinyBtn');
+    shinyBtn.disabled = !shinyOwned;
+    shinyBtn.style.opacity = shinyOwned ? "1" : "0.3";
+
+    // 4. Mega 按鈕顯示判定
+    const hasMega = MEGA_LIST.includes(dexId) && caught;
+    const isDual = [6, 150].includes(dexId); // 噴火龍, 超夢
+    
+    document.getElementById('megaGroup').style.display = hasMega ? "grid" : "none";
+    document.getElementById('mBtnSingle').style.display = (hasMega && !isDual) ? "block" : "none";
+    document.getElementById('mBtnX').style.display = isDual ? "block" : "none";
+    document.getElementById('mBtnY').style.display = isDual ? "block" : "none";
+    document.getElementById('megaTag').style.display = hasMega ? "block" : "none";
+}
+
+// --- 🧬 切換 Mega 型態 ---
+function toggleMega(type) {
+    // 這裡可以加上檢查 s.items.mstone 是否足夠的邏輯
+    dexMega = (dexMega === type) ? "" : type; // 再次點擊則取消
+    updateDexDetail();
+}
+
+// --- ✨ 切換閃光 ---
+function setDexShiny(v) {
+    if (v && !s.shinyOwned.includes(dexId)) return;
+    dexShiny = v;
+    updateDexDetail();
+}
+
+// --- 🤝 就決定是你了！ ---
+function assignBuddy() {
+    if (!s.owned.includes(dexId)) { 
+        alert("尚未捕捉此寶可夢！"); 
+        return; 
     }
     
-    const caught = s.owned.includes(dexId);
+    // 儲存到存檔物件 s
+    s.buddyId = dexId; 
+    s.isShinyBuddy = dexShiny;
+    s.buddyMega = dexMega; // 🚩 新增儲存欄位，記得在 updateUI 使用它
     
-    // [修正點 2] 詳細面板標題同步中文名
-    const detailName = caught ? getPkmnName(dexId) : "???";
-    document.getElementById('dexTitle').innerText = `No.${String(dexId).padStart(3,'0')} ${detailName}`;
+    if (typeof saveGame === 'function') saveGame();
+    if (typeof updateUI === 'function') updateUI(); 
     
-    document.getElementById('dexImg').src = caught ? `${API}/pokemon/${dexShiny?'shiny/':''}${dexId}.png` : `${API}/pokemon/0.png`;
-    document.getElementById('shinyBtn').disabled = !s.shinyOwned.includes(dexId);
-}
-function setDexShiny(v) { dexShiny = v; renderDex(); }
-function assignBuddy() {
-    if(!s.owned.includes(dexId)) { alert("尚未捕捉此寶可夢！"); return; }
-    s.buddyId = dexId; s.isShinyBuddy = dexShiny;
-    updateUI(); alert("夥伴更換成功！");
+    alert(`更換夥伴：${POKEMON_NAMES[dexId]} ${dexMega ? '(' + dexMega.toUpperCase() + ')' : ''}`);
 }
 
 function buy(type, price) {
@@ -1978,6 +2150,7 @@ function renderCharts() {
 let tempData = []; // 暫存區
 let lastImportCount = 0; // 儲存上次匯入成功筆數
 
+// 注意：這裡不准放任何 <div> 標籤！
 function handleCSV(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -1989,8 +2162,15 @@ function handleCSV(e) {
 
         tempData = [];
         const previewList = document.getElementById('previewList');
+        
+        // 安全檢查
+        if (!previewList) {
+            console.error("錯誤：找不到 id='previewList' 的元素，請將 <div id='previewList'></div> 放到 HTML 中。");
+            return; 
+        }
+
         previewList.innerHTML = "";
-        lastImportCount = 0; // 每次匯入前重置
+        lastImportCount = 0;
 
         for (let i = 1; i < lines.length; i++) {
             const cols = lines[i].split(',').map(c => c.replace(/^["']|["']$/g, '').trim());
@@ -2026,40 +2206,37 @@ function handleCSV(e) {
                 tempData.push(item);
                 lastImportCount++;
 
-                // 顯示暫存區資料
                 previewList.innerHTML += `
-    <div class="csv-item-mobile">
-        <div class="csv-row">
-            <input type="date" value="${item.date}" 
-                   onchange="tempData[${tempData.length-1}].date=this.value" class="csv-date">
-            <select onchange="tempData[${tempData.length-1}].cat=this.value" class="csv-cat">
-                <option value="其他" ${item.cat==="其他"?"selected":""}>其他</option>
-                <option value="餐飲" ${item.cat==="餐飲"?"selected":""}>餐飲</option>
-                <option value="交通" ${item.cat==="交通"?"selected":""}>交通</option>
-                <option value="購物" ${item.cat==="購物"?"selected":""}>購物</option>
-                <option value="娛樂" ${item.cat==="娛樂"?"selected":""}>娛樂</option>
-                <option value="醫療" ${item.cat==="醫療"?"selected":""}>醫療</option>
-            </select>
-        </div>
-        <div class="csv-row">
-            <input type="text" value="${item.note}" 
-                   onchange="tempData[${tempData.length-1}].note=this.value" class="csv-note" placeholder="備註">
-            <span class="csv-amt">$${item.amt}</span>
-        </div>
-    </div>`;
+                    <div class="csv-item-mobile">
+                        <div class="csv-row">
+                            <input type="date" value="${item.date}" onchange="tempData[${tempData.length-1}].date=this.value" class="csv-date">
+                            <select onchange="tempData[${tempData.length-1}].cat=this.value" class="csv-cat">
+                                <option value="其他" ${item.cat==="其他"?"selected":""}>其他</option>
+                                <option value="餐飲" ${item.cat==="餐飲"?"selected":""}>餐飲</option>
+                                <option value="交通" ${item.cat==="交通"?"selected":""}>交通</option>
+                                <option value="購物" ${item.cat==="購物"?"selected":""}>購物</option>
+                                <option value="娛樂" ${item.cat==="娛樂"?"selected":""}>娛樂</option>
+                                <option value="醫療" ${item.cat==="醫療"?"selected":""}>醫療</option>
+                            </select>
+                        </div>
+                        <div class="csv-row">
+                            <input type="text" value="${item.note}" onchange="tempData[${tempData.length-1}].note=this.value" class="csv-note" placeholder="備註">
+                            <span class="csv-amt">$${item.amt}</span>
+                        </div>
+                    </div>`;
             }
         }
 
-        if(tempData.length>0){
+        if(tempData.length > 0){
             document.getElementById('csvPreviewArea').style.display = "block";
             document.getElementById('importCount').innerText = `預覽資料數量: ${lastImportCount}`;
         } else {
             document.getElementById('importCount').innerText = `預覽資料數量: 0`;
         }
-    };
+    }; // reader.onload 結束
 
     reader.readAsText(file);
-}
+} // handleCSV 函式結束 (🚩 這邊之前少了這個括號)
 
 function confirmImport() {
     if(!tempData || tempData.length===0){ cancelImport(); return; }
