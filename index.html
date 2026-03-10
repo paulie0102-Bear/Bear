@@ -1398,11 +1398,31 @@ function tryMega() {
 
 // --- [ 介面控制與導航 ] ---
 function openPage(id) {
+    // 1. 抓取目標元素
+    const target = document.getElementById(id);
+    
+    // 🔴 關鍵防護：如果找不到對應的 ID，就不要執行後面的動作
+    if (!target) {
+        console.error(`❌ 找不到頁面 ID: "${id}"，請檢查 HTML 中的 id 設定。`);
+        return; 
+    }
+
+    // 2. 移除所有頁面的活躍狀態
     document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active'));
-    document.getElementById(id).classList.add('page-active');
-    if(id === 'dexPage') renderDex();
-    if(id === 'taskPage') renderTasks();
-    if(id === 'chartPage') renderCharts();
+
+    // 3. 顯示目標頁面
+    target.classList.add('page-active');
+
+    // 4. 根據 ID 執行對應的渲染函式
+    if (id === 'dexPage') renderDex();
+    if (id === 'taskPage') renderTasks();
+    if (id === 'chartPage') renderCharts();
+    
+    // ✨ 新增：如果是導引頁，更新等級顯示
+    if (id === 'guidePage') {
+        const lvlEl = document.getElementById('guideLvl');
+        if (lvlEl) lvlEl.innerText = s.lvl || 1;
+    }
 }
 function back() { document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active')); }
 
