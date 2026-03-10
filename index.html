@@ -1185,57 +1185,62 @@ function updateUI() {
     document.getElementById('st-shiny-rate').innerText = finalShiny + "%";
 
     // 夥伴圖片渲染邏輯 (含 Mega 分支)
-// --- 夥伴圖片渲染邏輯 (引用本地資料夾版) ---
-const isMegaActive = Date.now() < s.megaUntil; 
-const bEl = document.getElementById('buddyImg');
+// --- 夥伴圖片渲染邏輯 (APK/GitHub 通用穩定版) ---
+function updateBuddyUI() { // 確保包裹在函數內
+    const isMegaActive = Date.now() < s.megaUntil; 
+    const bEl = document.getElementById('buddyImg');
 
-// 根據是否 Mega 進化決定大小與樣式
-if (isMegaActive) {
-    bEl.style.width = "200px"; 
-    bEl.style.height = "200px";
-    bEl.classList.add('mega-fx');
-} else {
-    bEl.style.width = "150px";
-    bEl.style.height = "150px";
-    bEl.classList.remove('mega-fx');
-}
+    if (!bEl) return; // 防錯：如果找不到元素則停止
 
-let bImg;
-if (isMegaActive) {
-    // 確定資料夾 (一般或閃光)
-    const folder = s.isShinyBuddy ? 'shiny' : 'normal';
-    
-    // 確定檔案名稱
-    let fileName = s.buddyId; 
-
-    // A. 處理特殊分支 (噴火龍 6, 超夢 150)
-    if (s.buddyId === 6 || s.buddyId === 150) {
-        // 取得字尾 x 或 y (預設為 x)
-        const suffix = s.currentMegaType || 'x';
-        fileName = `${s.buddyId}${suffix}`;
+    // 1. 樣式調整
+    if (isMegaActive) {
+        bEl.style.width = "200px"; 
+        bEl.style.height = "200px";
+        bEl.classList.add('mega-fx');
+    } else {
+        bEl.style.width = "150px";
+        bEl.style.height = "150px";
+        bEl.classList.remove('mega-fx');
     }
 
-    // 引用你上傳到 GitHub 的本地資料夾路徑
-    // 假設你的路徑是 img/mega/normal/384.png
-    bImg = `./img/mega/${folder}/${fileName}.png`;
+    let bImg;
+    if (isMegaActive) {
+        const folder = s.isShinyBuddy ? 'shiny' : 'normal';
+        let fileName = s.buddyId; 
 
-} else {
-    // 一般狀態 (維持原樣或也改用本地圖)
-    // 如果一般狀態也想用本地圖，可以改為 `./img/pokemon/${s.isShinyBuddy ? 'shiny' : 'normal'}/${s.buddyId}.png`
-    const apiPath = s.isShinyBuddy ? 'shiny/' : '';
-    bImg = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${apiPath}${s.buddyId}.png`;
+        // 處理分支
+        if (s.buddyId === 6 || s.buddyId === 150) {
+            const suffix = s.currentMegaType || 'x';
+            fileName = `${s.buddyId}${suffix}`;
+        }
+
+        // 修改點：移除開頭的 ./ 增加 APK 相容性
+        bImg = `img/mega/${folder}/${fileName}.png`;
+    } else {
+        // 一般狀態建議也使用本地圖，避免 APK 在斷網時無法顯示
+        const folder = s.isShinyBuddy ? 'shiny' : 'normal';
+        const apiPath = s.isShinyBuddy ? 'shiny/' : '';
+        
+        // 如果你沒下載一般圖，就維持原本的 API 路徑
+        bImg = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${apiPath}${s.buddyId}.png`;
+    }
+
+    // 2. 執行圖片更新
+    bEl.src = bImg;
+
+    // 3. 備援與除錯 (APK 調試關鍵)
+    bEl.onerror = function() { 
+        console.error("載入失敗的路徑:", this.src);
+        // 回退到最基本的一般圖 API
+        this.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${s.buddyId}.png`;
+        
+        // APK 測試時可以開啟這行 alert，確認到底是哪個檔案沒被打包進去
+        // alert("找不到圖片: " + bImg); 
+    };
+
+    if (typeof renderBag === 'function') renderBag();
 }
 
-bEl.src = bImg;
-
-// 備援機制：如果本地圖載入失敗，回退到官方 API 的一般圖片
-bEl.onerror = () => { 
-    bEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${s.buddyId}.png`;
-    console.warn(`無法載入本地圖片: ${bImg}，已切換至備援路徑。`);
-};
-
-renderBag();
-}
 
 function getTitle(count) {
     if(count >= 493) return {name: "寶可夢大師", bonus: 50};
