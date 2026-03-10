@@ -1173,138 +1173,95 @@ function gainExp(amount) {
     }
 }
 
-function showMsg(text){
-    document.getElementById("msg").innerText = text;
+function showMsg(text) {
+    const msgEl = document.getElementById("msg");
+    if (msgEl) msgEl.innerText = text;
 }
 
 function updateUI() {
+    // 1. 本地存檔
     localStorage.setItem('pokemaster_v60', JSON.stringify(s));
-    const stLevel = document.getElementById('st-level');
 
-    if (stLevel) stLevel.innerText = `Lv. ${s.lvl || 1}`;
+    // 2. 基礎狀態渲染 (加上防錯判斷防止找不到元素)
+    const setInner = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
+    };
 
-
-
-    const stDex = document.getElementById('st-dex-count');
-
-    if (stDex) stDex.innerText = s.owned.length;
-    document.getElementById('shop-bal').innerText = s.bal;
-    document.getElementById('enc-prog').innerText = s.pool;
-    document.getElementById('st-dex-count').innerText = s.owned.length;
+    setInner('st-level', `Lv. ${s.lvl || 1}`);
+    setInner('st-dex-count', s.owned.length);
+    setInner('shop-bal', s.bal);
+    setInner('enc-prog', s.pool);
     
-    document.getElementById('p-evo-txt').innerText = s.prog.evo;
-    document.getElementById('p-evo-bar').style.width = (s.prog.evo/5*100) + "%";
-    document.getElementById('p-mega-txt').innerText = s.prog.mega;
-    document.getElementById('p-mega-bar').style.width = (s.prog.mega/5*100) + "%";
+    // 進度條與文字
+    setInner('p-evo-txt', s.prog.evo);
+    const evoBar = document.getElementById('p-evo-bar');
+    if (evoBar) evoBar.style.width = (Math.min(s.prog.evo / 5 * 100, 100)) + "%";
 
+    setInner('p-mega-txt', s.prog.mega);
+    const megaBar = document.getElementById('p-mega-bar');
+    if (megaBar) megaBar.style.width = (Math.min(s.prog.mega / 5 * 100, 100)) + "%";
+
+    // 3. 稱號與機率計算
     const titleObj = getTitle(s.owned.length);
-    document.getElementById('st-title').innerText = titleObj.name;
-    const isMega = Date.now() < s.megaUntil;
-    const finalCatch = (30 + titleObj.bonus + (isMega?20:0));
-    const finalShiny = (5 + (isMega?10:0));
-    document.getElementById('st-catch-rate').innerText = finalCatch + "%";
-    document.getElementById('st-shiny-rate').innerText = finalShiny + "%";
+    setInner('st-title', titleObj.name);
+    
+    const isMegaActive = Date.now() < s.megaUntil; // 統一判斷變數
+    const finalCatch = (30 + titleObj.bonus + (isMegaActive ? 20 : 0));
+    const finalShiny = (5 + (isMegaActive ? 10 : 0));
+    
+    setInner('st-catch-rate', finalCatch + "%");
+    setInner('st-shiny-rate', finalShiny + "%");
 
-    // 夥伴圖片渲染邏輯 (含 Mega 分支)
-const isMegaActive = Date.now() < s.megaUntil;
+    // 4. 夥伴圖片渲染邏輯 (對接 GitHub 伺服器)
+    const bEl = document.getElementById('buddyImg');
+    if (bEl) {
+        let bImg;
+        const statusFolder = s.isShinyBuddy ? 'shiny' : 'normal';
 
-const bEl = document.getElementById('buddyImg');
+        if (isMegaActive) {
+            // --- Mega 狀態：使用你的 GitHub 伺服器 ---
+            bEl.style.width = "200px";
+            bEl.style.height = "200px";
+            bEl.classList.add('mega-fx');
 
+            let fileName = s.buddyId;
+            // 處理特殊分支 (噴火龍 6, 超夢 150)
+            if (s.buddyId === 6 || s.buddyId === 150) {
+                const suffix = s.currentMegaType || 'x';
+                fileName = `${s.buddyId}${suffix}`;
+            }
 
+            // 你的正確網址路徑
+            bImg = `https://paulie0102-bear.github.io/Bear/img/mega/${statusFolder}/${fileName}.png`;
 
-// 根據是否 Mega 進化決定大小與樣式
+        } else {
+            // --- 一般狀態：使用 PokeAPI 官方高清圖 ---
+            bEl.style.width = "150px";
+            bEl.style.height = "150px";
+            bEl.classList.remove('mega-fx');
 
-if (isMegaActive) {
+            const shinyPath = s.isShinyBuddy ? 'shiny/' : '';
+            // 建議用 official-artwork，解析度比原本的小圖好很多
+            bImg = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${shinyPath}${s.buddyId}.png`;
+        }
 
-bEl.style.width = "200px";
+        // 執行替換圖片
+        bEl.src = bImg;
 
-bEl.style.height = "200px";
+        // 備援機制：如果圖片加載失敗（如 GitHub 404），回退到官方普通小圖
+        bEl.onerror = () => {
+            const apiPath = s.isShinyBuddy ? 'shiny/' : '';
+            bEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${apiPath}${s.buddyId}.png`;
+            console.warn(`[圖片加載警告]: 找不到資源 ${bImg}，已自動切換備援。`);
+            bEl.onerror = null; // 避免備援也失敗時造成無限迴圈
+        };
+    }
 
-bEl.classList.add('mega-fx');
-
-} else {
-
-bEl.style.width = "150px";
-
-bEl.style.height = "150px";
-
-bEl.classList.remove('mega-fx');
-
+    // 5. 渲染背包
+    if (typeof renderBag === 'function') renderBag();
 }
 
-
-
-let bImg;
-
-if (isMegaActive) {
-
-// 確定資料夾 (一般或閃光)
-
-const folder = s.isShinyBuddy ? 'shiny' : 'normal';
-
-
-
-// 確定檔案名稱
-
-let fileName = s.buddyId;
-
-
-
-// A. 處理特殊分支 (噴火龍 6, 超夢 150)
-
-if (s.buddyId === 6 || s.buddyId === 150) {
-
-// 取得字尾 x 或 y (預設為 x)
-
-const suffix = s.currentMegaType || 'x';
-
-fileName = `${s.buddyId}${suffix}`;
-
-}
-
-
-
-// 引用你上傳到 GitHub 的本地資料夾路徑
-
-// 假設你的路徑是 img/mega/normal/384.png
-
-bImg = `./img/mega/${folder}/${fileName}.png`;
-
-
-
-} else {
-
-// 一般狀態 (維持原樣或也改用本地圖)
-
-// 如果一般狀態也想用本地圖，可以改為 `./img/pokemon/${s.isShinyBuddy ? 'shiny' : 'normal'}/${s.buddyId}.png`
-
-const apiPath = s.isShinyBuddy ? 'shiny/' : '';
-
-bImg = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${apiPath}${s.buddyId}.png`;
-
-}
-
-
-
-bEl.src = bImg;
-
-
-
-// 備援機制：如果本地圖載入失敗，回退到官方 API 的一般圖片
-
-bEl.onerror = () => {
-
-bEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${s.buddyId}.png`;
-
-console.warn(`無法載入本地圖片: ${bImg}，已切換至備援路徑。`);
-
-};
-
-
-
-renderBag();
-
-}
 
 function getTitle(count) {
     if(count >= 493) return {name: "寶可夢大師", bonus: 50};
