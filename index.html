@@ -115,7 +115,32 @@
         @keyframes ballShake { 0%, 100% { transform: translate(230px, -160px) rotate(0deg); } 25% { transform: translate(230px, -160px) rotate(15deg); } 75% { transform: translate(230px, -160px) rotate(-15deg); } }
         .mega-fx { filter: drop-shadow(0 0 10px var(--mega)); animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        .gotcha-text { position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); color: gold; font-size: 40px; font-weight: 900; text-shadow: 2px 2px #000; z-index: 2000; display: none; }
+        .gotcha-text {
+    position: absolute;
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    /* 漸層色彩 */
+    background: linear-gradient(to bottom, #FFF59D 0%, #FFD600 50%, #FF8F00 100%);
+    
+    /* --- 兼容性定義區 --- */
+    -webkit-background-clip: text; /* Safari & Chrome 舊版 */
+    background-clip: text;         /* 標準屬性 (Firefox & 現代瀏覽器) */
+    -webkit-text-fill-color: transparent; /* 必須搭配 -webkit 前綴才能生效 */
+    
+    /* 視覺增強 */
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) 
+            drop-shadow(2px 4px 4px rgba(0, 0, 0, 0.5));
+            
+    font-size: 52px;
+    font-weight: 900;
+    font-family: "Arial Black", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    z-index: 2000;
+    display: none;
+    letter-spacing: 4px;
+    white-space: nowrap;
+}
     </style>
 <style>
   /* 舞台：草叢與寶可夢演戲的地方 */
@@ -386,7 +411,7 @@
 
     <div class="battle-stage">
 
-        <div id="gotcha" class="gotcha-text">GOTCHA!</div>
+        <div id="gotcha" class="gotcha-text">抓到寶可夢了!</div>
 
         <div class="encounter-progress">遭遇進度: <span id="enc-prog">0</span> / 200</div>
 
@@ -485,11 +510,11 @@
                 <button onclick="setDexShiny(true)" id="shinyBtn" class="btn-dex-sm">✨ 閃光型態</button>
                 
                 <div id="megaGroup" style="grid-column: span 2; display: none; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px;">
-                    <button id="mBtnSingle" onclick="toggleMega('')" style="grid-column: span 2; background: #9b59b6; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold;">🧬 Mega 進化</button>
-                    
-                    <button id="mBtnX" onclick="toggleMega('x')" style="background: #3498db; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold;">Mega X</button>
-                    <button id="mBtnY" onclick="toggleMega('y')" style="background: #e67e22; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold;">Mega Y</button>
-                </div>
+    <button id="mBtnSingle" onclick="toggleMega('mega')" style="grid-column: span 2; background: #9b59b6; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold;">🧬 Mega 進化</button>
+    
+    <button id="mBtnX" onclick="toggleMega('x')" style="background: #3498db; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold;">Mega X</button>
+    <button id="mBtnY" onclick="toggleMega('y')" style="background: #e67e22; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold;">Mega Y</button>
+</div>
 
                 <button onclick="assignBuddy()" style="grid-column: span 2; background: var(--p); color: white; padding: 14px; border: none; border-radius: 25px; margin-top: 10px; font-weight: bold; font-size: 16px; box-shadow: 0 4px rgba(0,0,0,0.2);">就決定是你了！</button>
             </div>
@@ -981,7 +1006,7 @@ const EVO_BRANCHES = {
 let s = {
     bal: 1000, 
     pool: 0, 
-    items: {poke:10, great:5, ultra:0, master:1, stone:0, mstone:0},
+    items: {poke:10, great:5, ultra:1, master:1, stone:1, mstone:1},
     prog: {evo:0, mega:0}, 
     buddyId: 25,
     isShinyBuddy: false, 
@@ -1358,42 +1383,42 @@ function updateUI() {
         let bImg;
         const statusFolder = s.isShinyBuddy ? 'shiny' : 'normal';
 
+        // 🚩 修正 1：直接檢查存檔中的 buddyMega 變數是否有值
+        const isMegaActive = (s.buddyMega && s.buddyMega !== "");
+
         if (isMegaActive) {
-            // --- Mega 狀態：使用你的 GitHub 伺服器 ---
+            // --- Mega 狀態 ---
             bEl.style.width = "200px";
             bEl.style.height = "200px";
             bEl.classList.add('mega-fx');
 
-            let fileName = s.buddyId;
-            // 處理特殊分支 (噴火龍 6, 超夢 150)
-            if (s.buddyId === 6 || s.buddyId === 150) {
-                const suffix = s.currentMegaType || 'x';
-                fileName = `${s.buddyId}${suffix}`;
+            // 🚩 修正 2：統一使用 s.buddyMega 作為後綴判定
+            let suffix = "";
+            if (s.buddyMega === 'x' || s.buddyMega === 'y') {
+                suffix = s.buddyMega;
             }
 
-            // 你的正確網址路徑
+            // 🚩 修正 3：組合檔名 (例如: 6x.png 或 3.png)
+            const fileName = `${s.buddyId}${suffix}`;
             bImg = `https://paulie0102-bear.github.io/Bear/img/mega/${statusFolder}/${fileName}.png`;
 
         } else {
-            // --- 一般狀態：使用 PokeAPI 官方高清圖 ---
+            // --- 一般狀態 ---
             bEl.style.width = "150px";
             bEl.style.height = "150px";
             bEl.classList.remove('mega-fx');
 
             const shinyPath = s.isShinyBuddy ? 'shiny/' : '';
-            // 建議用 official-artwork，解析度比原本的小圖好很多
             bImg = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${shinyPath}${s.buddyId}.png`;
         }
 
-        // 執行替換圖片
         bEl.src = bImg;
 
-        // 備援機制：如果圖片加載失敗（如 GitHub 404），回退到官方普通小圖
         bEl.onerror = () => {
             const apiPath = s.isShinyBuddy ? 'shiny/' : '';
             bEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${apiPath}${s.buddyId}.png`;
-            console.warn(`[圖片加載警告]: 找不到資源 ${bImg}，已自動切換備援。`);
-            bEl.onerror = null; // 避免備援也失敗時造成無限迴圈
+            console.warn(`[圖片加載警告]: 找不到資源 ${bImg}，已切換備援。`);
+            bEl.onerror = null;
         };
     }
 
@@ -1697,7 +1722,7 @@ function spawnEnemy(targetId) { // 🔴 增加參數
 
     const displayName = `No.${String(id).padStart(3, '0')} ${curE.name}`;
     document.getElementById('enemyName').innerText = `${displayName}${isShiny ? ' (✨閃光)' : ''}`;
-    document.getElementById('turnInfo').innerText = "最大回合：7 (在此之前不會逃跑)";
+    document.getElementById('turnInfo').innerText = "7回合內，寶可夢不會逃跑";
     document.getElementById('msg').innerText = `✨ 野生的 ${curE.name} 出現了！`;
 
     // 延遲撥開草叢，之後恢復動畫
@@ -1957,19 +1982,32 @@ function updateDexDetail() {
     let prefix = dexMega ? `Mega ${dexMega.toUpperCase()} ` : "";
     document.getElementById('dexTitle').innerText = `No.${String(dexId).padStart(3, '0')} ${prefix}${detailName}`;
 
-    // 2. 圖片路徑邏輯 (分流處理)
+    // 2. 圖片路徑邏輯 (修正後版本)
     const imgEl = document.getElementById('dexImg');
     if (!caught) {
+        // 未捕捉顯示 0 號圖 (或替換為問號圖)
         imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png`;
     } else if (dexMega !== "") {
-        // 抓你的 GitHub Mega 庫
+        // --- 🧬 抓取你的 GitHub Mega 庫 ---
         const folder = dexShiny ? 'shiny' : 'normal';
-        const url = `https://paulie0102-bear.github.io/Bear/img/mega/${folder}/${dexId}${dexMega}.png`;
+        
+        // 🚩 修正點：如果是 'mega' 則後綴為空字串，如果是 'x'/'y' 則保留後綴
+        let suffix = (dexMega === 'x' || dexMega === 'y') ? dexMega : "";
+        
+        // 🚩 修正點：這裡原本是 ${dexMega}，現在改為 ${suffix}
+        const url = `https://paulie0102-bear.github.io/Bear/img/mega/${folder}/${dexId}${suffix}.png`;
+        
+        console.log("正在嘗試讀取 Mega 圖片網址:", url); // 方便你按 F12 檢查網址是否正確
         imgEl.src = url;
-        // 防破圖：如果 GitHub 沒這張圖，跳回普通版
-        imgEl.onerror = () => { imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${dexShiny ? 'shiny/' : ''}${dexId}.png`; imgEl.onerror = null; };
+
+        // 防破圖：如果 GitHub 沒這張圖，自動跳回 PokeAPI 普通版
+        imgEl.onerror = () => { 
+            console.error("Mega 圖片讀取失敗，跳回普通版。網址為:", url);
+            imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${dexShiny ? 'shiny/' : ''}${dexId}.png`; 
+            imgEl.onerror = null; 
+        };
     } else {
-        // 抓標準 PokeAPI
+        // --- 🏠 抓標準 PokeAPI 普通/閃光圖 ---
         imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${dexShiny ? 'shiny/' : ''}${dexId}.png`;
         imgEl.onerror = null;
     }
