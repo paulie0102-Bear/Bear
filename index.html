@@ -15,6 +15,7 @@
         
         /* 頁面層級 */
         /* 基礎頁面設定 */
+/* 基礎頁面設定 */
 .page { 
     display: none; 
     width: 100vw; 
@@ -25,22 +26,19 @@
     left: 0; 
     z-index: 1000; 
     overflow-y: auto; 
-    box-sizing: border-box; /* 確保 padding 不會撐破寬度 */
+    box-sizing: border-box; 
 }
 
-/* 啟動狀態：將 .page-active 改為 .page.active */
-/* 使用 .active 是為了匹配 JS 的 classList.add('active') */
+/* 統一使用 .active 類別 */
 .page.active { 
     display: block !important; 
     animation: slideUp 0.3s ease-out; 
 }
 
-/* 進場動畫 */
 @keyframes slideUp { 
     from { transform: translateY(20px); opacity: 0; } 
     to { transform: translateY(0); opacity: 1; } 
 }
-
         /* 戰鬥舞台 */
         .battle-stage { height: 260px; position: relative; background: linear-gradient(#87ceeb 60%, #9cd39c 60%); border-bottom: 4px solid #333; overflow: hidden; }
         .buddy-box { position: absolute; bottom: 30px; left: 40px; width: 110px; transition: 0.3s; z-index: 5; }
@@ -1398,33 +1396,34 @@ function tryMega() {
 
 // --- [ 介面控制與導航 ] ---
 function openPage(id) {
-    // 1. 抓取目標元素
     const target = document.getElementById(id);
     
-    // 🔴 關鍵防護：如果找不到對應的 ID，就不要執行後面的動作
     if (!target) {
-        console.error(`❌ 找不到頁面 ID: "${id}"，請檢查 HTML 中的 id 設定。`);
+        console.error(`❌ 找不到頁面 ID: "${id}"`);
         return; 
     }
 
-    // 2. 移除所有頁面的活躍狀態
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active'));
+    // 全部移除 "active" 類別
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
-    // 3. 顯示目標頁面
-    target.classList.add('page-active');
+    // 目標加上 "active" 類別
+    target.classList.add('active');
 
-    // 4. 根據 ID 執行對應的渲染函式
+    // 渲染邏輯
     if (id === 'dexPage') renderDex();
     if (id === 'taskPage') renderTasks();
     if (id === 'chartPage') renderCharts();
     
-    // ✨ 新增：如果是導引頁，更新等級顯示
     if (id === 'guidePage') {
         const lvlEl = document.getElementById('guideLvl');
         if (lvlEl) lvlEl.innerText = s.lvl || 1;
     }
 }
-function back() { document.querySelectorAll('.page').forEach(p => p.classList.remove('page-active')); }
+
+function back() { 
+    // 移除所有頁面的 "active" 類別，即會回到主畫面
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); 
+}
 
 // --- [ 記帳核心 ] ---
 function record() {
