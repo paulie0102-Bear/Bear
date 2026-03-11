@@ -404,6 +404,46 @@
     cursor: not-allowed;
 }
 </style>
+<style>
+/* --- 每日野外寶可夢動畫樣式 --- */
+
+/* 1. 容器基礎定位 */
+.wild-encounter-unit {
+    position: fixed; /* 確保它浮動在所有 UI 之上 */
+    cursor: pointer;
+    z-index: 100;
+}
+
+/* 2. 初始狀態：隱藏驚嘆號 */
+.wild-encounter-unit .exclamation {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%) scale(0); /* 縮小到 0 */
+    opacity: 0; /* 透明度 0 */
+    color: #ff3e3e;
+    font-weight: bold;
+    font-size: 30px;
+    text-shadow: 2px 2px 0 #fff;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+}
+
+/* 3. 初始狀態：寶可夢圖片 */
+.wild-encounter-unit img {
+    transition: transform 0.2s ease; /* 設定平滑放大的動畫時間 */
+}
+
+/* 4. 【重點】點擊後啟動的狀態 (JS 會幫忙加上這個 class) */
+.active-encounter img {
+    transform: scale(1.6); /* 圖片放大到 1.6 倍 */
+}
+
+.active-encounter .exclamation {
+    opacity: 1; /* 變回不透明 */
+    transform: translateX(-50%) scale(1.3); /* 驚嘆號彈跳出來並放大 */
+}
+</style>
 </head>
 <body>
 
