@@ -1052,7 +1052,15 @@ window.onload = () => {
     } else {
         if (!s.claimedGifts) s.claimedGifts = [];
     }
+ // 如果 s 已經存在，請確保它包含這兩個欄位
 
+s.dailyWild = s.dailyWild || {
+
+    claimed: false,  // 紀錄今天是否已經抓到了
+
+    lastDate: ""     // 紀錄上一次遇到的日期
+
+};
     document.getElementById('recDate').valueAsDate = new Date();
     document.getElementById('chartMonthPicker').value = new Date().toISOString().substring(0, 7);
     
@@ -1424,9 +1432,84 @@ function updateUI() {
 
     // 5. 渲染背包
     if (typeof renderBag === 'function') renderBag();
+    // 🚩 [新增] 在所有 UI 更新完後，執行每日野怪的判斷與渲染
+    renderDailyWild();
 }
 
+function renderDailyWild() {
+    const today = new Date().toDateString();
+    
+    // 1. 跨日重置判定：如果紀錄的日期跟今天不同，就重置捕捉狀態為 false
+    if (s.dailyWild.lastDate !== today) {
+        s.dailyWild.claimed = false;
+        s.dailyWild.lastDate = today;
+    }
 
+    // 2. 取得目前的圖標元件
+    const oldIcon = document.getElementById('dailyWildIcon');
+    
+    // 3. 判斷顯示邏輯
+    if (s.dailyWild.claimed) {
+        // 如果今天已經抓到了，確保畫面上的圖標被移除
+        if (oldIcon) oldIcon.remove();
+        return;
+    }
+
+    // 4. 如果今天還沒抓到，且畫面上沒怪，就刷出一隻新的
+    if (!oldIcon) {
+        spawnDailyWildIcon();
+    }
+}
+
+function spawnDailyWildIcon() {
+    // 隨機選一個 ID (1-493)
+    const randomId = Math.floor(Math.random() * 493) + 1;
+    // 隨機決定閃光 (5% 機率)
+    const isShiny = Math.random() < 0.05;
+    // 隨機決定水平位置 (15% - 85% 避開邊緣)
+    const posX = Math.floor(Math.random() * 70) + 15;
+
+    const wildDiv = document.createElement('div');
+    wildDiv.id = 'dailyWildIcon';
+    wildDiv.className = 'wild-encounter-unit';
+    
+    // 定位在選單上方
+    wildDiv.style.left = posX + "%";
+    wildDiv.style.bottom = "220px"; 
+
+    const imgPath = isShiny ? 'shiny/' : '';
+    wildDiv.innerHTML = `
+        <div class="exclamation">!</div>
+        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${imgPath}${randomId}.png" style="width: 50px; height: 50px;">
+    `;
+
+    // --- 🎮 [修改重點]：加入點擊互動遊程 ---
+    wildDiv.onclick = function() {
+        // 1. 鎖定點擊：防止在動畫期間重複點擊導致開啟多個戰鬥
+        wildDiv.onclick = null;
+        
+        // 2. 觸發第一步提到的 CSS 動畫 (放大 + 驚嘆號)
+        wildDiv.classList.add('active-encounter');
+
+        // 3. 演出時間：延遲 600 毫秒（等待驚嘆號彈出動畫）後切換戰鬥
+        setTimeout(() => {
+            // 🟢 對接閃光邏輯：如果是閃光，開啟你的 s.forceShiny 開關
+            if (isShiny) {
+                s.forceShiny = true;
+            }
+
+            // 🟢 對接戰鬥流程：直接呼叫你原本寫好的函式
+            spawnEnemy(randomId);
+
+            // 4. 戰鬥開始後，從主畫面移除這個元素
+            // 注意：因為還沒設定 s.dailyWild.claimed = true，所以逃跑後重新整理會再刷出新的怪
+            wildDiv.remove();
+        }, 600);
+    };
+
+    document.body.appendChild(wildDiv);
+}
+    
 function getTitle(count) {
     if(count >= 493) return {name: "寶可夢大師", bonus: 50};
     if(count >= 400) return {name: "聯盟冠軍", bonus: 40};
@@ -1797,7 +1880,13 @@ async function throwBall() {
         s.tasks.dCatch += 1;
         s.tasks.wCatch += 1;
         s.tasks.mCatch += 1;
-
+        
+        // 🏆 [關鍵新增]：每日奇遇任務達成！
+        // 只要這行被執行，今天主畫面的驚喜寶可夢就不會再出現了
+        if (s.dailyWild) {
+            s.dailyWild.claimed = true;
+        }
+        
         // ● 功能 12: 給予經驗值與動態提示
         if (typeof gainExp === 'function') gainExp(10);
 
