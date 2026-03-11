@@ -1437,6 +1437,13 @@ function updateUI() {
 }
 
 function renderDailyWild() {
+    // 🚩 [防護機制]：如果 s.dailyWild 不存在，立即初始化它
+    if (!s.dailyWild) {
+        s.dailyWild = {
+            claimed: false,
+            lastDate: ""
+        };
+    }
     const today = new Date().toDateString();
     
     // 1. 跨日重置判定：如果紀錄的日期跟今天不同，就重置捕捉狀態為 false
