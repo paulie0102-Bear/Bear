@@ -2544,8 +2544,48 @@ function delHist(id) {
     if(idx > -1) { const h = s.hist[idx]; s.yearSums[h.date.substring(0,7)] -= h.amt; s.catSums[h.cat] -= h.amt; s.hist.splice(idx, 1); updateUI(); searchHistory(); }
 }
 
-function exportData() { const blob = new Blob([JSON.stringify(s)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `pokemaster_save_${Date.now()}.json`; a.click(); }
-function importData(e) { const reader = new FileReader(); reader.onload = (ev) => { s = JSON.parse(ev.target.result); updateUI(); alert("存檔讀取成功！"); }; reader.readAsText(e.target.files[0]); }
+function exportData() {
+    // 取得現在時間 (格式: 20240520_1430)
+    const now = new Date();
+    const timeStr = now.getFullYear() + 
+                    (now.getMonth()+1).toString().padStart(2, '0') + 
+                    now.getDate().toString().padStart(2, '0') + "_" +
+                    now.getHours().toString().padStart(2, '0') + 
+                    now.getMinutes().toString().padStart(2, '0');
+
+    const blob = new Blob([JSON.stringify(s)], {type: "application/octet-stream"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    
+    // 🚩 修改後綴為 .pkms，並加上時間戳記
+    a.download = `PM_Save_${timeStr}.pkms`; 
+    
+    a.click();
+    URL.revokeObjectURL(a.href); // 釋放記憶體，對手機效能較好
+}
+
+function importData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            const data = JSON.parse(ev.target.result);
+            // 簡單檢查一下是不是正確的存檔結構
+            if (data.owned && data.bal !== undefined) {
+                s = data;
+                updateUI();
+                alert("✅ 存檔讀取成功！");
+            } else {
+                throw new Error("格式錯誤");
+            }
+        } catch (err) {
+            alert("❌ 讀取失敗：請選擇正確的 .pkms 存檔檔案");
+        }
+    };
+    reader.readAsText(file);
+}
 function lighten() { /* 簡化清理邏輯保留 */ const start = document.getElementById('lightStart').value; const end = document.getElementById('lightEnd').value; if(!start || !end) return; exportData(); s.hist = s.hist.filter(h => h.date < start || h.date > end); updateUI(); alert("清理完成並已匯出備份。"); }
 function resetAll() { if(confirm("🔥 確定重置？這會永久刪除所有紀錄與圖鑑！")) { localStorage.removeItem('pokemaster_v60'); location.reload(); } }
 </script>
