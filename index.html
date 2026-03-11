@@ -1477,6 +1477,12 @@ function updateUI() {
 }
 
 function renderDailyWild() {
+    // 🚩 [新增判斷]：如果現在正在戰鬥中，就不要執行生怪邏輯
+    // 請根據你切換畫面的邏輯修改，例如：
+    const battleDiv = document.getElementById('battle-screen'); // 或是你的戰鬥容器 ID
+    if (battleDiv && battleDiv.style.display !== 'none') {
+        return; // 如果戰鬥畫面開著，直接結束，不要生怪
+    }    
     // 🚩 [防護機制]：如果 s.dailyWild 不存在，立即初始化它
     if (!s.dailyWild) {
         s.dailyWild = {
