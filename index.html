@@ -1483,6 +1483,8 @@ function spawnDailyWildIcon() {
     // 定位在選單上方
     wildDiv.style.left = posX + "%";
     wildDiv.style.bottom = "220px"; 
+    wildDiv.style.position = "fixed"; // 確保是固定定位
+    wildDiv.style.zIndex = "999";     // 數字越大層級越高，建議設 100~999 之間
 
     const imgPath = isShiny ? 'shiny/' : '';
     wildDiv.innerHTML = `
