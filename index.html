@@ -311,7 +311,7 @@
     border: 25px solid #222; 
     border-radius: 60px; 
     padding: 30px 17px; 
-    margin: 8px 8px 45px 8px; 
+    margin: 8px 8px 40px 8px; 
     box-shadow: 0 15px 30px rgba(0,0,0,0.5), inset -10px -10px 0 rgba(0,0,0,0.1);
     position: relative;
     /* 🚩 修正：建立新的層疊上下文，確保內部 z-index 生效 */
@@ -1627,7 +1627,7 @@ function spawnDailyWildIcon() {
     
     // 定位在選單上方
     wildDiv.style.left = posX + "%";
-    wildDiv.style.bottom = "220px"; 
+    wildDiv.style.bottom = "150px"; 
     wildDiv.style.position = "fixed"; // 確保是固定定位
     wildDiv.style.zIndex = "999";     // 數字越大層級越高，建議設 100~999 之間
 
