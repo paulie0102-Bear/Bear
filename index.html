@@ -894,9 +894,9 @@
 <div id="adminPage" class="page">
     <div class="card">
         <h3>⚙️ 設定與管理</h3>
-        <button onclick="exportData()" style="background:#2980b9; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">💾 匯出全存檔 (JSON)</button>
+        <button onclick="exportData()" style="background:#2980b9; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">💾 匯出全存檔 </button>
         <input type="file" id="importFile" style="display:none" onchange="importData(event)">
-        <button onclick="document.getElementById('importFile').click()" style="background:#27ae60; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">📂 讀取存檔 (JSON)</button>
+        <button onclick="document.getElementById('importFile').click()" style="background:#27ae60; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">📂 讀取存檔 </button>
         <hr>
         <p style="font-size:12px; color:gray;">區間清理：匯出檔案並刪除明細（統計總額保留）</p>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:10px;">
@@ -2545,7 +2545,7 @@ function delHist(id) {
 }
 
 function exportData() {
-    // 取得現在時間 (格式: 20240520_1430)
+    // 1. 取得現在時間 (例如: 20260311_1530)
     const now = new Date();
     const timeStr = now.getFullYear() + 
                     (now.getMonth()+1).toString().padStart(2, '0') + 
@@ -2553,35 +2553,61 @@ function exportData() {
                     now.getHours().toString().padStart(2, '0') + 
                     now.getMinutes().toString().padStart(2, '0');
 
-    const blob = new Blob([JSON.stringify(s)], {type: "application/octet-stream"});
+    // 2. 轉換為 JSON 字串
+    const blob = new Blob([JSON.stringify(s)], {type: "application/json"});
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     
-    // 🚩 修改後綴為 .pkms，並加上時間戳記
+    // 3. 設定自訂副檔名 .pkms (方便手機查找)
     a.download = `PM_Save_${timeStr}.pkms`; 
     
+    // 4. 執行下載
+    document.body.appendChild(a); // 部分手機瀏覽器需要將元素加入 DOM 才能點擊
     a.click();
-    URL.revokeObjectURL(a.href); // 釋放記憶體，對手機效能較好
+    
+    // 5. 清理與釋放記憶體
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href); 
+    }, 100);
 }
 
 function importData(e) {
     const file = e.target.files[0];
     if (!file) return;
 
+    // 🚩 檢查副檔名 (非強制，但可提醒玩家)
+    if (!file.name.endsWith('.pkms') && !file.name.endsWith('.json')) {
+        if (!confirm("這看起來不是標準的存檔格式，是否仍要嘗試讀取？")) return;
+    }
+
     const reader = new FileReader();
     reader.onload = (ev) => {
         try {
-            const data = JSON.parse(ev.target.result);
-            // 簡單檢查一下是不是正確的存檔結構
-            if (data.owned && data.bal !== undefined) {
-                s = data;
-                updateUI();
-                alert("✅ 存檔讀取成功！");
-            } else {
-                throw new Error("格式錯誤");
-            }
+            const loaded = JSON.parse(ev.target.result);
+            
+            // 🚩 [關鍵修改] 使用與 window.onload 一致的合併邏輯
+            // 這樣能保證「舊存檔」匯入「新遊戲」時，新功能變數（如 dailyWild）不會消失
+            s = { 
+                ...s,              // 先放目前新版本的預設結構
+                ...loaded,         // 用讀取的資料覆蓋
+                claimedGifts: (loaded.claimedGifts || s.claimedGifts || []) // 確保陣列欄位存在
+            };
+
+            // 🚩 匯入後立即存檔到 LocalStorage，確保手機關閉 APP 後資料還在
+            localStorage.setItem('pokemaster_v60', JSON.stringify(s));
+
+            // 更新 UI 顯示新資料
+            updateUI(); 
+            
+            alert("✅ 存檔匯入成功！");
+            
+            // 重設上傳按鈕，方便下次重複選取相同檔案
+            e.target.value = ""; 
+
         } catch (err) {
-            alert("❌ 讀取失敗：請選擇正確的 .pkms 存檔檔案");
+            console.error("Import Error:", err);
+            alert("❌ 讀取失敗：存檔內容損壞或格式不符");
         }
     };
     reader.readAsText(file);
