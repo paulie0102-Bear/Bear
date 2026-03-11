@@ -311,7 +311,7 @@
     border: 25px solid #222; 
     border-radius: 60px; 
     padding: 30px 17px; 
-    margin: 8px 8px 60px 8px; 
+    margin: 8px 8px 45px 8px; 
     box-shadow: 0 15px 30px rgba(0,0,0,0.5), inset -10px -10px 0 rgba(0,0,0,0.1);
     position: relative;
     /* 🚩 修正：建立新的層疊上下文，確保內部 z-index 生效 */
@@ -1535,8 +1535,8 @@ function updateUI() {
 
         if (isMegaActive) {
             // --- Mega 狀態 ---
-            bEl.style.width = "200px";
-            bEl.style.height = "200px";
+            bEl.style.width = "150px";
+            bEl.style.height = "150px";
             bEl.classList.add('mega-fx');
 
             // 🚩 修正 2：統一使用 s.buddyMega 作為後綴判定
@@ -1551,8 +1551,8 @@ function updateUI() {
 
         } else {
             // --- 一般狀態 ---
-            bEl.style.width = "150px";
-            bEl.style.height = "150px";
+            bEl.style.width = "120px";
+            bEl.style.height = "120px";
             bEl.classList.remove('mega-fx');
 
             const shinyPath = s.isShinyBuddy ? 'shiny/' : '';
