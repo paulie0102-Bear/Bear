@@ -568,42 +568,32 @@
 </dialog>
 
 <div id="dexPage" class="page">
-    <div class="dex-container">
-        <div class="dex-sidebar" id="dexNav"></div>
-        
-        <div class="dex-main">
-            <h3 id="dexTitle" style="margin: 0 0 10px 0; color: #333; font-size: 18px;">No.???</h3>
-            
-            <div style="background: white; border: 3px solid #ddd; border-radius: 12px; padding: 15px; position: relative;">
-                <img id="dexImg" src="" style="width: 140px; height: 140px; object-fit: contain;">
-                <div id="megaTag" style="position: absolute; top: 5px; right: 8px; font-size: 18px; display: none;">🧬</div>
-            </div>
-
-            <div id="dexCtrl" style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%;">
-                <button onclick="setDexShiny(false)" class="btn-dex-sm">一般型態</button>
-                <button onclick="setDexShiny(true)" id="shinyBtn" class="btn-dex-sm">✨ 閃光型態</button>
-                
-                <div id="megaGroup" style="grid-column: span 2; display: none; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px;">
-    <button id="mBtnSingle" onclick="toggleMega('mega')" style="grid-column: span 2; background: #9b59b6; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold;">🧬 Mega 進化</button>
-    
-    <button id="mBtnX" onclick="toggleMega('x')" style="background: #3498db; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold;">Mega X</button>
-    <button id="mBtnY" onclick="toggleMega('y')" style="background: #e67e22; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold;">Mega Y</button>
-</div>
-
-                <button onclick="assignBuddy()" style="grid-column: span 2; background: var(--p); color: white; padding: 14px; border: none; border-radius: 25px; margin-top: 10px; font-weight: bold; font-size: 16px; box-shadow: 0 4px rgba(0,0,0,0.2);">就決定是你了！</button>
-            </div>
-        </div>
-    </div>
-    
     <div class="pball-shell">
-    <div class="dex-container">
-        <div class="dex-sidebar">
-            </div>
-        <div class="dex-main">
-            </div>
-    </div>
-</div>
-    <button class="btn-back" onclick="back()" style="margin-top: 15px;">✖ 關閉圖鑑</button>
+        <div class="dex-container">
+            
+            <div class="dex-sidebar" id="dexNav"></div>
+            
+            <div class="dex-main">
+                <h3 id="dexTitle" style="margin: 0 0 10px 0; color: #333; font-size: 18px; font-family: monospace;">No.???</h3>
+                
+                <div class="dex-image-container" style="background: white; border: 3px solid #333; border-radius: 12px; padding: 10px; position: relative;">
+                    <img id="dexImg" src="" style="width: 130px; height: 130px; object-fit: contain;">
+                    <div id="megaTag" style="position: absolute; top: 5px; right: 8px; font-size: 18px; display: none;">🧬</div>
+                </div>
+
+                <div id="dexCtrl" style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%;">
+                    <button onclick="setDexShiny(false)" class="btn-dex-sm">一般型態</button>
+                    <button onclick="setDexShiny(true)" id="shinyBtn" class="btn-dex-sm">✨ 閃光</button>
+                    
+                    <div id="megaGroup" style="grid-column: span 2; display: none; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 5px;">
+                        <button id="mBtnSingle" onclick="toggleMega('mega')" style="grid-column: span 2; background: #9b59b6; color: white; border: 2px solid #333; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px;">🧬 Mega 進化</button>
+                        <button id="mBtnX" onclick="toggleMega('x')" style="background: #3498db; color: white; border: 2px solid #333; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px;">Mega X</button>
+                        <button id="mBtnY" onclick="toggleMega('y')" style="background: #e67e22; color: white; border: 2px solid #333; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px;">Mega Y</button>
+                    </div>
+
+                    <button onclick="assignBuddy()" style="grid-column: span 2; background: #dc0a2d; color: white; padding: 12px; border: 2px solid #333; border-radius: 25px; margin-top: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 4px rgba(0,0,0,0.2);">就決定是你了！</button>
+                </div>
+            </div> </div> </div> <button class="btn-back" onclick="back()" style="margin-top: 10px;">✖ 關閉圖鑑</button>
 </div>
 
 
@@ -2129,25 +2119,28 @@ const MEGA_LIST = [3, 6, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142, 150, 181, 20
 
 // --- 🎨 核心渲染函式 ---
 function renderDex() {
-    const nav = document.getElementById('dexNav');
+    // 🚩 確保 ID 對應到新 HTML 結構中的左側欄
+    const nav = document.getElementById('dexNav') || document.querySelector('.dex-sidebar');
     if (!nav) return;
 
-    // 1. 局部更新列表 (僅在初次或必要時生成，優化效能)
-    // 這裡我們直接生成 HTML，但透過 class 切換來優化視覺
     let listHtml = "";
     for (let i = 1; i <= 493; i++) {
         const caught = s.owned.includes(i);
         const nameText = caught ? (POKEMON_NAMES[i] || "???") : "???";
         const activeClass = (i === dexId) ? "active" : "";
+        
+        // 渲染列表項目
         listHtml += `<div class="dex-item ${activeClass}" onclick="selectDex(${i})">
             No.${String(i).padStart(3, '0')} ${nameText}
         </div>`;
     }
     nav.innerHTML = listHtml;
 
-    // 自動捲動到選中項 (選填)
-    // const activeItem = document.querySelector('.dex-item.active');
-    // if(activeItem) activeItem.scrollIntoView({ block: 'nearest' });
+    // 🚩 修正：自動捲動到選中項（這在手機上非常重要，不然點了下面的精靈，列表會跳回最上面）
+    const activeItem = nav.querySelector('.dex-item.active');
+    if(activeItem) {
+        activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 
     updateDexDetail();
 }
