@@ -194,46 +194,51 @@
   .encounter-active .grass-right { transform: translateX(110%); }
 </style>
 <style>
-    .csv-item {
+  .csv-item {
     display: flex;
     align-items: center;
-    gap: 8px;  /* 稍微加大間距 */
-    padding: 10px;  /* 增加內邊距讓顯示區域更大 */
-    margin-bottom: 8px;  /* 調整底部間距 */
+    gap: 12px;           /* 加大間距，讓欄位更有呼吸感 */
+    padding: 12px 15px;  /* 增加左右內邊距 */
+    margin-bottom: 8px;
     background: white;
-    border-radius: 15px;  /* 調整圓角 */
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);  /* 增加陰影 */
+    border-radius: 12px; 
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
-.csv-date, .csv-cat, .csv-amt {
-    font-size: 14px;  /* 字體稍微放大 */
-}
-
+/* 1. 日期：維持固定寬度 */
 .csv-date {
-    width: 130px;
+    width: 100px;        /* 縮短一點點，給其他欄位空間 */
     font-weight: bold;
     color: #333;
+    flex-shrink: 0;      /* 防止被壓縮 */
+}
+
+/* 2. 備註：自動伸縮，但保留適當空間 */
+.csv-note {
+    flex: 1;             /* 自動填滿中間剩餘空間 */
+    min-width: 0;        /* 防止文字過長撐開容器 */
+    font-size: 14px;
+    border: none;
+    border-bottom: 1px solid #eee;
+    padding: 4px;
+    font-style: italic;
+    color: #888;
+}
+
+/* 3. 類別與金額：設定相同寬度並右對齊，達成對齊效果 */
+.csv-cat, .csv-amt {
+    width: 85px;         /* 🚩 設定相同寬度 */
+    text-align: right;   /* 🚩 統一向右靠齊 */
+    font-size: 14px;
+    font-weight: bold;
+    flex-shrink: 0;      /* 防止被壓縮 */
 }
 
 .csv-cat {
-    width: 90px;
-    font-weight: bold;
     color: #666;
 }
 
-.csv-note {
-    flex: 1;
-    font-size: 14px;
-    border: none;
-    border-bottom: 1px solid #ddd;
-    padding: 4px;
-    font-style: italic;  /* 加上斜體效果 */
-}
-
 .csv-amt {
-    width: 70px;
-    text-align: right;
-    font-weight: bold;
     color: #2c7;
 }
 
@@ -337,71 +342,119 @@
 }
 </style>
 <style>
-    /* --- 圖鑑整體外框 (經典紅) --- */
+    /* --- 圖鑑整體外框 (GBA 火紅質感) --- */
 .dex-container {
     display: flex;
-    background: #e74c3c; /* 經典 Pokedex 紅 */
-    border: 8px solid #c0392b;
-    border-radius: 15px;
-    height: calc(100vh - 140px); /* 扣除底部選單的高度 */
+    background: #dc0a2d; /* 飽和的經典紅 */
+    border: 10px solid #8b0000; /* 深色加厚外框 */
+    border-radius: 15px 5px 40px 5px; /* 不規則圓角，模擬掌機外殼 */
+    height: calc(100vh - 140px);
     overflow: hidden;
-    box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
-    margin: 5px;
+    box-shadow: inset -4px -4px 0px #a00, 5px 5px 15px rgba(0,0,0,0.4);
+    margin: 8px;
+    position: relative;
 }
 
-/* --- 左側列表：解決手機下拉重新整理的關鍵 --- */
+/* --- 左側列表：液晶螢幕背光感 --- */
 .dex-sidebar {
-    width: 40%;
-    background: #2b2b2b; /* 深色背景更有螢幕感 */
+    width: 45%;
+    background: #51ad60; /* 經典 GBA 列表綠 */
     overflow-y: auto;
-    border-right: 4px solid #c0392b;
-    /* 核心優化：封鎖瀏覽器下拉重新整理，並讓滑動絲滑 */
-    overscroll-behavior-y: contain; 
+    border: 4px solid #333;
+    margin: 12px 5px 12px 10px;
+    border-radius: 5px;
+    box-shadow: inset 3px 3px 10px rgba(0,0,0,0.2);
+    overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
 }
 
-/* --- 右側詳細資訊區 (液晶螢幕感) --- */
+/* --- 列表項目：加入 CSS 繪製的寶貝球 --- */
+.dex-item {
+    padding: 12px 8px 12px 35px; /* 留出左側空間放寶貝球 */
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    color: #1a1a1a;
+    font-size: 14px;
+    font-family: 'Courier New', monospace; /* 像素字體感 */
+    cursor: pointer;
+    position: relative;
+    transition: background 0.1s;
+}
+
+/* 繪製左側小寶貝球 */
+.dex-item::before {
+    content: "";
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    border: 2px solid #333;
+    border-radius: 50%;
+    /* 寶貝球配色：上紅下白 */
+    background: linear-gradient(to bottom, #ff0000 45%, #333 45%, #333 55%, #fff 55%);
+}
+
+/* 當前選中的項目：黃色高亮與寶貝球跳動 */
+.dex-item.active {
+    background: rgba(255, 255, 255, 0.4);
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000;
+}
+
+.dex-item.active::before {
+    animation: pokeball-bounce 0.6s infinite ease-in-out;
+    box-shadow: 0 0 5px #fff;
+}
+
+@keyframes pokeball-bounce {
+    0%, 100% { transform: translateY(-50%); }
+    50% { transform: translateY(-75%); }
+}
+
+/* --- 右側詳細資訊區：金屬面板感 --- */
 .dex-main {
-    width: 60%;
-    background: #fdfdfd;
+    width: 55%;
+    background: #dedede; /* 淺灰色金屬質感 */
+    border: 4px solid #444;
+    margin: 12px 10px 12px 5px;
+    border-radius: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 15px 10px;
+    padding: 15px 5px;
     position: relative;
-    overflow-y: auto; /* 防止內容過多時擠壓 */
+    overflow-y: auto;
+    box-shadow: inset 2px 2px 8px rgba(0,0,0,0.1);
 }
 
-/* --- 列表項目樣式 --- */
-.dex-item {
-    padding: 12px 8px;
-    border-bottom: 1px solid #3d3d3d;
-    color: #888;
-    font-size: 13px;
-    cursor: pointer;
-    transition: background 0.2s;
+/* 液晶螢幕內的圖片容器 */
+.dex-image-container {
+    background: #fff;
+    border: 3px solid #333;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
 }
 
-/* 當前選中的項目 */
-.dex-item.active {
-    background: #444;
-    color: #ffeb3b; /* 選中時文字變黃色 */
-    border-left: 5px solid #ffeb3b;
-    font-weight: bold;
-}
-
-/* 輔助按鈕樣式 (針對圖鑑內的小按鈕) */
+/* --- 復古風格按鈕 --- */
 .btn-dex-sm {
-    padding: 8px 4px;
+    padding: 6px 12px;
     font-size: 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: #f8f9fa;
+    font-weight: bold;
+    color: white;
+    background: #444;
+    border: 2px solid #222;
+    border-radius: 20px; /* 圓角膠囊型按鈕 */
     cursor: pointer;
+    box-shadow: 2px 2px 0px #888;
+    active: transform: translateY(1px);
 }
+
 .btn-dex-sm:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
+    opacity: 0.4;
+    filter: grayscale(1);
 }
 </style>
 <style>
