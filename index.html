@@ -187,121 +187,89 @@
   .encounter-active .grass-right { transform: translateX(110%); }
 </style>
 <style>
-  .csv-item {
+  /* --- 搜尋明細清單項 (整合版) --- */
+
+.csv-item {
     display: flex;
     align-items: center;
-    gap: 12px;           /* 加大間距，讓欄位更有呼吸感 */
-    padding: 12px 15px;  /* 增加左右內邊距 */
-    margin-bottom: 8px;
+    gap: 12px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
     background: white;
-    border-radius: 12px; 
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s;
 }
 
-/* 1. 日期：維持固定寬度 */
+/* 1. 日期 */
 .csv-date {
-    width: 100px;        /* 縮短一點點，給其他欄位空間 */
+    width: 90px;
     font-weight: bold;
-    color: #333;
-    flex-shrink: 0;      /* 防止被壓縮 */
+    color: #444;
+    flex-shrink: 0;
+    font-family: monospace;
 }
 
-/* 2. 備註：自動伸縮，但保留適當空間 */
-.csv-note {
-    flex: 1;             /* 自動填滿中間剩餘空間 */
-    min-width: 0;        /* 防止文字過長撐開容器 */
-    font-size: 14px;
-    border: none;
-    border-bottom: 1px solid #eee;
-    padding: 4px;
-    font-style: italic;
-    color: #888;
-}
-
-/* 3. 類別與金額：設定相同寬度並右對齊，達成對齊效果 */
-.csv-cat, .csv-amt {
-    width: 85px;         /* 🚩 設定相同寬度 */
-    text-align: right;   /* 🚩 統一向右靠齊 */
-    font-size: 14px;
-    font-weight: bold;
-    flex-shrink: 0;      /* 防止被壓縮 */
-}
-
+/* 2. 類別 (給個小標籤感) */
 .csv-cat {
+    width: 70px;
     color: #666;
-}
-
-.csv-amt {
-    color: #2c7;
-}
-
-/* 手機版 */
-@media (max-width: 600px) {
-    .csv-item {
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .csv-date {
-        width: 40%;
-    }
-
-    .csv-cat {
-        width: 40%;
-    }
-
-    .csv-note {
-        width: 100%;
-    }
-
-    .csv-amt {
-        width: 100%;
-        text-align: right;
-    }
-}
-
-/* 每一筆資料的外容器 */
-.csv-item-mobile {
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 8px; /* 每一筆資料間的間隔 */
-    display: flex;
-    flex-direction: column;
-    gap: 8px; /* 兩排之間的垂直距離 */
-}
-
-/* 每排內部的佈局 */
-.csv-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-/* 調整輸入框比例 */
-.csv-date, .csv-cat {
-    flex: 1; /* 平分空間 */
-    padding: 5px;
-    border: 1px solid #ccc;
+    font-size: 13px;
+    background: #f0f0f0;
+    text-align: center;
+    padding: 2px 6px;
     border-radius: 4px;
+    flex-shrink: 0;
 }
 
+/* 3. 備註 (自動填滿) */
 .csv-note {
-    flex: 3; /* 讓商家備註長一點 */
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* 文字過長自動顯示 ... */
 }
 
+/* 4. 金額 */
 .csv-amt {
-    flex: 1;
+    width: 80px;
     text-align: right;
     font-weight: bold;
-    font-size: 1.1em;
-    color: #e67e22; /* 給金額一個明顯的顏色 */
+    color: #e67e22; /* 暖橘色，醒目但不刺眼 */
+    flex-shrink: 0;
 }
 
+/* 📱 手機版調整：自動轉為兩排佈局 */
+@media (max-width: 480px) {
+    .csv-item {
+        flex-wrap: wrap;
+        padding: 10px;
+        gap: 5px;
+    }
+
+    /* 第一排：日期與類別 */
+    .csv-date { width: auto; flex: 1; }
+    .csv-cat { width: auto; }
+
+    /* 第二排：備註與金額 */
+    .csv-note { 
+        width: 65%; 
+        flex: none; 
+        order: 3; /* 強制排在後面 */
+        padding-top: 5px;
+        border-top: 1px dashed #eee;
+    }
+    .csv-amt { 
+        width: 30%; 
+        flex: 1; 
+        order: 4; 
+        padding-top: 5px;
+        border-top: 1px dashed #eee;
+    }
+}
 </style>
 <style>
     /* -------------------------------------------
@@ -335,34 +303,36 @@
 }
 </style>
 <style>
-    /* --- [最新] 寶貝球主題圖鑑佈局 --- */
+/* --- [修正版] 寶貝球主題圖鑑 (解決層級遮擋問題) --- */
 
 /* 1. 最外層：大寶貝球外殼 */
 .pball-shell {
     background: linear-gradient(to bottom, #e3350d 46%, #333 46%, #333 54%, #fff 54%);
-    border: 10px solid #222;
-    border-radius: 40px; 
-    padding: 25px 12px; 
-    margin: 8px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset -5px -5px 0 rgba(0,0,0,0.1);
+    border: 25px solid #222; 
+    border-radius: 60px; 
+    padding: 30px 17px; 
+    margin: 8px 8px 60px 8px; 
+    box-shadow: 0 15px 30px rgba(0,0,0,0.5), inset -10px -10px 0 rgba(0,0,0,0.1);
     position: relative;
+    /* 🚩 修正：建立新的層疊上下文，確保內部 z-index 生效 */
+    z-index: 0; 
 }
 
-/* 寶貝球中心的圓形按鈕裝飾 */
-.pball-shell::before {
+/* 🚩 關鍵修正：焊接延伸黑底座 */
+.pball-shell::after {
     content: "";
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 70px;
-    height: 70px;
-    background: #fff;
-    border: 8px solid #333;
-    border-radius: 50%;
-    z-index: 1;
-    pointer-events: none;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    /* 🚩 修正：負值定位，讓底座與黑色邊框完美融合並覆蓋在內容邊角 */
+    right: -15px; 
+    bottom: -15px; 
+    width: 110px;
+    height: 115px;
+    background: #222; 
+    border-radius: 50px 20px 60px 25px; 
+    /* 🚩 修正：層級提高，必須大於螢幕容器的 z-index */
+    z-index: 3; 
+    box-shadow: -5px -5px 15px rgba(0,0,0,0.3);
+    pointer-events: none; /* 確保點擊能穿透到下方的 B 鍵區域 */
 }
 
 /* 2. 中間方框：嵌入的圖鑑主體 */
@@ -371,13 +341,14 @@
     background: #333; 
     border: 4px solid #444;
     border-radius: 10px;
-    height: calc(100vh - 180px); /* 預留底部選單空間 */
+    height: calc(100vh - 240px); 
     overflow: hidden;
     position: relative;
-    z-index: 2;
+    /* 🚩 修正：層級降低，避免蓋過延伸黑底 */
+    z-index: 1; 
 }
 
-/* 3. 左側列表 (液晶綠背景) */
+/* --- [3, 4, 5 功能區塊 100% 原始代碼，無更動] --- */
 .dex-sidebar {
     width: 45%;
     background: #51ad60; 
@@ -387,7 +358,6 @@
     -webkit-overflow-scrolling: touch;
 }
 
-/* 4. 列表項目與紅白球小圖示 */
 .dex-item {
     padding: 12px 8px 12px 38px;
     border-bottom: 1px solid rgba(0,0,0,0.1);
@@ -413,21 +383,14 @@
         linear-gradient(to bottom, #ff0000 44%, #333 44%, #333 56%, #fff 56%);
 }
 
-.dex-item.active {
-    background: rgba(255, 255, 255, 0.4);
-    font-weight: bold;
-}
-
-.dex-item.active::before {
-    animation: pball-bounce 0.6s infinite ease-in-out;
-}
+.dex-item.active { background: rgba(255, 255, 255, 0.4); font-weight: bold; }
+.dex-item.active::before { animation: pball-bounce 0.6s infinite ease-in-out; }
 
 @keyframes pball-bounce {
     0%, 100% { transform: translateY(-50%) scale(1); }
     50% { transform: translateY(-80%) scale(1.1); }
 }
 
-/* 5. 右側詳細資訊區 (金屬灰) */
 .dex-main {
     width: 55%;
     background: #dedede;
@@ -436,6 +399,51 @@
     align-items: center;
     padding: 15px 5px;
     overflow-y: auto;
+}
+
+/* --- [新 B 鍵區] 修正定位與層級 --- */
+.dex-b-button-wrapper {
+    position: absolute;
+    /* 🚩 修正：將 B 鍵推向右下角邊框交界處 */
+    right: -5px; 
+    bottom: 5px; 
+    width: 85px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    /* 🚩 修正：最高層級，保證可點擊離開 */
+    z-index: 10; 
+}
+
+.dex-close-btn {
+    width: 50px;
+    height: 50px;
+    background: #c0392b;
+    border: 4px solid #111;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    font-size: 22px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 5px 0 #851e13;
+    transition: all 0.1s;
+    user-select: none;
+}
+
+.dex-b-button-wrapper:active .dex-close-btn {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #851e13;
+}
+
+.btn-label {
+    color: #777;
+    font-size: 11px;
+    font-weight: bold;
+    margin-top: 6px;
+    letter-spacing: 1px;
 }
 </style>
 <style>
@@ -448,19 +456,71 @@
     z-index: 100;
 }
 
-/* 2. 初始狀態：隱藏驚嘆號 */
+/* 2. 初始狀態：模擬寶石版 NPC 挑戰氣泡 */
 .wild-encounter-unit .exclamation {
     position: absolute;
-    top: -30px;
+    top: -50px; /* 稍微再往上提一點，給氣泡空間 */
     left: 50%;
-    transform: translateX(-50%) scale(0); /* 縮小到 0 */
-    opacity: 0; /* 透明度 0 */
-    color: #ff3e3e;
-    font-weight: bold;
-    font-size: 30px;
-    text-shadow: 2px 2px 0 #fff;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: translateX(-50%) scale(0);
+    opacity: 0;
     pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 100;
+
+    /* 🚩 氣泡外框設計 */
+    background: #fff; /* 白色底框 */
+    border: 3px solid #333; /* 黑色深邊框 */
+    border-radius: 8px; /* 寶石版風格的圓角 */
+    padding: 2px 10px;
+    
+    /* 🚩 字體設計 */
+    color: #ff3e3e; /* 經典紅色 */
+    font-weight: 900;
+    font-size: 28px;
+    font-family: "Courier New", Courier, monospace; /* 像素感字體 */
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+}
+
+/* 🚩 增加氣泡下方的小尾巴 (尖角) */
+.wild-encounter-unit .exclamation::after {
+    content: "";
+    position: absolute;
+    bottom: -10px; /* 貼在框框底部 */
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #333; /* 黑色尖角邊框 */
+}
+
+/* 🚩 氣泡內部的白色小尖角 (蓋在黑色上面) */
+.wild-encounter-unit .exclamation::before {
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #fff; /* 白色尖角中心 */
+    z-index: 1;
+}
+
+/* 🚩 當觸發顯示時的動畫效果 (模擬驚訝的震動感) */
+.wild-encounter-unit.show-exclamation .exclamation {
+    transform: translateX(-50%) scale(1.2); /* 稍微放大增加衝擊力 */
+    opacity: 1;
+    animation: exclamation-pop 0.4s ease-out;
+}
+
+@keyframes exclamation-pop {
+    0% { transform: translateX(-50%) scale(0); }
+    50% { transform: translateX(-50%) scale(1.4); } /* 瞬間撐大 */
+    100% { transform: translateX(-50%) scale(1.2); }
 }
 
 /* 3. 初始狀態：寶可夢圖片 */
@@ -567,10 +627,9 @@
     </button>
 </dialog>
 
-<div id="dexPage" class="page">
+<div id="dexPage" class="page" style="display:none;">
     <div class="pball-shell">
         <div class="dex-container">
-            
             <div class="dex-sidebar" id="dexNav"></div>
             
             <div class="dex-main">
@@ -593,8 +652,12 @@
 
                     <button onclick="assignBuddy()" style="grid-column: span 2; background: #dc0a2d; color: white; padding: 12px; border: 2px solid #333; border-radius: 25px; margin-top: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 4px rgba(0,0,0,0.2);">就決定是你了！</button>
                 </div>
-            </div> </div> </div> <button class="btn-back" onclick="back()" style="margin-top: 10px;">✖ 關閉圖鑑</button>
-</div>
+            </div> 
+        </div> <div class="dex-b-button-wrapper" onclick="back()">
+            <div class="dex-close-btn">B</div>
+        </div>
+        
+    </div> </div>
 
 
 <div id="guidePage" class="page" style="background: #1a1a1a; color: white; display: none;">
@@ -920,9 +983,12 @@
         <button onclick="searchHistory()" style="background:var(--dark); color:white; width:100%; padding:10px; border:none; border-radius:5px;">搜尋明細</button>
         
         <div id="historyList" style="margin-top:10px; max-height:200px; overflow-y:auto; border: 1px solid #eee; border-radius: 5px; background: #fafafa;"></div>
-        
-    </div> <button class="btn-back" onclick="back()" style="margin-top: 15px; width: 100%;">✖ 關閉</button>
+    </div> <button class="btn-back" onclick="back()" 
+            style="margin: 15px auto 30px auto; display: block; width: calc(100% - 24px); box-sizing: border-box;">
+        ✖ 關閉
+    </button>
 </div>
+
 
 <div id="adminPage" class="page">
     <div class="card">
@@ -1568,7 +1634,7 @@ function spawnDailyWildIcon() {
     const imgPath = isShiny ? 'shiny/' : '';
     wildDiv.innerHTML = `
         <div class="exclamation">!</div>
-        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${imgPath}${randomId}.png" style="width: 50px; height: 50px;">
+        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${imgPath}${randomId}.png" style="width: 80px; height: 80px;">
     `;
 
     // --- 🎮 [修改重點]：加入點擊互動遊程 ---
