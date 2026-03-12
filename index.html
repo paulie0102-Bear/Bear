@@ -1222,34 +1222,41 @@ window.onload = () => {
 };
 
 function checkTaskReset() {
-    // 1. 安全性檢查
+    // 1. [安全性檢查]：這段絕對不能刪！確保全新帳號不會報錯
     if (!s.tasks) {
-        s.tasks = { dailyDate: "", weeklyDate: "", dRec: 0, dCatch: 0, wRec: 0, wCatch: 0, claimed: [] };
+        s.tasks = { 
+            dailyDate: "", 
+            weeklyDate: "", 
+            dRec: 0, dCatch: 0, 
+            wRec: 0, wCatch: 0, 
+            claimed: [] 
+        };
     }
 
     const now = new Date();
     const today = now.toDateString(); 
     
-    // 2. 計算週一標記 (使用副本計算，不影響 today)
-    const tempDate = new Date(now.getTime()); 
-    const dayVal = tempDate.getDay(); 
-    const diffVal = tempDate.getDate() - dayVal + (dayVal === 0 ? -6 : 1);
-    tempDate.setDate(diffVal);
-    const mondayDate = tempDate.toDateString();
+    // 2. [計算週一標記]：使用副本計算，變數名稱唯一化
+    const mondayCalc = new Date(now.getTime()); 
+    const currentDay = mondayCalc.getDay(); 
+    const dayDiff = mondayCalc.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
+    mondayCalc.setDate(dayDiff);
+    const mondayDate = mondayCalc.toDateString();
 
     let hasChanged = false;
 
-    // 3. 每日重置判定
+    // 3. [每日重置判定]
     if (s.tasks.dailyDate !== today) {
         console.log(`%c📅 每日重置成功 | ${today}`, "color: white; background: #2ecc71; padding: 2px 5px; border-radius: 3px; font-weight: bold;");
         s.tasks.dailyDate = today;
         s.tasks.dRec = 0;   
         s.tasks.dCatch = 0; 
+        // 確保 claimed 是陣列才過濾
         s.tasks.claimed = (s.tasks.claimed || []).filter(id => !id.includes('daily'));
         hasChanged = true;
     }
 
-    // 4. 每週重置判定
+    // 4. [每週重置判定]
     if (s.tasks.weeklyDate !== mondayDate) {
         console.log(`%c🗓️ 每週重置成功 | 週一標記: ${mondayDate}`, "color: white; background: #3498db; padding: 2px 5px; border-radius: 3px; font-weight: bold;");
         s.tasks.weeklyDate = mondayDate;
@@ -1259,18 +1266,18 @@ function checkTaskReset() {
         hasChanged = true;
     }
 
-    // 5. 冠軍資格檢查 (偵錯用)
+    // 5. [偵錯 Console]
     const currentAge = (typeof getAccountAge === 'function') ? getAccountAge() : 0;
     console.log(`%c🏆 任務資格檢查`, "color: #b8860b; font-weight: bold;");
     console.log(`[帳號天數]：${currentAge} / 100 天`);
 
-    // 6. 存檔與 UI 更新
+    // 6. [存檔與渲染]
     if (hasChanged) {
         localStorage.setItem('pokemaster_v60', JSON.stringify(s));
         if (typeof renderTasks === "function") renderTasks();
-        console.log("%c💾 換日數據已同步", "color: gray; font-style: italic;");
     }
 }
+    
 // 新增第二個參數 isChampion，預設為 false
 function openGiftSelector(docKey, isChampion = false) {
     console.log("🎁 開啟選擇器:", docKey, "冠軍模式:", isChampion);
