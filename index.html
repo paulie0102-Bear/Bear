@@ -1338,6 +1338,11 @@ function openGiftSelector(docKey, isChampion = false) {
     dialog.showModal();
 }
 
+// 建議直接這樣寫，把邏輯統整
+function updateGiftButtons() {
+    lockClaimedGifts(); 
+    // 如果還有其他博士按鈕的鎖定邏輯也可以放在這
+}
 
 // --- [ 2. UI 處理：鎖定已領取的禮物 ] ---
 function lockClaimedGifts() {
