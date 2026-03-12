@@ -1177,74 +1177,99 @@ const CHAMPION_DATA = {
     'cynthia':{ name: '神奧地區｜竹蘭的遺跡之魂', ids: [445, 448, 350] }  // 烈咬陸鯊、路卡利歐、美納斯
 };
 
-// --- [ 初始化與存檔讀取 ] ---
 window.onload = () => {
+    // --- 1. 讀取並合併存檔 ---
     const saved = localStorage.getItem('pokemaster_v60');
     if(saved) {
         const loaded = JSON.parse(saved);
-        // 合併存檔資料
         s = { 
             ...s, 
             ...loaded, 
-            claimedGifts: (loaded.claimedGifts || []) 
+            claimedGifts: (loaded.claimedGifts || []),
+            tasks: loaded.tasks || s.tasks 
         }; 
-    } else {
-        if (!s.claimedGifts) s.claimedGifts = [];
     }
- // 如果 s 已經存在，請確保它包含這兩個欄位
 
-s.dailyWild = s.dailyWild || {
+    // --- 2. 初始化物件結構 (防止 undefined) ---
+    if (!s.claimedGifts) s.claimedGifts = [];
+    s.dailyWild = s.dailyWild || { claimed: false, lastDate: "" };
+    s.tasks = s.tasks || { dailyDate: "", weeklyDate: "", dRec: 0, dCatch: 0, wRec: 0, wCatch: 0, claimed: [] };
 
-    claimed: false,  // 紀錄今天是否已經抓到了
+    // --- 3. 執行重置檢查 (換日/換週) ---
+    checkTaskReset(); 
 
-    lastDate: ""     // 紀錄上一次遇到的日期
-
-};
-    document.getElementById('recDate').valueAsDate = new Date();
-    document.getElementById('chartMonthPicker').value = new Date().toISOString().substring(0, 7);
+    // --- 4. 設定 UI 預設值 (日期、月份) ---
+    const now = new Date();
+    document.getElementById('recDate').valueAsDate = now;
+    const monthStr = now.toISOString().substring(0, 7);
+    const monthPicker = document.getElementById('chartMonthPicker');
+    if (monthPicker) monthPicker.value = monthStr;
     
-    // ✅ [核心修改]：將原本的 lockClaimedGifts(); 改為執行 updateGiftButtons();
-    // 這樣重新整理後，JS 才會立即掃描存檔，把博士的土狼犬名場面重新畫上去
-    updateGiftButtons(); 
+    // --- 5. 啟動各項 UI 更新功能 ---
+    updateUI();          // 渲染主畫面數據
+    updateGiftButtons(); // 鎖定領取的禮物或檢查冠軍資格
+    initCarrier();       // 🚩 初始化載具條碼 (從你第二個 onload 移過來的)
+    
+    // --- 6. 啟動野怪偵測 ---
+    if (typeof renderDailyWild === "function") {
+        renderDailyWild();
+    }
 
-    updateUI();
+    // --- 7. 定時器 ---
     setInterval(tickMega, 1000);
+    
+    console.log("%c🚀 系統初始化完成", "color: #2ecc71; font-weight: bold;");
 };
 
-// 任務重置檢查函式 (含每日與每週)
 function checkTaskReset() {
+    // 1. 安全性檢查：確保 s.tasks 結構存在
+    if (!s.tasks) {
+        s.tasks = { dailyDate: "", weeklyDate: "", dRec: 0, dCatch: 0, wRec: 0, wCatch: 0, claimed: [] };
+    }
+
     const now = new Date();
     const today = now.toDateString();
     
-    // 計算「本週」標籤 (以該週週一為基準)
-    const day = now.getDay(); // 0(日) 到 6(六)
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1); // 調整至週一
-    const mondayDate = new Date(now.setDate(diff)).toDateString();
+    // 2. 計算週一標記
+    const tempDate = new Date(now.getTime()); 
+    const day = tempDate.getDay(); 
+    const diff = tempDate.getDate() - day + (day === 0 ? -6 : 1);
+    tempDate.setDate(diff);
+    const mondayDate = tempDate.toDateString();
 
     let hasChanged = false;
 
-    // 1. 每日重置判定
+    // 3. 每日重置判定
     if (s.tasks.dailyDate !== today) {
+        console.log(`%c📅 每日重置成功 | ${today}`, "color: white; background: #2ecc71; padding: 2px 5px; border-radius: 3px; font-weight: bold;");
         s.tasks.dailyDate = today;
         s.tasks.dRec = 0;   
         s.tasks.dCatch = 0; 
-        s.tasks.claimed = s.tasks.claimed.filter(id => !id.includes('daily'));
-        hasChanged = true;
-    }
-// 2. 每週重置判定 (每週一重置)
-    if (s.tasks.weeklyDate !== mondayDate) {
-        s.tasks.weeklyDate = mondayDate;
-        s.tasks.wRec = 0;   
-        s.tasks.wCatch = 0; 
-        s.tasks.claimed = s.tasks.claimed.filter(id => !id.includes('weekly'));
+        s.tasks.claimed = (s.tasks.claimed || []).filter(id => !id.includes('daily'));
         hasChanged = true;
     }
 
-    // 如果有變動，立即存檔
+    // 4. 每週重置判定
+    if (s.tasks.weeklyDate !== mondayDate) {
+        console.log(`%c🗓️ 每週重置成功 | 週一標記: ${mondayDate}`, "color: white; background: #3498db; padding: 2px 5px; border-radius: 3px; font-weight: bold;");
+        s.tasks.weeklyDate = mondayDate;
+        s.tasks.wRec = 0;   
+        s.tasks.wCatch = 0; 
+        s.tasks.claimed = (s.tasks.claimed || []).filter(id => !id.includes('weekly'));
+        hasChanged = true;
+    }
+
+    // 5. 冠軍資格檢查 (偵錯用)
+    const currentAge = (typeof getAccountAge === 'function') ? getAccountAge() : 0;
+    console.log(`%c🏆 任務資格檢查`, "color: #b8860b; font-weight: bold;");
+    console.log(`[帳號天數]：${currentAge} / 100 天`);
+
+    // 6. 存檔與 UI 更新
     if (hasChanged) {
         localStorage.setItem('pokemaster_v60', JSON.stringify(s));
+        if (typeof renderTasks === "function") renderTasks();
     }
-};
+}
 
 // 新增第二個參數 isChampion，預設為 false
 function openGiftSelector(docKey, isChampion = false) {
@@ -1414,22 +1439,6 @@ window.onChampionBtnClick = function(key) {
 };
 
 
-// 1. 修改 window.onload，加入載具初始化
-window.onload = () => {
-    const saved = localStorage.getItem('pokemaster_v60');
-    if(saved) {
-        const loaded = JSON.parse(saved);
-        s = { ...s, ...loaded }; 
-    }
-    document.getElementById('recDate').valueAsDate = new Date();
-    document.getElementById('chartMonthPicker').value = new Date().toISOString().substring(0, 7);
-    
-    updateUI();
-    initCarrier(); // <-- 這裡新增：初始化載具條碼
-    setInterval(tickMega, 1000);
-};
-
-// 2. 在 updateUI 附近加入這三個載具專用函式
 function initCarrier() {
     const savedCarrier = localStorage.getItem('user_carrier');
     if (savedCarrier) {
@@ -1437,7 +1446,7 @@ function initCarrier() {
         renderBarcode(savedCarrier);
     }
 }
-
+    
 function saveCarrier() {
     let code = document.getElementById('carrierInput').value.trim().toUpperCase();
     
