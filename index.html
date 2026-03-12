@@ -1365,7 +1365,7 @@ function lockClaimedGifts() {
     champions.forEach(key => {
         const btn = document.getElementById(`btn-gift-${key}`);
         if (btn && !s.claimedGifts.includes(key) && days < 100) {
-            btn.disabled = true;
+            btn.disabled = false;
             btn.innerText = `🔒 剩餘 ${100 - days} 天`;
         }
     });
