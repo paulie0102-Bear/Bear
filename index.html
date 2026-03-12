@@ -937,39 +937,42 @@
 }
 
 
-/* 勳章大頭貼容器 - 正方形對齊版 */
+/* 勳章大頭貼容器 - 霸氣放大版 */
 .badge-avatar-wrap {
     position: absolute;
-    top: 55px;         /* 對齊「稱號」行的高度 */
-    right: 30px;       /* 距離右側邊界的位置 */
-    width: 105px;      /* 高度剛好覆蓋 稱號+等級+圖鑑 的範圍 */
-    height: 105px;     
+    top: 45px;         /* 稍微往上調，對齊稱號頂端 */
+    right: 20px;       /* 靠右邊界 */
+    width: 135px;      /* 顯著放大 */
+    height: 135px;     /* 保持正方形 */
     cursor: pointer;
     z-index: 10;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.15); /* 淡淡的底色讓正方形有輪廓感 */
-    border-radius: 12px;            /* 稍微圓角，看起來更精緻 */
-    border: 1px solid rgba(255, 215, 0, 0.2); /* 隱約的金邊 */
+    /* 增加深色半透明圓角底座，讓金色勳章更跳出來 */
+    background: rgba(0, 0, 0, 0.25); 
+    border-radius: 15px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
 }
 
 #current-badge-img {
-    width: 95% !important;    /* 稍微縮小一點點，留出內邊距 */
-    height: 95% !important;
-    image-rendering: pixelated; /* 保持像素銳利度 */
-    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
-    object-fit: contain;      
-    transition: transform 0.2s;
+    width: 125px !important;   /* 圖片本體也放大 */
+    height: 125px !important;
+    image-rendering: pixelated; /* 像素銳利化 */
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.7));
+    object-fit: contain;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+/* 滑鼠移上去的動態反饋 */
 #current-badge-img:hover {
-    transform: scale(1.1);
+    transform: scale(1.1) rotate(3deg);
 }
 
-/* 防止左側文字被壓到 */
-.card p {
-    margin-right: 120px; 
+/* 文字保護：確保左側文字有足夠空間，不會被 135px 的大勳章擋住 */
+.card p, .card h3 {
+    margin-right: 150px; 
 }
 
 </style>
@@ -2181,6 +2184,15 @@ async function throwBall() {
         s.tasks.wCatch += 1;
         s.tasks.mCatch += 1;
         
+
+        // 在你的原本捕捉函式最後面加入
+if (isSuccess) {
+    s.owned.push(curE.id);
+    checkBadgeUnlockAnnounce(); // 每次抓到寶可夢都自動檢查是否湊齊勳章
+    save(); // 存檔
+    updateUI();
+}
+
         // 🏆 [關鍵新增]：每日奇遇任務達成！
         // 只要這行被執行，今天主畫面的驚喜寶可夢就不會再出現了
         if (s.dailyWild) {
@@ -2212,6 +2224,30 @@ async function throwBall() {
     updateUI();
     if (typeof updateGiftButtons === 'function') updateGiftButtons();
 }
+
+// 檢查並提示解鎖
+function checkBadgeUnlockAnnounce() {
+    Object.keys(BADGE_DATA).forEach(key => {
+        const data = BADGE_DATA[key];
+        // 檢查是否集齊
+        const isAllCaught = data.req.every(id => s.owned.includes(id));
+        
+        // 如果集齊了，且之前還沒紀錄過「已通知解鎖」
+        if (isAllCaught && !s[`badge_${key}_unlocked`]) {
+            s[`badge_${key}_unlocked`] = true; // 標記為已解鎖
+            
+            // 彈出華麗的驚喜提示
+            alert(`🏆 恭喜！你已集齊 ${data.name} 所需的神獸，冠軍徽章已解鎖！`);
+            
+            // 如果勳章館開著，就順便刷新它
+            if (document.getElementById('badgeModal').style.display === "block") {
+                openBadgeModal(); 
+            }
+            updateUI();
+        }
+    });
+}
+
 
 // --- 戰鬥結束 ---
 function endBattle(text) {
