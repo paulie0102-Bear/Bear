@@ -701,9 +701,12 @@
 
 
 <div id="statusPage" class="page">
-    <div class="card">
+    <div class="card" style="position: relative; padding-top: 30px;"> <div id="selected-badge-display" class="badge-avatar-wrap" onclick="openBadgeModal()">
+            <img id="current-badge-img" src="" style="display: none;">
+            <div id="no-badge-txt">配戴<br>勳章</div>
+        </div>
         <h3>👤 訓練家資訊</h3>
-        <p>當前稱號：<b id="st-title" style="color:var(--mega);">初出茅廬</b></p>
+               <div style="margin-right: 110px;"> </div> <p>當前稱號：<b id="st-title" style="color:var(--mega);">初出茅廬</b></p>
         <p>訓練家等級：<b id="st-level" style="color:var(--accent);">Lv. 1</b></p>
         <p>圖鑑進度：<span id="st-dex-count">0</span> / 493</p>
         <hr>
@@ -720,6 +723,16 @@
     </div>
     <button class="btn-back" onclick="back()">✖ 關閉</button>
 </div>
+<div id="badgeModal" class="badge-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; backdrop-filter:blur(5px);">
+    <div style="background:#1a1a1a; margin:10% auto; padding:20px; width:85%; max-width:400px; border-radius:15px; border:2px solid #444; color:white; position:relative;">
+        <span onclick="closeBadgeModal()" style="position:absolute; right:15px; top:10px; font-size:24px; cursor:pointer;">&times;</span>
+        <h3 style="text-align:center; color:gold; margin-bottom:20px;">🏆 冠軍勳章館</h3>
+        <p style="font-size:12px; text-align:center; color:#888; margin-bottom:15px;">點擊已解鎖的勳章進行配戴</p>
+        <div id="badge-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            </div>
+    </div>
+</div>
+
 
 <div id="bagPage" class="page">
     <div class="card">
@@ -921,6 +934,46 @@
 
 .champion-text {
     text-align: left;
+}
+
+
+/* 勳章大頭貼容器 - 大尺寸橫向版 */
+.badge-avatar-wrap {
+    position: absolute;
+    top: 55px;         /* 從稱號高度開始 */
+    right: 20px;       /* 靠右對齊 */
+    width: 180px;      /* 加大寬度以符合 14:8 比例 */
+    height: 105px;     /* 高度剛好覆蓋三行文字的高度 */
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03); /* 極淡底色增加質感 */
+    border-radius: 5px;
+    overflow: visible;
+}
+
+#current-badge-img {
+    width: 100% !important;   /* 寬度填滿容器 */
+    height: auto !important;  /* 高度自適應比例 */
+    image-rendering: pixelated; 
+    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.6));
+    object-fit: contain;      /* 確保不因容器比例微差而變形 */
+}
+
+/* 文字保護：確保左側文字不會跟勳章撞在一起 */
+.card p {
+    position: relative;
+    z-index: 5;
+    margin-right: 190px; /* 寬度稍微大於勳章，確保留白 */
+    white-space: nowrap; /* 防止文字太擠時自動換行 */
+}
+
+/* 針對行動裝置微調：如果螢幕太窄，自動縮小勳章以免擠壓 */
+@media (max-width: 400px) {
+    .badge-avatar-wrap { width: 140px; height: 80px; right: 10px; }
+    .card p { margin-right: 145px; }
 }
 
 </style>
@@ -1214,6 +1267,59 @@ window.onload = () => {
     
     console.log("🚀 PokeMaster 啟動成功！當前狀態：", s);
 };
+
+// 在你的全域變數 s 中加入 s.selectedBadge = null;
+
+const BADGE_DATA = {
+    kanto:  { id: 1, req: [25, 150, 151], name: "關都始源" },
+    johto:  { id: 2, req: [149, 249, 250], name: "城都龍魂" },
+    hoenn:  { id: 3, req: [382, 383, 384, 376], name: "豐緣隕石" },
+    sinnoh: { id: 4, req: [484, 483, 487, 445], name: "神奧神話" }
+};
+
+function openBadgeModal() {
+    document.getElementById('badgeModal').style.display = "block";
+    const grid = document.getElementById('badge-grid');
+    grid.innerHTML = ""; // 清空重繪
+
+    Object.keys(BADGE_DATA).forEach(key => {
+        const data = BADGE_DATA[key];
+        const owned = data.req.filter(id => s.owned.includes(id));
+        const isUnlocked = owned.length === data.req.length;
+        const missingNames = data.req.filter(id => !s.owned.includes(id)).map(id => getPkmnName(id));
+
+        const slot = document.createElement('div');
+        slot.style.cssText = `text-align:center; padding:10px; background:#252525; border-radius:10px; border:1px solid ${s.selectedBadge === data.id ? 'gold' : '#444'}; cursor:pointer;`;
+        
+        // 勳章圖片
+        const imgStyle = isUnlocked ? "filter:grayscale(0); opacity:1;" : "filter:grayscale(1) brightness(0.3); opacity:0.5;";
+        slot.innerHTML = `
+            <img src="https://paulie0102-bear.github.io/Bear/img/mega/${data.id}.png" style="width:70px; image-rendering:pixelated; ${imgStyle}">
+            <div style="font-size:12px; margin-top:5px; color:${isUnlocked ? 'gold' : '#666'}">${data.name}</div>
+            <div style="font-size:10px; color:#888;">${owned.length}/${data.req.length}</div>
+        `;
+
+        slot.title = isUnlocked ? "點擊配戴此勳章" : `缺少：${missingNames.join('、')}`;
+
+        if (isUnlocked) {
+            slot.onclick = () => selectBadge(data.id);
+        }
+        grid.appendChild(slot);
+    });
+}
+
+function selectBadge(badgeId) {
+    s.selectedBadge = badgeId;
+    alert("配戴成功！");
+    closeBadgeModal();
+    updateUI(); // 確保主介面更新
+}
+
+function closeBadgeModal() {
+    document.getElementById('badgeModal').style.display = "none";
+}
+
+
 
 function checkTaskReset() {
     const now = new Date();
@@ -1592,6 +1698,31 @@ function updateUI() {
     if (typeof renderBag === 'function') renderBag();
     // 🚩 [新增] 在所有 UI 更新完後，執行每日野怪的判斷與渲染
     renderDailyWild();
+    const badgeImg = document.getElementById('current-badge-img');
+    const noBadgeTxt = document.getElementById('no-badge-txt');
+    
+    // 確保這兩個 HTML 元素存在
+    if (badgeImg && noBadgeTxt) {
+        if (s.selectedBadge) {
+            const newSrc = `https://paulie0102-bear.github.io/Bear/img/mega/${s.selectedBadge}.png`;
+            
+            // 只有在路徑不同時才更新，避免閃爍
+            if (badgeImg.src !== newSrc) {
+                badgeImg.src = newSrc;
+            }
+            
+            badgeImg.style.display = "block";
+            noBadgeTxt.style.display = "none";
+            
+            console.log("✅ 勳章已渲染:", newSrc);
+        } else {
+            badgeImg.style.display = "none";
+            noBadgeTxt.style.display = "block";
+        }
+    } else {
+        console.error("❌ 找不到勳章顯示元素！請檢查 HTML ID 是否正確。");
+    }
+
 }
 
 function renderDailyWild() {
