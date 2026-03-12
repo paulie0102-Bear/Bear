@@ -1222,22 +1222,19 @@ window.onload = () => {
 };
 
 function checkTaskReset() {
+    // 1. 安全性檢查
+    if (!s.tasks) {
+        s.tasks = { dailyDate: "", weeklyDate: "", dRec: 0, dCatch: 0, wRec: 0, wCatch: 0, claimed: [] };
+    }
+
     const now = new Date();
-    const today = now.toDateString(); // 這裡是正確的「今天」
+    const today = now.toDateString(); 
     
-    // 🚩 關鍵修正點：使用副本計算，不要動到 now，否則 today 會變成週一
-    const mondayCalc = new Date(now); 
-    const day = mondayCalc.getDay(); 
-    const diff = mondayCalc.getDate() - day + (day === 0 ? -6 : 1);
-    const mondayDate = new Date(mondayCalc.setDate(diff)).toDateString();
-
-    let hasChanged = false;
-
-    // 2. 計算週一標記
+    // 2. 計算週一標記 (使用副本計算，不影響 today)
     const tempDate = new Date(now.getTime()); 
-    const day = tempDate.getDay(); 
-    const diff = tempDate.getDate() - day + (day === 0 ? -6 : 1);
-    tempDate.setDate(diff);
+    const dayVal = tempDate.getDay(); 
+    const diffVal = tempDate.getDate() - dayVal + (dayVal === 0 ? -6 : 1);
+    tempDate.setDate(diffVal);
     const mondayDate = tempDate.toDateString();
 
     let hasChanged = false;
@@ -1271,9 +1268,9 @@ function checkTaskReset() {
     if (hasChanged) {
         localStorage.setItem('pokemaster_v60', JSON.stringify(s));
         if (typeof renderTasks === "function") renderTasks();
+        console.log("%c💾 換日數據已同步", "color: gray; font-style: italic;");
     }
 }
-
 // 新增第二個參數 isChampion，預設為 false
 function openGiftSelector(docKey, isChampion = false) {
     console.log("🎁 開啟選擇器:", docKey, "冠軍模式:", isChampion);
