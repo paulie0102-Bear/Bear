@@ -1222,14 +1222,17 @@ window.onload = () => {
 };
 
 function checkTaskReset() {
-    // 1. 安全性檢查：確保 s.tasks 結構存在
-    if (!s.tasks) {
-        s.tasks = { dailyDate: "", weeklyDate: "", dRec: 0, dCatch: 0, wRec: 0, wCatch: 0, claimed: [] };
-    }
-
     const now = new Date();
-    const today = now.toDateString();
+    const today = now.toDateString(); // 這裡是正確的「今天」
     
+    // 🚩 關鍵修正點：使用副本計算，不要動到 now，否則 today 會變成週一
+    const mondayCalc = new Date(now); 
+    const day = mondayCalc.getDay(); 
+    const diff = mondayCalc.getDate() - day + (day === 0 ? -6 : 1);
+    const mondayDate = new Date(mondayCalc.setDate(diff)).toDateString();
+
+    let hasChanged = false;
+
     // 2. 計算週一標記
     const tempDate = new Date(now.getTime()); 
     const day = tempDate.getDay(); 
