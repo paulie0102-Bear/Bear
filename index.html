@@ -2163,7 +2163,8 @@ async function throwBall() {
         
         // ● 功能 7: 更新基礎圖鑑
         if(!s.owned.includes(curE.id)) s.owned.push(curE.id);
-        
+        // 2. 檢查勳章解鎖
+        checkBadgeUnlockAnnounce();
         // ★ 功能 8: 強化閃光紀錄 (包含冠軍必閃)
         if(curE.isShiny && !s.shinyOwned.includes(curE.id)) {
             s.shinyOwned.push(curE.id);
@@ -2183,15 +2184,10 @@ async function throwBall() {
         s.tasks.dCatch += 1;
         s.tasks.wCatch += 1;
         s.tasks.mCatch += 1;
+        if (s.dailyWild) s.dailyWild.claimed = true;
         
+        saveGameData(); // 統一存檔一次
 
-        // 在你的原本捕捉函式最後面加入
-if (isSuccess) {
-    s.owned.push(curE.id);
-    checkBadgeUnlockAnnounce(); // 每次抓到寶可夢都自動檢查是否湊齊勳章
-    save(); // 存檔
-    updateUI();
-}
 
         // 🏆 [關鍵新增]：每日奇遇任務達成！
         // 只要這行被執行，今天主畫面的驚喜寶可夢就不會再出現了
