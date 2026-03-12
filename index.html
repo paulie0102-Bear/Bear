@@ -937,43 +937,39 @@
 }
 
 
-/* 勳章大頭貼容器 - 大尺寸橫向版 */
+/* 勳章大頭貼容器 - 正方形對齊版 */
 .badge-avatar-wrap {
     position: absolute;
-    top: 55px;         /* 從稱號高度開始 */
-    right: 20px;       /* 靠右對齊 */
-    width: 180px;      /* 加大寬度以符合 14:8 比例 */
-    height: 105px;     /* 高度剛好覆蓋三行文字的高度 */
+    top: 55px;         /* 對齊「稱號」行的高度 */
+    right: 30px;       /* 距離右側邊界的位置 */
+    width: 105px;      /* 高度剛好覆蓋 稱號+等級+圖鑑 的範圍 */
+    height: 105px;     
     cursor: pointer;
     z-index: 10;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.03); /* 極淡底色增加質感 */
-    border-radius: 5px;
-    overflow: visible;
+    background: rgba(0, 0, 0, 0.15); /* 淡淡的底色讓正方形有輪廓感 */
+    border-radius: 12px;            /* 稍微圓角，看起來更精緻 */
+    border: 1px solid rgba(255, 215, 0, 0.2); /* 隱約的金邊 */
 }
 
 #current-badge-img {
-    width: 100% !important;   /* 寬度填滿容器 */
-    height: auto !important;  /* 高度自適應比例 */
-    image-rendering: pixelated; 
-    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.6));
-    object-fit: contain;      /* 確保不因容器比例微差而變形 */
+    width: 95% !important;    /* 稍微縮小一點點，留出內邊距 */
+    height: 95% !important;
+    image-rendering: pixelated; /* 保持像素銳利度 */
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
+    object-fit: contain;      
+    transition: transform 0.2s;
 }
 
-/* 文字保護：確保左側文字不會跟勳章撞在一起 */
+#current-badge-img:hover {
+    transform: scale(1.1);
+}
+
+/* 防止左側文字被壓到 */
 .card p {
-    position: relative;
-    z-index: 5;
-    margin-right: 190px; /* 寬度稍微大於勳章，確保留白 */
-    white-space: nowrap; /* 防止文字太擠時自動換行 */
-}
-
-/* 針對行動裝置微調：如果螢幕太窄，自動縮小勳章以免擠壓 */
-@media (max-width: 400px) {
-    .badge-avatar-wrap { width: 140px; height: 80px; right: 10px; }
-    .card p { margin-right: 145px; }
+    margin-right: 120px; 
 }
 
 </style>
