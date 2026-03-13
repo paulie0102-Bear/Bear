@@ -89,7 +89,7 @@
         /* 通用元件 */
         .card { background: var(--white); border-radius: 12px; padding: 15px; margin: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .msg-box { height: 45px; background: #fff; padding: 10px 15px; font-weight: bold; border-bottom: 1px solid #ddd; color: var(--p); display: flex; align-items: center; }
-        .btn-back { background: var(--dark); color: white; width: calc(100% - 20px); padding: 15px; margin: 10px; border: none; border-radius: 10px; font-weight: bold; }
+        .btn-back { background: var(--dark); color: white; width: calc(100% - 20px); padding: 15px; margin: 10px; margin-bottom: 30px; border: none; border-radius: 10px; font-weight: bold; }
         .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; text-align: center; }
         .res-icon { width: 30px; height: 30px; object-fit: contain; }
 
@@ -538,6 +538,49 @@
     transform: translateX(-50%) scale(1.3); /* 驚嘆號彈跳出來並放大 */
 }
 </style>
+
+<style>
+    /* 後花園全螢幕背景 */
+#garden-overlay {
+    background: linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 100%) !important;
+    animation: slideIn 0.3s ease-out;
+}
+
+/* 讓素材和料理看起來有漂浮感 */
+#garden-overlay .card-mini {
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 15px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+@keyframes slideIn {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+/* 像素圖案最佳化 */
+#garden-overlay img {
+    image-rendering: pixelated;
+    transition: transform 0.2s;
+}
+
+#garden-overlay img:hover {
+    transform: scale(1.1) rotate(5deg);
+}
+</style>
+<style>
+    /* 讓公告內的捲軸變窄、變圓潤 */
+    #news-overlay div::-webkit-scrollbar {
+        width: 4px;
+    }
+    #news-overlay div::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 10px;
+    }
+    @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>
+
 </head>
 <body>
 
@@ -709,18 +752,19 @@
                <div style="margin-right: 110px;"> </div> <p>當前稱號：<b id="st-title" style="color:var(--mega);">初出茅廬</b></p>
         <p>訓練家等級：<b id="st-level" style="color:var(--accent);">Lv. 1</b></p>
         <p>圖鑑進度：<span id="st-dex-count">0</span> / 493</p>
-        <hr>
-        <p>進化石進度 (<span id="p-evo-txt">0</span>/5)</p>
-        <div class="hp-bar"><div id="p-evo-bar" style="height:100%; background:var(--accent); width:0%;"></div></div>
-        <p>Mega石進度 (<span id="p-mega-txt">0</span>/5)</p>
-        <div class="hp-bar"><div id="p-mega-bar" style="height:100%; background:var(--mega); width:0%;"></div></div>
-        <hr>
-        <div style="font-size:14px; line-height:1.8;">
+        
+           <div style="font-size:14px; line-height:1.8;">
             <div>🎯 綜合捕捉率：<b id="st-catch-rate">30%</b></div>
             <div>✨ 綜合閃光率：<b id="st-shiny-rate">5%</b></div>
             <div id="mega-timer" style="color:var(--mega); display:none;">🧬 Mega 強化中：<span id="mega-time-left">00:00</span></div>
         </div>
     </div>
+
+<button onclick="renderGarden(); GARDEN.processLoot();" 
+    style="background:#2ecc71; color:white; width:calc(100% - 20px); padding:15px; border:none; border-radius:10px; font-weight:bold; margin:10px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
+    <span>🌿</span> 進入秘密花園
+</button>
+
     <button class="btn-back" onclick="back()">✖ 關閉</button>
 </div>
 <div id="badgeModal" class="badge-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; backdrop-filter:blur(5px);">
@@ -742,6 +786,13 @@
         <h3>🎒 我的背包</h3>
         <div id="bag-items" class="res-grid"></div>
         <hr>
+        
+        <p>進化石進度 (<span id="p-evo-txt">0</span>/5)</p>
+        <div class="hp-bar"><div id="p-evo-bar" style="height:100%; background:var(--accent); width:0%;"></div></div>
+        <p>Mega石進度 (<span id="p-mega-txt">0</span>/5)</p>
+        <div class="hp-bar"><div id="p-mega-bar" style="height:100%; background:var(--mega); width:0%;"></div></div>
+        <hr>
+        
         <button onclick="performEvolve()" style="background:#e67e22; color:white; width:100%; padding:15px; border:none; border-radius:10px; font-weight:bold;">🧬 使用 1 顆進化石</button>
     </div>
     <button class="btn-back" onclick="back()">✖ 關閉</button>
@@ -1215,7 +1266,22 @@ let s = {
     // --- [ 個人式修正：新增等級屬性 ] ---
     lvl: 1,           // 玩家等級
     exp: 0,           // 當前經驗值
-    nextExp: 100      // 升級門檻
+    nextExp: 100,      // 升級門檻
+
+    farm: {
+        inv: { "🌾": 0, "🥗": 0, "🐟": 0, "🦐": 0, "🥩": 0, "🥚": 0 }, // 素材倉庫
+        dishes: {},          // 料理成品倉庫
+        knownRecipes: [],    // 已解鎖的食譜公式 (圖鑑)
+        friendship: 0,       // 夥伴親密度 (影響掉落率)
+        lastLootTime: Date.now(), // 上次領取 6 小時獎勵的時間
+        quest: "🌾🐟🥩",     // 當前夥伴想吃的料理 (預設一個)
+        prod: {
+            bulbasaur: { type: null, end: 0 },
+            squirtle: { type: null, end: 0 },
+            charmander: { type: null, end: 0 },
+            pikachu: { type: null, end: 0, slots: [null, null, null] }
+        }
+    }
 };
 
 const DOCTOR_DATA = {
@@ -1231,6 +1297,357 @@ const CHAMPION_DATA = {
     'steven': { name: '豐緣地區｜大吾的鋼鐵意志', ids: [376, 373, 306] }, // 巨金怪、暴飛龍、波士可多拉
     'cynthia':{ name: '神奧地區｜竹蘭的遺跡之魂', ids: [445, 448, 350] }  // 烈咬陸鯊、路卡利歐、美納斯
 };
+
+const GARDEN = {
+    // 1. 食譜對照表
+    recipes: {
+        "🌾🐟🥩": { name: "陸海空豪華便當", icon: "🍱" },
+        "🌾🐟🥚": { name: "滑蛋鮮魚粥", icon: "🥣" },
+        "🌾🦐🥩": { name: "鮮蝦燒肉飯", icon: "🍛" },
+        "🌾🦐🥚": { name: "🍤黃金蝦仁炒飯", icon: "🍤" },
+        "🥗🐟🥩": { name: "🥗海陸健身沙拉", icon: "🥗" },
+        "🥗🐟🥚": { name: "🍳時蔬魚排歐姆蛋", icon: "🍳" },
+        "🥗🦐🥩": { name: "🥘鮮蝦時蔬快炒", icon: "🥘" },
+        "🥗🦐🥚": { name: "🍮嫩蝦蔬菜蒸蛋", icon: "🍮" }
+    },
+
+    // 2. 核心獎勵引擎 (每 6 小時計算一次)
+    processLoot: () => {
+        const now = Date.now();
+        let elapsed = now - s.farm.lastLootTime;
+        
+        // 限制最多累積 24 小時，避免太久沒玩導致獎勵過量
+        if (elapsed > 86400000) elapsed = 86400000; 
+
+        const count = Math.floor(elapsed / 21600000); // 計算有幾個 6 小時
+        
+        if (count > 0) {
+            // 親密度等級 (最高 Lv.10)
+            const fsLv = Math.min(Math.floor(s.farm.friendship / 100), 10);
+            let rewards = [];
+            
+            for(let i=0; i<count; i++) {
+                const rand = Math.random() * 100;
+                
+                // --- 依照你要求的機率權重進行判定 ---
+                if (rand < (1 + fsLv * 0.6)) { 
+                    // Mega石: 1% -> 上限 7%
+                    s.items.mstone++;
+                    rewards.push("🌀Mega石");
+                } else if (rand < (3 + fsLv * 1.6)) { 
+                    // 進化石: 2% -> 上限 13% (3 + 10 = 13)
+                    s.items.stone++;
+                    rewards.push("💎進化石");
+                } else if (rand < (10 + fsLv * 2.5)) { 
+                    // 高級球: 7% -> 15% (10 + 5 = 15)
+                    s.items.ultra++;
+                    rewards.push("🟡高級球");
+                } else if (rand < (25 + fsLv * 2.5)) { 
+                    // 超級球: 15% 穩定固定
+                    s.items.great++;
+                    rewards.push("🔵超級球");
+                } else if (rand < (50 + fsLv * 4.5)) { 
+                    // 寶貝球: 25% -> 20% (隨等級調降，讓位給高級獎勵)
+                    s.items.poke++;
+                    rewards.push("🔴寶貝球");
+                } else {
+                    // 金幣: 50% -> 30% (Lv.10)
+                    s.bal += 100;
+                    rewards.push("💰P$100");
+                }
+            }
+            
+            s.farm.lastLootTime = now - (elapsed % 21600000);
+            alert(`❤️ 夥伴在野外巡邏 ${count * 6} 小時，帶回了：\n${rewards.join('、')}`);
+            
+            // 如果你有存檔和更新介面的函式，在這裡執行
+            if (typeof saveGameData === 'function') saveGameData();
+            if (typeof updateUI === 'function') updateUI();
+        }
+    },
+
+    // 取得 API 圖示
+    getGif: (id) => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`,
+    
+    // 時間顯示格式化
+    getTimeStr: (ms) => {
+        const diff = ms - Date.now();
+        if (diff <= 0) return "✅ 完工！";
+        const m = Math.floor(diff / 60000), sec = Math.floor((diff % 60000) / 1000);
+        return `${m}m ${sec}s`;
+    }
+};
+
+/* --- UI 渲染與動作邏輯 --- */
+function renderGarden() {
+    // 確保數據存在
+    if (!s.farm) s.farm = { inv:{}, dishes:{}, knownRecipes:[], friendship:0, prod:{pikachu:{slots:[null,null,null]}} };
+    
+    let overlay = document.getElementById('garden-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'garden-overlay';
+        overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999; overflow-y:auto; font-family:sans-serif; text-align:center;";
+        document.body.appendChild(overlay);
+    }
+
+    const f = s.farm, partnerId = s.buddyId || 25;
+    
+    overlay.innerHTML = `
+        <div style="padding:20px; max-width:500px; margin:auto; padding-bottom:100px;">
+            <button onclick="document.getElementById('garden-overlay').remove(); if(window.updateUI) updateUI();" 
+                style="float:left; padding:8px 15px; border-radius:10px; border:none; background:#333; color:white; cursor:pointer;">⬅ 返回</button>
+            <h2 style="margin:10px 0;">🌳 秘密花園</h2>
+            
+            <div style="background:white; border-radius:15px; padding:10px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+                <b>❤️ 親密度 Lv.${Math.floor(f.friendship/100)}</b>
+                <div style="width:100%; background:#eee; height:10px; border-radius:5px; margin-top:5px; margin-bottom:10px;">
+                    <div style="width:${f.friendship%100}%; background:#ff5252; height:100%; border-radius:5px; transition:0.3s;"></div>
+                </div>
+                <div style="font-size: 13px; color: #666; padding-top: 5px; border-top: 1px solid #f5f5f5;">
+                    ⏱️ 下次巡邏獎勵：<span id="patrol-timer" style="font-weight:bold; color:#2ecc71;">${getPatrolTimeStr()}</span>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px; background:rgba(255,255,255,0.4); padding:10px; border-radius:20px;">
+                ${renderWorker('bulbasaur', 1, ['🌾', '🥗'])}
+                ${renderWorker('squirtle', 7, ['🐟', '🦐'])}
+                ${renderWorker('charmander', 4, ['🥩', '🥚'])}
+            </div>
+
+            <div style="background:white; border-radius:20px; padding:15px; box-shadow:0 4px 15px rgba(0,0,0,0.05); margin-bottom:20px;">
+                <img src="${GARDEN.getGif(25)}" style="width:60px; image-rendering:pixelated;">
+                <h4 style="margin:5px 0;">皮卡丘大廚</h4>
+                <div style="display:flex; justify-content:center; gap:10px; margin:10px 0;">
+                    ${[0,1,2].map(i => {
+                        const icon = f.prod.pikachu.slots[i];
+                        const opts = i==0?['🌾','🥗']:i==1?['🐟','🦐']:['🥩','🥚'];
+                        return `<div onclick="setCookSlot(${i},'${opts[0]}','${opts[1]}')" style="width:45px; height:45px; background:#f5f5f5; border:2px dashed #ccc; border-radius:10px; line-height:45px; font-size:24px; cursor:pointer;">${icon||'？'}</div>`;
+                    }).join('')}
+                </div>
+                ${f.prod.pikachu.end > Date.now() ? 
+                    `<p>🍳 料理中... ${GARDEN.getTimeStr(f.prod.pikachu.end)}</p>` : 
+                    (f.prod.pikachu.end !== 0 ? `<button onclick="collectDish()" style="background:#ff9800; color:white; border:none; padding:10px 25px; border-radius:12px; cursor:pointer;">完成料理</button>` : `<button onclick="startCook()" style="background:#4caf50; color:white; border:none; padding:10px 25px; border-radius:12px; cursor:pointer;">開始料理 (1hr)</button>`)
+                }
+            </div>
+
+            <div style="background:#fff3e0; border-radius:20px; padding:15px; border:2px solid #ffe0b2;">
+                <img src="${GARDEN.getGif(partnerId)}" style="width:70px; image-rendering:pixelated;">
+                <p>夥伴想吃：<b>${GARDEN.recipes[f.quest]?.icon || '❓'} ${GARDEN.recipes[f.quest]?.name || '未知'}</b></p>
+                <button onclick="submitQuest()" style="background:#e65100; color:white; border:none; padding:12px 30px; border-radius:15px; font-weight:bold; cursor:pointer;">餵食夥伴</button>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; justify-content: center; gap: 15px;">
+                <button onclick="toggleGardenModal('farm-inv')" style="background: #795548; color: white; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1;">📦 儲存箱</button>
+                <button onclick="toggleGardenModal('recipe-book')" style="background: var(--p, #e67e22); color: white; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1;">📜 食譜圖鑑</button>
+            </div>
+        </div>
+
+        <div id="farm-inv-modal" class="garden-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:85%; max-width:350px; background:white; border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:10001; padding:20px;">
+            <h3 style="margin:0 0 15px 0; color:#5d4037; text-align:center;">🧺 素材儲存箱</h3>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+                ${Object.entries(f.inv).map(([emoji, count]) => `
+                    <div onclick="autoFillSlot('${emoji}'); toggleGardenModal('farm-inv');" style="padding:10px; background:#f9f9f9; border-radius:12px; cursor:pointer; border:1px solid #eee; text-align:center;">
+                        <div style="font-size:28px;">${emoji}</div>
+                        <div style="font-size:14px; font-weight:bold; color:#333;">x${count}</div>
+                    </div>
+                `).join('')}
+            </div>
+            <button onclick="closeAllGardenModals()" style="margin-top:20px; width:100%; padding:10px; border:none; background:#eee; border-radius:10px; cursor:pointer; font-weight:bold;">關閉</button>
+        </div>
+
+        <div id="recipe-book-modal" class="garden-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:90%; max-width:380px; max-height:70vh; overflow-y:auto; background:white; border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:10001; padding:20px;">
+            <h3 style="margin:0 0 15px 0; color:#e65100; text-align:center;">📜 料理圖鑑</h3>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                ${Object.entries(GARDEN.recipes).map(([formula, data]) => {
+                    const isKnown = s.farm.knownRecipes.includes(formula);
+                    const count = s.farm.dishes[data.icon] || 0;
+                    const ing = [...formula]; 
+                    return `
+                        <div style="display:flex; align-items:center; justify-content:space-between; background:${isKnown ? '#fff3e0' : '#f5f5f5'}; padding:10px; border-radius:12px; border:1px solid ${isKnown ? '#ffe0b2' : '#ddd'};">
+                            <div style="display:flex; align-items:center; gap:3px; font-size:16px;">
+                                <span>${isKnown?ing[0]:'❓'}</span>+<span>${isKnown?ing[1]:'❓'}</span>+<span>${isKnown?ing[2]:'❓'}</span>=<span>${isKnown?data.icon:'❔'}</span>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:12px; font-weight:bold; color:${isKnown?'#e65100':'#999'};">${isKnown?data.name:'未知料理'}</div>
+                                <div style="font-size:11px; color:#666;">持有: ${count}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            <button onclick="closeAllGardenModals()" style="margin-top:20px; width:100%; padding:10px; border:none; background:#eee; border-radius:10px; cursor:pointer; font-weight:bold;">關閉</button>
+        </div>
+
+        <div id="garden-modal-overlay" onclick="closeAllGardenModals()" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000;"></div>
+    `;
+}
+
+// 每秒更新一次後花園內的計時器文字
+setInterval(() => {
+    const timerEl = document.getElementById('patrol-timer');
+    if (timerEl) {
+        timerEl.innerText = getPatrolTimeStr();
+    }
+}, 1000);
+
+// 計算時間的輔助函式
+function getPatrolTimeStr() {
+    if (!s.farm) return "計算中...";
+    const nextLoot = s.farm.lastLootTime + 21600000; // 6小時
+    const diff = nextLoot - Date.now();
+    
+    if (diff <= 0) return "🎁 獎勵準備就緒！";
+    
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const sec = Math.floor((diff % 60000) / 1000);
+    
+    // 補零讓時間格式更整齊 (例如 05:09:01)
+    return `${h}h ${String(m).padStart(2, '0')}m ${String(sec).padStart(2, '0')}s`;
+}
+
+/* --- 生產、料理與餵食控制 --- */
+
+// 1. 渲染生產工人 (御三家)
+function renderWorker(key, id, opts) {
+    const p = s.farm.prod[key];
+    const isDone = p.end !== 0 && p.end <= Date.now();
+    const isBusy = p.end > Date.now();
+    
+    return `<div style="width:32%;">
+        <img src="${GARDEN.getGif(id)}" style="width:50px; image-rendering:pixelated; ${isBusy ? 'filter:grayscale(1); opacity:0.5' : ''}">
+        <div style="margin-top:5px;">
+            ${isDone ? 
+                `<button onclick="collectFarm('${key}')" style="background:#ffd700; border:none; border-radius:8px; font-size:12px; padding:5px 8px; cursor:pointer; font-weight:bold;">領取${p.type}</button>` : 
+              isBusy ? 
+                `<span style="font-size:11px; display:block; color:#666;">${GARDEN.getTimeStr(p.end)}</span>` : 
+                `<div style="display:flex; gap:2px; justify-content:center;">
+                    <button onclick="startFarm('${key}','${opts[0]}')" style="padding:5px; border-radius:5px; border:1px solid #ddd; background:white; cursor:pointer;">${opts[0]}</button>
+                    <button onclick="startFarm('${key}','${opts[1]}')" style="padding:5px; border-radius:5px; border:1px solid #ddd; background:white; cursor:pointer;">${opts[1]}</button>
+                </div>`}
+        </div>
+    </div>`;
+}
+
+// 2. 開始生產 (4小時)
+function startFarm(pk, type) {
+    if(s.farm.prod[pk].end > Date.now()) return;
+    s.farm.prod[pk].type = type;
+    s.farm.prod[pk].end = Date.now() + 14400000; // 4 * 60 * 60 * 1000
+    renderGarden();
+    if(typeof saveGameData === 'function') saveGameData();
+}
+
+// 3. 領取素材
+function collectFarm(pk) {
+    const p = s.farm.prod[pk];
+    if(p.end > Date.now() || p.end === 0) return;
+    s.farm.inv[p.type] = (s.farm.inv[p.type] || 0) + 1;
+    p.type = null;
+    p.end = 0;
+    renderGarden();
+    if(typeof saveGameData === 'function') saveGameData();
+}
+
+// 4. 皮卡丘料理槽點擊 (手動選擇)
+function setCookSlot(i, a, b) {
+    const p = s.farm.prod.pikachu;
+    if(p.end > Date.now()) return;
+    p.slots[i] = (p.slots[i] === a) ? b : a;
+    renderGarden();
+}
+
+// 5. 倉庫快速填充邏輯
+function autoFillSlot(emoji) {
+    const p = s.farm.prod.pikachu;
+    if (p.end > Date.now()) return;
+    const slotMap = { '🌾':0,'🥗':0, '🐟':1,'🦐':1, '🥩':2,'🥚':2 };
+    const targetSlot = slotMap[emoji];
+    if (targetSlot !== undefined) {
+        p.slots[targetSlot] = emoji;
+        renderGarden();
+    }
+}
+
+// 6. 開始料理 (1小時)
+function startCook() {
+    const p = s.farm.prod.pikachu;
+    if (p.slots.includes(null)) return alert("請放滿三種材料！");
+    if (s.farm.inv[p.slots[0]] > 0 && s.farm.inv[p.slots[1]] > 0 && s.farm.inv[p.slots[2]] > 0) {
+        s.farm.inv[p.slots[0]]--;
+        s.farm.inv[p.slots[1]]--;
+        s.farm.inv[p.slots[2]]--;
+        p.end = Date.now() + 3600000; // 1小時
+        renderGarden();
+        if(typeof saveGameData === 'function') saveGameData();
+    } else {
+        alert("材料不足，快去生產吧！");
+    }
+}
+
+// 7. 完成料理並解鎖食譜
+function collectDish() {
+    const p = s.farm.prod.pikachu;
+    if (p.end > Date.now() || p.end === 0) return;
+    const formula = p.slots.join("");
+    const res = GARDEN.recipes[formula];
+    const tasty = Math.random() < 0.1; // 10% 雙倍產量
+    
+    s.farm.dishes[res.icon] = (s.farm.dishes[res.icon] || 0) + (tasty ? 2 : 1);
+    
+    // 解鎖圖鑑
+    if(!s.farm.knownRecipes.includes(formula)) {
+        s.farm.knownRecipes.push(formula);
+    }
+    
+    alert(`${tasty ? '✨手感極佳！(獲得2份)' : '🍳'} 料理好了：${res.name}`);
+    p.end = 0;
+    p.slots = [null, null, null];
+    renderGarden();
+    if(typeof saveGameData === 'function') saveGameData();
+}
+
+// 8. 餵食夥伴 (親密度增加)
+function submitQuest() {
+    const targetFormula = s.farm.quest;
+    const targetIcon = GARDEN.recipes[targetFormula].icon;
+    
+    if (s.farm.dishes[targetIcon] > 0) {
+        s.farm.dishes[targetIcon]--;
+        s.farm.friendship += 20; // 增加 20 點親密度
+        
+        // 更換下一個隨機任務
+        const keys = Object.keys(GARDEN.recipes);
+        s.farm.quest = keys[Math.floor(Math.random() * keys.length)];
+        
+        alert("❤️ 夥伴吃得很開心！親密度上升了！");
+        renderGarden();
+        if(typeof updateUI === 'function') updateUI();
+        if(typeof saveGameData === 'function') saveGameData();
+    } else {
+        alert("你還沒做好這道料理喔！");
+    }
+    
+}
+
+// 9. 方框控制函式
+function toggleGardenModal(type) {
+    const modal = document.getElementById(type + '-modal');
+    const overlay = document.getElementById('garden-modal-overlay');
+    closeAllGardenModals();
+    if (modal && overlay) {
+        modal.style.display = 'block';
+        overlay.style.display = 'block';
+    }
+}
+
+function closeAllGardenModals() {
+    document.querySelectorAll('.garden-modal').forEach(m => m.style.display = 'none');
+    const overlay = document.getElementById('garden-modal-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
 
 // --- [ 初始化與存檔讀取 ] ---
 window.onload = () => {
@@ -1268,6 +1685,8 @@ window.onload = () => {
     setInterval(tickMega, 1000);
     
     console.log("🚀 PokeMaster 啟動成功！當前狀態：", s);
+
+    showAnnouncement();
 };
 
 // 在你的全域變數 s 中加入 s.selectedBadge = null;
@@ -1296,6 +1715,75 @@ const BADGE_DATA = {
     kyogre_p:   { id: 19, req: [382], name: "根源波動：始源之海的咆哮" },
     regigigas:  { id: 20, req: [486, 377, 378, 379], name: "永恆遺產：拖動大陸的巨人" }
 };
+
+function showAnnouncement() {
+    // 1. 開發者總開關 (想關閉公告時改為 true)
+    const isMaintenance = false; 
+    if (isMaintenance) return;
+
+    // 2. 取得今日日期與玩家儲存的狀態
+    const today = new Date().toDateString();
+    const hideDate = localStorage.getItem('hide_announcement_date');
+
+    // 3. 如果玩家今天已經勾選過「不再顯示」，則不執行彈窗
+    if (hideDate === today) return;
+
+    const news = document.createElement('div');
+    news.id = 'news-overlay';
+    news.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:20000; display:flex; align-items:center; justify-content:center; font-family:sans-serif;";
+    
+    news.innerHTML = `
+        <div style="background:white; width:85%; max-width:400px; border-radius:20px; position:relative; overflow:hidden; animation: popIn 0.3s ease-out;">
+            <div onclick="closeNews()" style="position:absolute; top:10px; right:15px; font-size:24px; cursor:pointer; color:#999; font-weight:bold;">×</div>
+            
+            <div style="background:var(--p, #e67e22); padding:20px; text-align:center;">
+                <h2 style="margin:0; color:white; letter-spacing:2px;">📜 冒險者日報</h2>
+            </div>
+            
+            <div style="padding: 20px; color: #333;">
+    
+    <div style="max-height: 250px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; text-align: left; font-size: 14px; line-height: 1.6;">
+        <b style="color: #e67e22;">【系統更新內容】</b><br>
+        • 👤 玩家頁面新增徽章系統，快來蒐集圖鑑，獲取最適合自己的徽章。<br>
+        • 👤 玩家頁面新增秘密花園系統！妙蛙種子、傑尼龜以及小火龍各司其職開始生產素材。<br>
+        • 🍱 皮卡丘大廚現在可以烹飪 8 種不同的料理。<br>
+        • ❤️ 增加親密度系統，提高親密度有助於增加掛機獎勵的機率。<br>
+        • 🎒 調整背包配置，將進化石進度與mega石進度移至背包頁面。<br>
+        • ⚙️ 隨機野怪以及每日任務的重置時間調整為午夜12點。<br>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+    <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:15px; padding: 5px;">
+    <input type="checkbox" id="no-more-today" style="width:18px; height:18px; cursor:pointer; margin:0;">
+    <label for="no-more-today" style="font-size:14px; color:#666; cursor:pointer; user-select:none; padding: 5px 0;">
+        今日不再顯示此公告
+    </label>
+</div>
+
+    <button onclick="closeNews()" 
+        style="width: 100%; padding: 12px; background: #333; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer;">
+        進入遊戲
+    </button>
+            </div>
+        </div>
+        <style>
+            @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        </style>
+    `;
+    document.body.appendChild(news);
+}
+
+// 關閉公告並存檔狀態
+function closeNews() {
+    const isChecked = document.getElementById('no-more-today').checked;
+    if (isChecked) {
+        const today = new Date().toDateString();
+        localStorage.setItem('hide_announcement_date', today);
+    }
+    document.getElementById('news-overlay').remove();
+}
+
 
 function openBadgeModal() {
     document.getElementById('badgeModal').style.display = "block";
@@ -2537,7 +3025,7 @@ function assignBuddy() {
     s.isShinyBuddy = dexShiny;
     s.buddyMega = dexMega; // 🚩 新增儲存欄位，記得在 updateUI 使用它
     
-    if (typeof saveGame === 'function') saveGame();
+    if (typeof saveGame === 'function') saveGameData();
     if (typeof updateUI === 'function') updateUI(); 
     
     alert(`更換夥伴：${POKEMON_NAMES[dexId]} ${dexMega ? '(' + dexMega.toUpperCase() + ')' : ''}`);
@@ -3087,6 +3575,8 @@ function updateGiftButtons() {
         }
     });
 }
+
+
 
 // ==========================================
 // 5. 🧪 測試工具：時光倒流
