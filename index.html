@@ -724,11 +724,14 @@
     <button class="btn-back" onclick="back()">✖ 關閉</button>
 </div>
 <div id="badgeModal" class="badge-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; backdrop-filter:blur(5px);">
-    <div style="background:#1a1a1a; margin:10% auto; padding:20px; width:85%; max-width:400px; border-radius:15px; border:2px solid #444; color:white; position:relative;">
-        <span onclick="closeBadgeModal()" style="position:absolute; right:15px; top:10px; font-size:24px; cursor:pointer;">&times;</span>
-        <h3 style="text-align:center; color:gold; margin-bottom:20px;">🏆 冠軍勳章館</h3>
+    <div style="background:#1a1a1a; margin:5% auto; padding:20px; width:85%; max-width:400px; max-height: 85vh; border-radius:15px; border:2px solid #444; color:white; position:relative; display: flex; flex-direction: column;">
+        
+        <span onclick="closeBadgeModal()" style="position:absolute; right:15px; top:10px; font-size:24px; cursor:pointer; z-index: 10;">&times;</span>
+        
+        <h3 style="text-align:center; color:gold; margin-bottom:10px;">🏆 圖鑑勳章館</h3>
         <p style="font-size:12px; text-align:center; color:#888; margin-bottom:15px;">點擊已解鎖的勳章進行配戴</p>
-        <div id="badge-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+        
+        <div id="badge-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; overflow-y: auto; padding-right: 5px;">
             </div>
     </div>
 </div>
@@ -1273,13 +1276,36 @@ const BADGE_DATA = {
     kanto:  { id: 1, req: [25, 150, 151], name: "關都始源" },
     johto:  { id: 2, req: [149, 249, 250], name: "城都龍魂" },
     hoenn:  { id: 3, req: [382, 383, 384, 376], name: "豐緣隕石" },
-    sinnoh: { id: 4, req: [484, 483, 487, 445], name: "神奧神話" }
+    sinnoh: { id: 4, req: [484, 483, 487, 445], name: "神奧神話" },
+    
+    // --- 新增擴充勳章 ---
+    arceus:     { id: 5,  req: [493], name: "創世神話：始源之光的萬物之主" },
+    palkia:     { id: 6,  req: [484], name: "空間裂縫：虛空維度的編織者" },
+    dialga:     { id: 7,  req: [483], name: "時光鐘塔：永恆刻度的守望者" },
+    giratina:   { id: 8,  req: [487], name: "幽冥之主：反轉維度的交響" },
+    rayquaza_s: { id: 9,  req: [384], name: "蒼穹斷章：終焉的黑閃光" },
+    birds:      { id: 10, req: [144, 145, 146], name: "天際霸主：極限屬性的共鳴" },
+    jirachi:    { id: 11, req: [385], name: "千年之約：星海間的許願星" },
+    latios_as:  { id: 12, req: [380, 381], name: "心靈羈絆：靈魂水滴的守護詩" },
+    beasts:     { id: 13, req: [243, 244, 245], name: "大地之魂：聖灰中的奔放力量" },
+    mew_mewtwo: { id: 14, req: [150, 151], name: "遺傳之謎：始源與超越的碰撞" },
+    ho_oh:      { id: 15, req: [250], name: "天際神諭：神聖火與鈴鐺塔" },
+    lugia:      { id: 16, req: [249], name: "深海霸權：旋渦島的鎮魂曲" },
+    dreams:     { id: 17, req: [488, 491], name: "夢境雙生：新月與噩夢的交織" },
+    groudon_p:  { id: 18, req: [383], name: "斷崖之劍：熔岩大地的覺醒" },
+    kyogre_p:   { id: 19, req: [382], name: "根源波動：始源之海的咆哮" },
+    regigigas:  { id: 20, req: [486, 377, 378, 379], name: "永恆遺產：拖動大陸的巨人" }
 };
 
 function openBadgeModal() {
     document.getElementById('badgeModal').style.display = "block";
     const grid = document.getElementById('badge-grid');
     grid.innerHTML = ""; // 清空重繪
+
+    // --- 新增：確保網格在不同螢幕下自動調整列數 ---
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(140px, 1fr))";
+    grid.style.gap = "15px";
 
     Object.keys(BADGE_DATA).forEach(key => {
         const data = BADGE_DATA[key];
@@ -1288,21 +1314,54 @@ function openBadgeModal() {
         const missingNames = data.req.filter(id => !s.owned.includes(id)).map(id => getPkmnName(id));
 
         const slot = document.createElement('div');
-        slot.style.cssText = `text-align:center; padding:10px; background:#252525; border-radius:10px; border:1px solid ${s.selectedBadge === data.id ? 'gold' : '#444'}; cursor:pointer;`;
+        const isActive = s.selectedBadge === data.id;
+
+        // 樣式優化：固定高度確保整齊
+        slot.style.cssText = `
+            text-align:center; 
+            padding:12px 10px; 
+            background:#252525; 
+            border-radius:12px; 
+            border:2px solid ${isActive ? 'gold' : '#444'}; 
+            box-shadow: ${isActive ? '0 0 15px rgba(255,215,0,0.3)' : 'none'};
+            cursor:pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 160px; /* 確保長名稱有足夠空間 */
+        `;
         
-        // 勳章圖片
-        const imgStyle = isUnlocked ? "filter:grayscale(0); opacity:1;" : "filter:grayscale(1) brightness(0.3); opacity:0.5;";
+        const imgStyle = isUnlocked ? "filter:drop-shadow(0 0 5px rgba(255,215,0,0.3));" : "filter:grayscale(1) brightness(0.2); opacity:0.4;";
+        
+        // 內容優化：針對長標題限制顯示高度
         slot.innerHTML = `
-            <img src="https://paulie0102-bear.github.io/Bear/img/mega/${data.id}.png" style="width:70px; image-rendering:pixelated; ${imgStyle}">
-            <div style="font-size:12px; margin-top:5px; color:${isUnlocked ? 'gold' : '#666'}">${data.name}</div>
-            <div style="font-size:10px; color:#888;">${owned.length}/${data.req.length}</div>
+            <img src="https://paulie0102-bear.github.io/Bear/img/mega/${data.id}.png" 
+                 style="width:75px; height:75px; object-fit:contain; image-rendering:pixelated; ${imgStyle}">
+            
+            <div style="font-size:11px; margin-top:8px; color:${isUnlocked ? 'gold' : '#666'}; 
+                        font-weight:bold; line-height:1.2; flex-grow:1; display:flex; align-items:center;">
+                ${data.name}
+            </div>
+            
+            <div style="font-size:10px; color:#888; margin-top:5px;">
+                ${owned.length} / ${data.req.length}
+            </div>
         `;
 
-        slot.title = isUnlocked ? "點擊配戴此勳章" : `缺少：${missingNames.join('、')}`;
+        slot.onclick = () => {
+            if (isUnlocked) {
+                selectBadge(data.id);
+                openBadgeModal(); // 點擊後重新整理，讓「選中金框」立即切換
+            } else {
+                alert(`🔴 尚未解鎖\n【${data.name}】\n————————————————\n還需要捕捉以下寶可夢：\n${missingNames.join('、')}`);
+            }
+        };
 
-        if (isUnlocked) {
-            slot.onclick = () => selectBadge(data.id);
-        }
+        // 加上 hover 效果讓質感更好
+        slot.onmouseenter = () => { if(isUnlocked) slot.style.borderColor = "gold"; };
+        slot.onmouseleave = () => { if(!isActive) slot.style.borderColor = "#444"; };
+
         grid.appendChild(slot);
     });
 }
