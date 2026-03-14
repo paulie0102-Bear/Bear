@@ -1034,16 +1034,22 @@
 <div id="chartPage" class="page">
     <div class="card">
         <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <button onclick="switchChart('year')" style="flex:1; padding:8px;">年統計</button>
-            <button onclick="switchChart('month')" style="flex:1; padding:8px;">月統計</button>
-            <button onclick="switchChart('cat')" style="flex:1; padding:8px;">類別</button>
+            <button onclick="switchChart('year')" style="flex:1; padding:10px; border-radius:5px; border:1px solid #ddd; background:#f8f9fa; cursor:pointer;">年統計</button>
+            <button onclick="switchChart('month')" style="flex:1; padding:10px; border-radius:5px; border:1px solid #ddd; background:#f8f9fa; cursor:pointer;">月統計</button>
+            <button onclick="switchChart('cat')" style="flex:1; padding:10px; border-radius:5px; border:1px solid #ddd; background:#f8f9fa; cursor:pointer;">月分類</button>
         </div>
-        <div id="chartControls" style="margin-bottom:10px; display:flex; gap:5px;">
-            <input type="month" id="chartMonthPicker" onchange="renderCharts()">
+
+        <div id="chartControls" style="margin-bottom:15px; display:none; gap:10px; align-items:center; background:#fff9db; padding:10px; border-radius:5px;">
+            <label for="chartMonthPicker" style="font-size:14px; color:#666;">選擇月份：</label>
+            <input type="month" id="chartMonthPicker" onchange="renderCharts()" style="flex:1; padding:5px; border:1px solid #ccc; border-radius:4px;">
         </div>
-        <canvas id="chartCanvas" style="max-height:300px;"></canvas>
+
+        <div style="position:relative; height:300px; width:100%;">
+            <canvas id="chartCanvas"></canvas>
+        </div>
     </div>
-    <button class="btn-back" onclick="back()">✖ 關閉</button>
+
+    <button class="btn-back" onclick="back()" style="width:100%; margin-top:15px; padding:12px; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer;">✖ 關閉圖表</button>
 </div>
 
 <div id="historyPage" class="page">
@@ -3741,25 +3747,60 @@ function switchChart(type) {
 }
 
 function renderCharts() {
-    const ctx = document.getElementById('chartCanvas').getContext('2d');
-    if(chartInstance) chartInstance.destroy();
+    const canvas = document.getElementById('chartCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    // 🚩 銷毀舊實例，防止記憶體洩漏與圖表重疊
+    if (chartInstance) chartInstance.destroy();
+    
     let labels = [], data = [], chartType = 'line';
-    if(currentChartType === 'year') { 
-        labels = Object.keys(s.yearSums).sort(); 
+    const targetMonth = document.getElementById('chartMonthPicker').value;
+    const history = s.hist || []; // 防呆：確保 hist 存在
+
+    if (currentChartType === 'year') { 
+        labels = Object.keys(s.yearSums || {}).sort(); 
         data = labels.map(l => s.yearSums[l]); 
-    }
-    else if(currentChartType === 'month') { 
-        const target = document.getElementById('chartMonthPicker').value; 
-        const filtered = s.hist.filter(h => h.date.startsWith(target)); 
+        chartType = 'bar'; // 年統計通常用長條圖較清楚
+    } 
+    else if (currentChartType === 'month') { 
+        // 過濾該月份每日支出 (折線圖)
+        const filtered = history.filter(h => h.date && h.date.startsWith(targetMonth)); 
         const days = {}; 
-        filtered.forEach(h => days[h.date] = (days[h.date]||0) + h.amt); 
+        filtered.forEach(h => days[h.date] = (days[h.date] || 0) + h.amt); 
         labels = Object.keys(days).sort(); 
         data = labels.map(l => days[l]); 
-    }
+        chartType = 'line';
+    } 
     else { 
-        labels = Object.keys(s.catSums); 
-        data = labels.map(l => s.catSums[l]); 
-        chartType = 'pie'; 
+        // --- 🟢 類別統計：按月分開做圓餅圖 ---
+        chartType = 'pie';
+        
+        // 1. 取得選擇器月份 (例如 "2026-03")
+        const targetMonth = document.getElementById('chartMonthPicker').value;
+        
+        // 2. 過濾數據
+        const filtered = history.filter(h => h.date && h.date.startsWith(targetMonth));
+        
+        // 3. 建立分類加總物件
+        const monthlyCat = {};
+        filtered.forEach(h => {
+            // 🚩 關鍵修正：將 h.category 改為 h.cat (與你的數據結構一致)
+            const catName = h.cat || "未分類"; 
+            
+            // 🚩 確保金額是數字相加，而非字串拼接
+            const amount = Number(h.amt) || 0;
+            
+            monthlyCat[catName] = (monthlyCat[catName] || 0) + amount;
+        });
+
+        // 4. 將結果轉換為 Chart.js 需要的格式
+        labels = Object.keys(monthlyCat);
+        data = labels.map(l => monthlyCat[l]);
+
+        if (labels.length === 0) {
+            console.warn(targetMonth + " 查無支出紀錄");
+        }
     }
 
     chartInstance = new Chart(ctx, { 
@@ -3767,16 +3808,23 @@ function renderCharts() {
         data: { 
             labels, 
             datasets: [{ 
-                label: '支出金額', 
+                label: '金額', 
                 data, 
-                backgroundColor: ['#ff6384','#36a2eb','#cc65fe','#ffce56','#4bc0c0','#f1c40f','#e67e22'], 
+                backgroundColor: chartType === 'pie' ? 
+        ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#26C6DA', '#9CCC65', '#BDBDBD'] : 
+        'rgba(46, 204, 113, 0.4)',
                 borderColor: '#2d5a27', 
-                tension: 0.1 
+                borderWidth: 2,
+                fill: false, // 折線圖開啟填充
+                tension: 0.3 
             }] 
         }, 
         options: { 
             responsive: true, 
-            maintainAspectRatio: false 
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: chartType === 'pie' } // 只有圓餅圖顯示側邊標註
+            }
         } 
     });
 }
