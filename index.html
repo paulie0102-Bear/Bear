@@ -1304,11 +1304,11 @@ const GARDEN = {
         "🌾🐟🥩": { name: "陸海空豪華便當", icon: "🍱" },
         "🌾🐟🥚": { name: "滑蛋鮮魚粥", icon: "🥣" },
         "🌾🦐🥩": { name: "鮮蝦燒肉飯", icon: "🍛" },
-        "🌾🦐🥚": { name: "🍤黃金蝦仁炒飯", icon: "🍤" },
-        "🥗🐟🥩": { name: "🥗海陸健身沙拉", icon: "🥗" },
-        "🥗🐟🥚": { name: "🍳時蔬魚排歐姆蛋", icon: "🍳" },
-        "🥗🦐🥩": { name: "🥘鮮蝦時蔬快炒", icon: "🥘" },
-        "🥗🦐🥚": { name: "🍮嫩蝦蔬菜蒸蛋", icon: "🍮" }
+        "🌾🦐🥚": { name: "黃金蝦仁炒飯", icon: "🍤" },
+        "🥗🐟🥩": { name: "海陸健身沙拉", icon: "🥗" },
+        "🥗🐟🥚": { name: "時蔬魚排歐姆蛋", icon: "🍳" },
+        "🥗🦐🥩": { name: "鮮蝦時蔬快炒", icon: "🥘" },
+        "🥗🦐🥚": { name: "嫩蝦蔬菜蒸蛋", icon: "🍮" }
     },
 
     // 2. 核心獎勵引擎 (每 6 小時計算一次)
@@ -1383,6 +1383,10 @@ function renderGarden() {
     // 確保數據存在
     if (!s.farm) s.farm = { inv:{}, dishes:{}, knownRecipes:[], friendship:0, prod:{pikachu:{slots:[null,null,null]}} };
     
+    // 初始化進度計數器
+    if (s.farm.feedCount === undefined) s.farm.feedCount = 0;
+    s.farm.maxFeed = 5;
+
     let overlay = document.getElementById('garden-overlay');
     if (!overlay) {
         overlay = document.createElement('div');
@@ -1393,13 +1397,16 @@ function renderGarden() {
 
     const f = s.farm, partnerId = s.buddyId || 25;
     
+    // ⭐ 重要：在 HTML 模板之前先計算好百分比
+    const progressPercent = (f.feedCount / f.maxFeed) * 100;
+
     overlay.innerHTML = `
         <div style="padding:20px; max-width:500px; margin:auto; padding-bottom:100px;">
             <button onclick="document.getElementById('garden-overlay').remove(); if(window.updateUI) updateUI();" 
                 style="float:left; padding:8px 15px; border-radius:10px; border:none; background:#333; color:white; cursor:pointer;">⬅ 返回</button>
             <h2 style="margin:10px 0;">🌳 秘密花園</h2>
             
-            <div style="background:white; border-radius:15px; padding:10px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+            <div style="background:white; border-radius:15px; padding:10px; margin-bottom:10px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
                 <b>❤️ 親密度 Lv.${Math.floor(f.friendship/100)}</b>
                 <div style="width:100%; background:#eee; height:10px; border-radius:5px; margin-top:5px; margin-bottom:10px;">
                     <div style="width:${f.friendship%100}%; background:#ff5252; height:100%; border-radius:5px; transition:0.3s;"></div>
@@ -1407,6 +1414,17 @@ function renderGarden() {
                 <div style="font-size: 13px; color: #666; padding-top: 5px; border-top: 1px solid #f5f5f5;">
                     ⏱️ 下次巡邏獎勵：<span id="patrol-timer" style="font-weight:bold; color:#2ecc71;">${getPatrolTimeStr()}</span>
                 </div>
+            </div>
+
+            <div style="background:white; border-radius:15px; padding:12px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.05); border: 1px solid #ffe0b2;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:14px; font-weight:bold; color:#e67e22;">✨ 驚喜邂逅進度</span>
+                    <span style="font-size:12px; background:#fff3e0; padding:2px 8px; border-radius:10px; color:#e67e22;">${f.feedCount} / ${f.maxFeed}</span>
+                </div>
+                <div style="width:100%; background:#eee; height:12px; border-radius:6px; overflow:hidden; border:1px solid #eee;">
+                    <div style="width:${progressPercent}%; background:linear-gradient(90deg, #f1c40f, #ff9800); height:100%; transition:all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);"></div>
+                </div>
+                <p style="font-size:11px; color:#999; margin:6px 0 0 0;">再餵食 <b>${f.maxFeed - f.feedCount}</b> 次觸發「必閃必捕捉」戰鬥！</p>
             </div>
 
             <div style="display:flex; justify-content:space-between; margin-bottom:20px; background:rgba(255,255,255,0.4); padding:10px; border-radius:20px;">
@@ -1610,25 +1628,57 @@ function collectDish() {
 
 // 8. 餵食夥伴 (親密度增加)
 function submitQuest() {
-    const targetFormula = s.farm.quest;
-    const targetIcon = GARDEN.recipes[targetFormula].icon;
-    
-    if (s.farm.dishes[targetIcon] > 0) {
-        s.farm.dishes[targetIcon]--;
-        s.farm.friendship += 20; // 增加 20 點親密度
+    const f = s.farm;
+    const targetFormula = f.quest;
+    const recipe = GARDEN.recipes[targetFormula];
+
+    if (!recipe) return;
+
+    // 1. 檢查是否有足夠料理
+    if (f.dishes[recipe.icon] > 0) {
+        // 扣除料理與增加親密度
+        f.dishes[recipe.icon]--;
+        f.friendship += 20; 
         
-        // 更換下一個隨機任務
+        // 📈 2. 增加特殊戰鬥進度
+        f.feedCount++;
+
+        // ⚔️ 3. 判斷是否滿 5 次，觸發必閃戰鬥
+        if (f.feedCount >= f.maxFeed) {
+            f.feedCount = 0; // 重置計數
+            
+            alert("✨ 夥伴感受到了極大的誠意！一場特殊的邂逅開始了！");
+            
+            // 讀取當前夥伴 ID 並設為必閃 (isChampion = true)
+            const partnerId = s.buddyId || 25;
+            executeClaimGift('GARDEN_BONUS', partnerId, true);
+            
+            // 關閉花園頁面以進入戰鬥
+            const overlay = document.getElementById('garden-overlay');
+            if (overlay) overlay.remove();
+            return; // 結束函式，不執行後續換菜邏輯
+        }
+
+        // 🔄 4. 更換隨機任務（加入「必不重複」邏輯）
         const keys = Object.keys(GARDEN.recipes);
-        s.farm.quest = keys[Math.floor(Math.random() * keys.length)];
+        let nextQuest = targetFormula;
+        if (keys.length > 1) {
+            while (nextQuest === targetFormula) {
+                nextQuest = keys[Math.floor(Math.random() * keys.length)];
+            }
+        }
+        f.quest = nextQuest;
+
+        alert(`❤️ 餵食成功！進度：${f.feedCount}/${f.maxFeed}`);
         
-        alert("❤️ 夥伴吃得很開心！親密度上升了！");
+        // 刷新 UI 與存檔
         renderGarden();
         if(typeof updateUI === 'function') updateUI();
         if(typeof saveGameData === 'function') saveGameData();
+        
     } else {
-        alert("你還沒做好這道料理喔！");
+        alert(`你還沒做好這道料理喔！你需要 ${recipe.icon} ${recipe.name}`);
     }
-    
 }
 
 // 9. 方框控制函式
@@ -1745,7 +1795,7 @@ function showAnnouncement() {
     <div style="max-height: 250px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; text-align: left; font-size: 14px; line-height: 1.6;">
         <b style="color: #e67e22;">【系統更新內容】</b><br>
         • 👤 玩家頁面新增徽章系統，快來蒐集圖鑑，獲取最適合自己的徽章。<br>
-        • 👤 玩家頁面新增秘密花園系統！<br>
+        • 👤 玩家頁面新增秘密花園系統！想與特殊的夥伴來一場邂逅嗎?<br>
         • 🍱 由大廚皮卡丘帶領的團隊現在可以烹飪 8 種不同的料理。<br>
         • ❤️ 增加親密度系統，提高親密度有助於增加掛機獎勵的機率。<br>
         • 🎒 調整背包配置，將進化石進度與mega石進度移至背包頁面。<br>
@@ -2715,6 +2765,7 @@ async function throwBall() {
         // ★ 優先判定：贈禮戰鬥必中 (包含博士與冠軍)
         isSuccess = true; 
         s.isGiftBattle = false; // ⚠️ 狀態重置，防止神力洩漏
+        s.forceShiny = false; // ⚠️ 新增：同時重置閃光標記，確保下一場野外戰鬥恢復正常機率
         console.log(s.forceShiny ? "🏆 冠軍祝福：捕捉成功！" : "🎓 博士贈禮：捕捉成功！");
     } else if (Math.random() < catchChance || type === 'master') {
         // ● 一般捕捉成功 (或使用大師球)
