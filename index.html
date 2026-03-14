@@ -1745,10 +1745,11 @@ function showAnnouncement() {
     <div style="max-height: 250px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; text-align: left; font-size: 14px; line-height: 1.6;">
         <b style="color: #e67e22;">【系統更新內容】</b><br>
         • 👤 玩家頁面新增徽章系統，快來蒐集圖鑑，獲取最適合自己的徽章。<br>
-        • 👤 玩家頁面新增秘密花園系統！妙蛙種子、傑尼龜以及小火龍各司其職開始生產素材。<br>
-        • 🍱 皮卡丘大廚現在可以烹飪 8 種不同的料理。<br>
+        • 👤 玩家頁面新增秘密花園系統！<br>
+        • 🍱 由大廚皮卡丘帶領的團隊現在可以烹飪 8 種不同的料理。<br>
         • ❤️ 增加親密度系統，提高親密度有助於增加掛機獎勵的機率。<br>
         • 🎒 調整背包配置，將進化石進度與mega石進度移至背包頁面。<br>
+        • 📖 再次遇到已捕捉過的寶可夢時，編號前方會帶有寶貝球的標記。<br>
         • ⚙️ 隨機野怪以及每日任務的重置時間調整為午夜12點。<br>
     </div>
 
@@ -2609,6 +2610,7 @@ function record() {
 
 // --- [ 戰鬥核心 ] ---
 // --- [ 戰鬥核心：修正版 ] ---
+// --- [ 戰鬥核心：修正版 ] ---
 function spawnEnemy(targetId) { // 🔴 增加參數
     const id = targetId || Math.floor(Math.random() * 493) + 1; 
     const isMega = (typeof s !== 'undefined') ? (Date.now() < s.megaUntil) : false;
@@ -2620,7 +2622,6 @@ function spawnEnemy(targetId) { // 🔴 增加參數
         s.forceShiny = false; // 觸發後立即關閉開關，確保只有這一隻是閃光
         console.log("✨ 冠軍祝福生效：這是一場必閃戰鬥！");
     } else {
-        // 原本的隨機閃光機率
         isShiny = Math.random() < (isMega ? 0.15 : 0.05);
     }
     
@@ -2630,8 +2631,6 @@ function spawnEnemy(targetId) { // 🔴 增加參數
     const stage = document.getElementById('encounterStage');
     const img = document.getElementById('enemyImg');
     const hpFill = document.getElementById('hpFill');
-
-
 
     // 1. 先顯示區域 (關鍵：區域不顯示，寬度計算就可能失敗)
     document.getElementById('enemyArea').style.display = "block";
@@ -2644,26 +2643,44 @@ function spawnEnemy(targetId) { // 🔴 增加參數
         hpFill.style.width = "100%";
         hpFill.classList.remove('hp-yellow', 'hp-red');
         hpFill.classList.add('hp-green');
-        void hpFill.offsetWidth; // 觸發重繪，解決黑色 0% 渲染錯誤
+        void hpFill.offsetWidth; // 觸發重繪
     }
 
     if (stage) stage.classList.remove('encounter-active');
+    
+    // 3. 處理圖片路徑
     if (img) {
         const apiPath = (typeof API !== 'undefined') ? API : "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites";
-        img.src = `${apiPath}/pokemon/${isShiny ? 'shiny/' : ''}${id}.png`;
+        // 🚩 修正點：確保使用原始 id (不補零) 拼接圖片路徑，避免 404
+        const spriteId = Number(id);
+        img.src = `${apiPath}/pokemon/${isShiny ? 'shiny/' : ''}${spriteId}.png`;
     }
 
+    // --- 🏆 新增：圖鑑收錄標記判定 ---
+    // 判斷 s.owned 是否包含目前的 id
+    const isCaught = (typeof s !== 'undefined' && s.owned && s.owned.includes(id));
+    // 如果收錄過，顯示一顆小寶貝球 (使用網路圖片確保不報錯)
+    const caughtIcon = isCaught ? `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;">` : "";
+
+    // 4. 更新 UI 文字 (改用 innerHTML 以支援圖片標籤)
     const displayName = `No.${String(id).padStart(3, '0')} ${curE.name}`;
-    document.getElementById('enemyName').innerText = `${displayName}${isShiny ? ' (✨閃光)' : ''}`;
+    const shinyTag = isShiny ? ' (✨閃光)' : '';
+    
+    const nameEl = document.getElementById('enemyName');
+    if (nameEl) {
+        // 🚩 寶貝球出現在編號前面
+        nameEl.innerHTML = `${caughtIcon}${displayName}${shinyTag}`;
+    }
+
     document.getElementById('turnInfo').innerText = "7回合內，寶可夢不會逃跑";
     document.getElementById('msg').innerText = `✨ 野生的 ${curE.name} 出現了！`;
 
-    // 延遲撥開草叢，之後恢復動畫
+    // 5. 延遲撥開草叢，之後恢復動畫
     setTimeout(() => {
         if (stage) stage.classList.add('encounter-active');
         if (hpFill) hpFill.style.transition = "width 0.5s ease";
     }, 60);
-} // <--- 函式在這裡結束，後面不要再多放 } 了
+}
 
 async function throwBall() {
     const type = document.getElementById('ballSelect').value;
