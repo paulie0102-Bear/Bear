@@ -1099,10 +1099,19 @@
 <div id="adminPage" class="page">
     <div class="card">
         <h3>⚙️ 設定與管理</h3>
-        <button onclick="exportData()" style="background:#2980b9; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">💾 匯出全存檔 </button>
-        <input type="file" id="importFile" style="display:none" onchange="importData(event)">
-        <button onclick="document.getElementById('importFile').click()" style="background:#27ae60; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">📂 讀取存檔 </button>
-        <hr>
+        <button onclick="exportData()" style="background:#2980b9; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px; cursor:pointer;">
+    💾 匯出全存檔
+</button>
+
+<input type="file" id="importFile" style="display:none" 
+       accept=".pkms,.json,.txt,application/json" 
+       onchange="importData(event)">
+
+<button onclick="document.getElementById('importFile').click()" style="background:#27ae60; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px; cursor:pointer;">
+    📂 讀取存檔
+</button>
+
+<hr style="border: 0; height: 1px; background: #eee; margin: 20px 0;">
         <p style="font-size:12px; color:gray;">區間清理：匯出檔案並刪除明細（統計總額保留）</p>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:10px;">
             <input type="date" id="lightStart"> <input type="date" id="lightEnd">
@@ -3448,32 +3457,50 @@ function exportData() {
                     now.getHours().toString().padStart(2, '0') + 
                     now.getMinutes().toString().padStart(2, '0');
 
-    // 2. 轉換為 JSON 字串
-    const blob = new Blob([JSON.stringify(s)], {type: "application/json"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+    const fileName = `PM_Save_${timeStr}.pkms`;
+
+    // 🚩 修正點 A：改用 octet-stream，這在手機端最能強制執行下載並保留檔名
+    const blob = new Blob([JSON.stringify(s)], {type: "application/octet-stream"});
+    const url = URL.createObjectURL(blob);
     
-    // 3. 設定自訂副檔名 .pkms (方便手機查找)
-    a.download = `PM_Save_${timeStr}.pkms`; 
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName; 
+    
+    // 🚩 修正點 B：針對 iOS/手機端補強，確保點擊前屬性已完全寫入
+    a.rel = "noopener"; 
     
     // 4. 執行下載
-    document.body.appendChild(a); // 部分手機瀏覽器需要將元素加入 DOM 才能點擊
-    a.click();
+    document.body.appendChild(a);
+    
+    // 🚩 修正點 C：有些手機瀏覽器需要稍微延遲點擊
+    try {
+        a.click();
+    } catch (e) {
+        console.error("下載觸發失敗", e);
+    }
     
     // 5. 清理與釋放記憶體
     setTimeout(() => {
         document.body.removeChild(a);
-        URL.revokeObjectURL(a.href); 
-    }, 100);
+        URL.revokeObjectURL(url); 
+    }, 500); // 稍微增加延遲確保手機完成喚起下載動作
 }
 
 function importData(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // 🚩 檢查副檔名 (非強制，但可提醒玩家)
-    if (!file.name.endsWith('.pkms') && !file.name.endsWith('.json')) {
-        if (!confirm("這看起來不是標準的存檔格式，是否仍要嘗試讀取？")) return;
+    // 🚩 1. 放寬檢查條件
+    // 手機端常會亂改副檔名，我們增加對 .txt 的容忍，主要還是看內容
+    const validExts = ['.pkms', '.json', '.txt'];
+    const isStandard = validExts.some(ext => file.name.toLowerCase().endsWith(ext));
+    
+    if (!isStandard) {
+        if (!confirm("這看起來不是標準的存檔格式，是否仍要嘗試讀取？")) {
+            e.target.value = "";
+            return;
+        }
     }
 
     const reader = new FileReader();
@@ -3481,32 +3508,39 @@ function importData(e) {
         try {
             const loaded = JSON.parse(ev.target.result);
             
-            // 🚩 [關鍵修改] 使用與 window.onload 一致的合併邏輯
-            // 這樣能保證「舊存檔」匯入「新遊戲」時，新功能變數（如 dailyWild）不會消失
+            // 🚩 2. 強大合併邏輯：確保舊存檔不會刷掉新功能的預設值
+            // 使用「深度合併」的概念，確保 tasks 等巢狀物件不會整塊消失
             s = { 
-                ...s,              // 先放目前新版本的預設結構
-                ...loaded,         // 用讀取的資料覆蓋
-                claimedGifts: (loaded.claimedGifts || s.claimedGifts || []) // 確保陣列欄位存在
+                ...s, 
+                ...loaded,
+                // 針對容易丟失的巢狀物件做特別保護
+                tasks: { ...(s.tasks || {}), ...(loaded.tasks || {}) },
+                items: { ...(s.items || {}), ...(loaded.items || {}) },
+                claimedGifts: Array.from(new Set([...(s.claimedGifts || []), ...(loaded.claimedGifts || [])]))
             };
 
-            // 🚩 匯入後立即存檔到 LocalStorage，確保手機關閉 APP 後資料還在
+            // 🚩 3. 統一存檔標籤
             localStorage.setItem('pokemaster_v60', JSON.stringify(s));
 
-            // 更新 UI 顯示新資料
-            updateUI(); 
-            
+            // 🚩 4. 關鍵：匯入後建議重新整理或初始化
+            // 有時候 updateUI 沒辦法更新所有監聽器，執行 init 或 location.reload 最保險
             alert("✅ 存檔匯入成功！");
             
-            // 重設上傳按鈕，方便下次重複選取相同檔案
+            if (typeof updateUI === 'function') updateUI();
+            if (typeof renderTasks === "function") renderTasks();
+            if (typeof lockClaimedGifts === "function") lockClaimedGifts();
+
             e.target.value = ""; 
 
         } catch (err) {
             console.error("Import Error:", err);
-            alert("❌ 讀取失敗：存檔內容損壞或格式不符");
+            alert("❌ 讀取失敗：內容格式錯誤 (非正確的 JSON)");
+            e.target.value = "";
         }
     };
     reader.readAsText(file);
 }
+
 function lighten() { /* 簡化清理邏輯保留 */ const start = document.getElementById('lightStart').value; const end = document.getElementById('lightEnd').value; if(!start || !end) return; exportData(); s.hist = s.hist.filter(h => h.date < start || h.date > end); updateUI(); alert("清理完成並已匯出備份。"); }
 function resetAll() { if(confirm("🔥 確定重置？這會永久刪除所有紀錄與圖鑑！")) { localStorage.removeItem('pokemaster_v60'); location.reload(); } }
 </script>
