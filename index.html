@@ -1034,22 +1034,16 @@
 <div id="chartPage" class="page">
     <div class="card">
         <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <button onclick="switchChart('year')" style="flex:1; padding:10px; border-radius:5px; border:1px solid #ddd; background:#f8f9fa; cursor:pointer;">年統計</button>
-            <button onclick="switchChart('month')" style="flex:1; padding:10px; border-radius:5px; border:1px solid #ddd; background:#f8f9fa; cursor:pointer;">月統計</button>
-            <button onclick="switchChart('cat')" style="flex:1; padding:10px; border-radius:5px; border:1px solid #ddd; background:#f8f9fa; cursor:pointer;">月分類</button>
+            <button onclick="switchChart('year')" style="flex:1; padding:8px;">年統計</button>
+            <button onclick="switchChart('month')" style="flex:1; padding:8px;">月統計</button>
+            <button onclick="switchChart('cat')" style="flex:1; padding:8px;">類別</button>
         </div>
-
-        <div id="chartControls" style="margin-bottom:15px; display:none; gap:10px; align-items:center; background:#fff9db; padding:10px; border-radius:5px;">
-            <label for="chartMonthPicker" style="font-size:14px; color:#666;">選擇月份：</label>
-            <input type="month" id="chartMonthPicker" onchange="renderCharts()" style="flex:1; padding:5px; border:1px solid #ccc; border-radius:4px;">
+        <div id="chartControls" style="margin-bottom:10px; display:flex; gap:5px;">
+            <input type="month" id="chartMonthPicker" onchange="renderCharts()">
         </div>
-
-        <div style="position:relative; height:300px; width:100%;">
-            <canvas id="chartCanvas"></canvas>
-        </div>
+        <canvas id="chartCanvas" style="max-height:300px;"></canvas>
     </div>
-
-    <button class="btn-back" onclick="back()" style="width:100%; margin-top:15px; padding:12px; background:#e74c3c; color:white; border:none; border-radius:5px; cursor:pointer;">✖ 關閉圖表</button>
+    <button class="btn-back" onclick="back()">✖ 關閉</button>
 </div>
 
 <div id="historyPage" class="page">
@@ -1105,19 +1099,10 @@
 <div id="adminPage" class="page">
     <div class="card">
         <h3>⚙️ 設定與管理</h3>
-        <button onclick="exportData()" style="background:#2980b9; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px; cursor:pointer;">
-    💾 匯出全存檔
-</button>
-
-<input type="file" id="importFile" style="display:none" 
-       accept=".pkms,.json,.txt,application/json" 
-       onchange="importData(event)">
-
-<button onclick="document.getElementById('importFile').click()" style="background:#27ae60; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px; cursor:pointer;">
-    📂 讀取存檔
-</button>
-
-<hr style="border: 0; height: 1px; background: #eee; margin: 20px 0;">
+        <button onclick="exportData()" style="background:#2980b9; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">💾 匯出全存檔 </button>
+        <input type="file" id="importFile" style="display:none" onchange="importData(event)">
+        <button onclick="document.getElementById('importFile').click()" style="background:#27ae60; color:white; width:100%; padding:12px; margin-bottom:10px; border:none; border-radius:5px;">📂 讀取存檔 </button>
+        <hr>
         <p style="font-size:12px; color:gray;">區間清理：匯出檔案並刪除明細（統計總額保留）</p>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:10px;">
             <input type="date" id="lightStart"> <input type="date" id="lightEnd">
@@ -1393,89 +1378,309 @@ const GARDEN = {
     }
 };
 
-/* --- UI 渲染與動作邏輯 --- */
-function renderGarden() {
-    // 確保數據存在
-    if (!s.farm) s.farm = { inv:{}, dishes:{}, knownRecipes:[], friendship:0, prod:{pikachu:{slots:[null,null,null]}} };
-    
-    // 初始化進度計數器
-    if (s.farm.feedCount === undefined) s.farm.feedCount = 0;
-    s.farm.maxFeed = 5;
+const WORLD_DATA = {
+    "Kanto": {
+        name: "關都",
+        color: "#2ecc71",
+        icon: "🌱",
+        starters: ["🍃 妙蛙種子", "💧 傑尼龜", "🔥 小火龍"],
+        starterIds: [1, 7, 4],
+        challengers: [
+            // 0-7 道館館主
+            { name: "小剛", badge: "岩石勳章", taunt: "我的意志堅如磐石！" },
+            { name: "小霞", badge: "藍色勳章", taunt: "讓你見識一下水之幻影！" },
+            { name: "馬志士", badge: "橙色勳章", taunt: "嘿！感受一下電擊的威力吧！" },
+            { name: "莉佳", badge: "彩虹勳章", taunt: "花朵的香氣會讓你沉醉..." },
+            { name: "阿杏", badge: "粉紅勳章", taunt: "忍者的戰術，你跟得上嗎？" },
+            { name: "娜姿", badge: "金黃勳章", taunt: "我早已預見了你的失敗。" },
+            { name: "夏伯", badge: "深紅勳章", taunt: "火焰的熱情足以燃燒一切！" },
+            { name: "坂木", badge: "綠色勳章", taunt: "歡迎來到大地之王的領地。" },
+            // 8-11 四天王
+            { name: "科拿", badge: "天王挑戰", taunt: "冰冷的氣息會凍結你的鬥志。" },
+            { name: "希巴", badge: "天王挑戰", taunt: "這就是鍛鍊到極致的力量！" },
+            { name: "菊子", badge: "天王挑戰", taunt: "老朽的幽靈會讓你領悟恐懼。" },
+            { name: "阿渡", badge: "天王挑戰", taunt: "在龍的憤怒下顫抖吧！" },
+            // 12 冠軍
+            { name: "青綠", badge: "冠軍獎盃", taunt: "雖然你很努力，但最強的是我！" }
+        ]
+    },
+    "Johto": {
+        name: "城都",
+        color: "#f1c40f",
+        icon: "🏮",
+        starters: ["🍃 菊草葉", "💧 小巨鱷", "🔥 火球鼠"],
+        starterIds: [152, 158, 155],
+        challengers: [
+            { name: "阿筆", badge: "昆蟲勳章", taunt: "蟲系寶可夢的深奧，你懂嗎？" },
+            { name: "小茜", badge: "正式勳章", taunt: "大奶罐！讓他們看看你的厲害！" },
+            { name: "小松", badge: "魅影勳章", taunt: "我看見了隱藏在陰影中的未來。" },
+            { name: "阿四", badge: "打擊勳章", taunt: "每日瀑布修行，肉體即是武器！" },
+            { name: "蜜柑", badge: "鋼鐵勳章", taunt: "溫柔且堅硬，這就是鋼鐵之魂。" },
+            { name: "柳伯", badge: "冰川勳章", taunt: "在嚴寒中磨練意志吧。" },
+            { name: "小椿", badge: "升龍勳章", taunt: "我才是世界上最強的龍使者！" },
+            { name: "阿速", badge: "飛翼勳章", taunt: "飛向更高遠的天空吧！" },
+            { name: "一樹", badge: "天王挑戰", taunt: "這場戰鬥將會非常華麗。" },
+            { name: "阿桔", badge: "天王挑戰", taunt: "體會忍術的神祕與恐怖吧。" },
+            { name: "希巴", badge: "天王挑戰", taunt: "力量！我追求的就是純粹的力量！" },
+            { name: "梨花", badge: "天王挑戰", taunt: "強不強不重要，重要的是喜歡。" },
+            { name: "阿渡", badge: "冠軍獎盃", taunt: "來吧，展現你挑戰冠軍的實力！" }
+        ]
+    },
+    "Hoenn": {
+        name: "豐緣",
+        color: "#3498db",
+        icon: "🌊",
+        starters: ["🍃 木守宮", "💧 水躍魚", "🔥 火稚雞"],
+        starterIds: [252, 258, 255],
+        challengers: [
+            { name: "杜娟", badge: "岩石勳章", taunt: "在訓練家學校學到的知識是不會輸的。" },
+            { name: "藤樹", badge: "拳擊勳章", taunt: "這股大浪，你能夠衝過去嗎？" },
+            { name: "鐵旋", badge: "電力勳章", taunt: "哈哈哈！充滿電力的感覺真好！" },
+            { name: "亞莎", badge: "烈焰勳章", taunt: "稍微有點緊張...但火焰是不會滅的！" },
+            { name: "千里", badge: "天秤勳章", taunt: "作為父親，我會用全力應戰。" },
+            { name: "娜琪", badge: "白羽勳章", taunt: "與鳥兒一同在天空中起舞吧。" },
+            { name: "楓與南", badge: "心靈勳章", taunt: "我們的心是合而為一的！" },
+            { name: "亞當", badge: "雨滴勳章", taunt: "優雅，是水之戰鬥的最高境界。" },
+            { name: "花月", badge: "天王挑戰", taunt: "嘿！盡情享受這場惡戰吧！" },
+            { name: "芙蓉", badge: "天王挑戰", taunt: "與幽靈共舞的感覺如何？" },
+            { name: "波妮", badge: "天王挑戰", taunt: "冰冷的空氣能讓頭腦冷靜。" },
+            { name: "源治", badge: "天王挑戰", taunt: "在海上磨練出來的龍之魂！" },
+            { name: "代後", badge: "冠軍獎盃", taunt: "最終，我才是最強且最尊貴的。" }
+        ]
+    },
+    "Sinnoh": {
+        name: "神奧",
+        color: "#bdc3c7",
+        icon: "❄️",
+        starters: ["🍃 草苗龜", "💧 波加曼", "🔥 小火焰猴"],
+        starterIds: [387, 393, 390],
+        challengers: [
+            { name: "瓢太", badge: "石炭勳章", taunt: "化石的硬度，就是我的防禦！" },
+            { name: "菜種", badge: "森林勳章", taunt: "植物的生命力可是很驚人的。" },
+            { name: "阿李", badge: "鋪石勳章", taunt: "赤腳戰鬥才是訓練的真諦。" },
+            { name: "吉憲", badge: "濕地勳章", taunt: "哈哈哈！大濕地在呼喚我！" },
+            { name: "梅卡", badge: "礦山勳章", taunt: "我就是鋼鐵般的男人！" },
+            { name: "梅麗莎", badge: "遺跡勳章", taunt: "跳舞吧！展現你的魅力！" },
+            { name: "鈴菜", badge: "冰河勳章", taunt: "集中注意力，冰雪會指引你。" },
+            { name: "電次", badge: "燈塔勳章", taunt: "終於有個能讓我燃起鬥志的人了。" },
+            { name: "阿柳", badge: "天王挑戰", taunt: "蟲系寶可夢是最美的藝術。" },
+            { name: "菊野", badge: "天王挑戰", taunt: "穩重的大地會包容一切。" },
+            { name: "大葉", badge: "天王挑戰", taunt: "燃燒吧！熱情就是要像火焰一樣！" },
+            { name: "悟松", badge: "天王挑戰", taunt: "超能力的奧秘，你準備好接觸了嗎？" },
+            { name: "竹蘭", badge: "冠軍獎盃", taunt: "你的眼神很堅定，讓我看看你的極限吧！" }
+        ]
+    }
+};
 
+
+/* --- 存檔初始化引擎 (修正版) --- */
+function initFarmProgress() {
+    // 1. 確保基礎 farm 結構
+    if (!s.farm) s.farm = { inv: {}, dishes: {}, knownRecipes: [], friendship: 0 };
+    
+    // 2. 確保 regionProg 及其內部的 stats 結構 (關鍵修復點)
+    if (!s.farm.regionProg) s.farm.regionProg = {};
+    if (!s.farm.regionProg.stats) s.farm.regionProg.stats = {};
+    
+    // 3. 確保基本屬性有預設值
+    if (!s.farm.regionProg.currentView) s.farm.regionProg.currentView = "Kanto";
+    if (!s.farm.regionProg.unlockedRegions) s.farm.regionProg.unlockedRegions = ["Kanto"];
+
+    // 4. 安全地遍歷 WORLD_DATA
+    // 增加檢查確保 WORLD_DATA 存在
+    if (typeof WORLD_DATA !== 'undefined') {
+        Object.keys(WORLD_DATA).forEach(regionId => {
+            // 如果這個地區的進度還沒建立，才建立它
+            if (!s.farm.regionProg.stats[regionId]) {
+                s.farm.regionProg.stats[regionId] = {
+                    gymsBeaten: 0,
+                    isChampion: false
+                };
+            }
+        });
+    }
+
+    // 5. 確保生產數據結構
+    if (!s.farm.prod) s.farm.prod = {};
+    if (!s.farm.prod.pikachu) {
+        s.farm.prod.pikachu = { 
+            slots: [null, null, null], 
+            end: 0 
+        };
+    }
+}
+
+/* --- 核心公式：計算全局採集加速倍率 (嚴格對標版) --- */
+function getGlobalSpeedBuff() {
+    let totalBuff = 0;
+
+    Object.keys(s.farm.regionProg.stats).forEach(regionId => {
+        const b = s.farm.regionProg.stats[regionId].gymsBeaten;
+        
+        if (b >= 13) {
+            // 規則：擊敗冠軍後，該區固定提供 50%
+            totalBuff += 0.50; 
+        } else {
+            // 規則：未通關時按進度累加
+            if (b > 0) {
+                // 1-8 徽章：每個 3% (最多 24%)
+                const gymCount = Math.min(b, 8);
+                totalBuff += gymCount * 0.03;
+            }
+            if (b > 8) {
+                // 9-12 四天王：每個 5% (最多 20%)
+                const eliteCount = Math.min(b - 8, 4);
+                totalBuff += eliteCount * 0.05;
+            }
+            // 注意：進度為 12 時，總計是 24% + 20% = 44%
+            // 當擊敗第 13 位(冠軍)時，會直接跳到上面 if 的 50%
+        }
+    });
+
+    // 上限設定：例如有四個地區全通關，加成就是 200% (時間縮短非常多)
+    return totalBuff; 
+}
+
+/* --- 地區切換分頁 UI --- */
+function renderRegionTabs() {
+    // 安全檢查：確保資料存在，避免報錯
+    if (!s.farm || !s.farm.regionProg) return "";
+
+    const prog = s.farm.regionProg;
+    const unlocked = prog.unlockedRegions || ["Kanto"]; // 已解鎖的地區
+    const currentView = prog.currentView || "Kanto";   // 目前選中的地區
+
+    return `
+        <div style="display:flex; justify-content:center; gap:8px; margin:15px 0; overflow-x:auto; padding:5px; -webkit-overflow-scrolling:touch;">
+            ${unlocked.map(rid => {
+                const data = WORLD_DATA[rid];
+                if (!data) return ""; // 預防資料庫沒這個地區
+                
+                const isActive = (currentView === rid);
+                
+                return `
+                    <div onclick="s.farm.regionProg.currentView='${rid}'; renderGarden();" 
+                        style="
+                            padding:6px 15px; 
+                            border-radius:20px; 
+                            font-size:13px; 
+                            cursor:pointer; 
+                            white-space:nowrap;
+                            transition: all 0.2s;
+                            background: ${isActive ? data.color : '#eee'};
+                            color: ${isActive ? 'white' : '#666'};
+                            border: 1px solid ${isActive ? 'transparent' : '#ccc'};
+                            font-weight: ${isActive ? 'bold' : 'normal'};
+                            box-shadow: ${isActive ? '0 2px 5px rgba(0,0,0,0.2)' : 'none'};
+                        ">
+                        ${data.icon} ${data.name}
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+function renderGarden() {
+    // 1. 初始化與數據校驗
+    initFarmProgress(); 
+    if (typeof initExtendedFarm === 'function') initExtendedFarm(); // 確保多線程存檔結構存在
+    
+    const f = s.farm;
+    const prog = f.regionProg;
+    const rid = prog.currentView || "Kanto";
+    const curData = WORLD_DATA[rid];
+    const curStats = prog.stats[rid];
+    const beaten = curStats.gymsBeaten;
+    const partnerId = s.buddyId || 25;
+
+    // 2. 建立 Overlay 外殼
     let overlay = document.getElementById('garden-overlay');
     if (!overlay) {
         overlay = document.createElement('div');
         overlay.id = 'garden-overlay';
-        overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999; overflow-y:auto; font-family:sans-serif; text-align:center;";
+        overlay.style = "position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999; overflow-y:auto; font-family:sans-serif; text-align:center; background:#f8f9fa;";
         document.body.appendChild(overlay);
     }
 
-    const f = s.farm, partnerId = s.buddyId || 25;
-    
-    // ⭐ 重要：在 HTML 模板之前先計算好百分比
-    const progressPercent = (f.feedCount / f.maxFeed) * 100;
+    // 3. 計算進度
+    if (f.feedCount === undefined) f.feedCount = 0;
+    const progressPercent = (f.feedCount / 5) * 100;
+    const starterNames = curData.starters.map(n => n.includes(' ') ? n.split(' ')[1] : n);
+    const starterIds = curData.starterIds || [1, 7, 4];
 
+    // 4. 渲染主內容
     overlay.innerHTML = `
-        <div style="padding:20px; max-width:500px; margin:auto; padding-bottom:100px;">
+        <div style="padding:20px; max-width:500px; margin:auto; padding-bottom:100px; background:linear-gradient(180deg, ${curData.color}15 0%, #f8f9fa 300px);">
             <button onclick="document.getElementById('garden-overlay').remove(); if(window.updateUI) updateUI();" 
                 style="float:left; padding:8px 15px; border-radius:10px; border:none; background:#333; color:white; cursor:pointer;">⬅ 返回</button>
             <h2 style="margin:10px 0;">🌳 秘密花園</h2>
             
+            ${renderRegionTabs()}
+
             <div style="background:white; border-radius:15px; padding:10px; margin-bottom:10px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
                 <b>❤️ 親密度 Lv.${Math.floor(f.friendship/100)}</b>
                 <div style="width:100%; background:#eee; height:10px; border-radius:5px; margin-top:5px; margin-bottom:10px;">
-                    <div style="width:${f.friendship%100}%; background:#ff5252; height:100%; border-radius:5px; transition:0.3s;"></div>
+                    <div style="width:${f.friendship%100}%; background:#ff5252; height:100%; border-radius:5px;"></div>
                 </div>
-                <div style="font-size: 13px; color: #666; padding-top: 5px; border-top: 1px solid #f5f5f5;">
-                    ⏱️ 下次巡邏獎勵：<span id="patrol-timer" style="font-weight:bold; color:#2ecc71;">${getPatrolTimeStr()}</span>
-                </div>
+                <div style="font-size: 13px; color: #666;">⏱️ 下次巡邏：<span style="font-weight:bold; color:#2ecc71;">${getPatrolTimeStr()}</span></div>
             </div>
 
             <div style="background:white; border-radius:15px; padding:12px; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.05); border: 1px solid #ffe0b2;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <span style="font-size:14px; font-weight:bold; color:#e67e22;">✨ 驚喜邂逅進度</span>
-                    <span style="font-size:12px; background:#fff3e0; padding:2px 8px; border-radius:10px; color:#e67e22;">${f.feedCount} / ${f.maxFeed}</span>
+                    <span style="font-size:12px; color:#e67e22;">${f.feedCount} / 5</span>
                 </div>
-                <div style="width:100%; background:#eee; height:12px; border-radius:6px; overflow:hidden; border:1px solid #eee;">
-                    <div style="width:${progressPercent}%; background:linear-gradient(90deg, #f1c40f, #ff9800); height:100%; transition:all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);"></div>
+                <div style="width:100%; background:#eee; height:12px; border-radius:6px; overflow:hidden;">
+                    <div style="width:${progressPercent}%; background:linear-gradient(90deg, #f1c40f, #ff9800); height:100%;"></div>
                 </div>
-                <p style="font-size:11px; color:#999; margin:6px 0 0 0;">再餵食 <b>${f.maxFeed - f.feedCount}</b> 次觸發「必閃必捕捉」戰鬥！</p>
             </div>
 
-            <div style="display:flex; justify-content:space-between; margin-bottom:20px; background:rgba(255,255,255,0.4); padding:10px; border-radius:20px;">
-                ${renderWorker('bulbasaur', 1, ['🌾', '🥗'])}
-                ${renderWorker('squirtle', 7, ['🐟', '🦐'])}
-                ${renderWorker('charmander', 4, ['🥩', '🥚'])}
+            <div style="background:white; border-radius:20px; padding:15px; margin-bottom:20px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border:2px solid ${curData.color};">
+                ${renderChallengeSection(rid, curStats)}
+                <hr style="border:0; border-top:1px dashed #ddd; margin:15px 0;">
+                <div style="display:flex; justify-content:space-between;">
+                    ${renderWorker(`${rid}_w1`, starterIds[0], ['🌾', '🥗'], starterNames[0])}
+                    ${renderWorker(`${rid}_w2`, starterIds[1], ['🐟', '🦐'], starterNames[1])}
+                    ${renderWorker(`${rid}_w3`, starterIds[2], ['🥩', '🥚'], starterNames[2])}
+                </div>
             </div>
 
             <div style="background:white; border-radius:20px; padding:15px; box-shadow:0 4px 15px rgba(0,0,0,0.05); margin-bottom:20px;">
-                <img src="${GARDEN.getGif(25)}" style="width:60px; image-rendering:pixelated;">
-                <h4 style="margin:5px 0;">皮卡丘大廚</h4>
-                <div style="display:flex; justify-content:center; gap:10px; margin:10px 0;">
-                    ${[0,1,2].map(i => {
-                        const icon = f.prod.pikachu.slots[i];
-                        const opts = i==0?['🌾','🥗']:i==1?['🐟','🦐']:['🥩','🥚'];
-                        return `<div onclick="setCookSlot(${i},'${opts[0]}','${opts[1]}')" style="width:45px; height:45px; background:#f5f5f5; border:2px dashed #ccc; border-radius:10px; line-height:45px; font-size:24px; cursor:pointer;">${icon||'？'}</div>`;
-                    }).join('')}
-                </div>
-                ${f.prod.pikachu.end > Date.now() ? 
-                    `<p>🍳 料理中... ${GARDEN.getTimeStr(f.prod.pikachu.end)}</p>` : 
-                    (f.prod.pikachu.end !== 0 ? `<button onclick="collectDish()" style="background:#ff9800; color:white; border:none; padding:10px 25px; border-radius:12px; cursor:pointer;">完成料理</button>` : `<button onclick="startCook()" style="background:#4caf50; color:white; border:none; padding:10px 25px; border-radius:12px; cursor:pointer;">開始料理 (1hr)</button>`)
-                }
+                <img src="${GARDEN.getGif(25)}" style="width:50px; image-rendering:pixelated;">
+                <h4 style="margin:5px 0;">皮卡丘主廚團隊</h4>
+                ${renderCookingLines()}
             </div>
 
-            <div style="background:#fff3e0; border-radius:20px; padding:15px; border:2px solid #ffe0b2;">
-                <img src="${GARDEN.getGif(partnerId)}" style="width:70px; image-rendering:pixelated;">
-                <p>夥伴想吃：<b>${GARDEN.recipes[f.quest]?.icon || '❓'} ${GARDEN.recipes[f.quest]?.name || '未知'}</b></p>
-                <button onclick="submitQuest()" style="background:#e65100; color:white; border:none; padding:12px 30px; border-radius:15px; font-weight:bold; cursor:pointer;">餵食夥伴</button>
-            </div>
+           <div style="display:flex; gap:10px; justify-content:center; margin:15px 0;">
+        
+        <div style="flex:1; background:#fff3e0; border-radius:20px; padding:15px; border:2px solid #ffe0b2; text-align:center;">
+            <div style="font-size:11px; color:#e65100; font-weight:bold; margin-bottom:5px;">🏠 夥伴餵食</div>
+            <img src="${GARDEN.getGif(partnerId)}" style="width:60px; height:60px; image-rendering:pixelated;">
+            <p style="font-size:13px; margin:8px 0;">想吃：<b>${GARDEN.recipes[f.quest]?.icon || '❓'}</b></p>
+            <button onclick="submitQuest()" style="background:#e65100; color:white; border:none; padding:8px 15px; border-radius:12px; font-weight:bold; cursor:pointer; font-size:12px; width:100%;">餵食夥伴</button>
+            <div style="font-size:10px; color:#a0522d; margin-top:5px;">進度：${f.feedCount}/${f.maxFeed || 5}</div>
+        </div>
 
-            <div style="margin-top: 30px; display: flex; justify-content: center; gap: 15px;">
-                <button onclick="toggleGardenModal('farm-inv')" style="background: #795548; color: white; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1;">📦 儲存箱</button>
-                <button onclick="toggleGardenModal('recipe-book')" style="background: var(--p, #e67e22); color: white; padding: 12px 20px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1;">📜 食譜圖鑑</button>
+        <div style="flex:1; background:#fffde7; border-radius:20px; padding:15px; border:2px solid #fff59d; text-align:center;">
+            <div style="font-size:11px; color:#f57f17; font-weight:bold; margin-bottom:5px;">🌟 管家基拉祈</div>
+            <img src="${GARDEN.getGif(385)}" style="width:60px; height:60px; image-rendering:pixelated;">
+            <p style="font-size:13px; margin:8px 0;">想吃：<b>${GARDEN.recipes[f.quest_jirachi || '🌾🐟🥩']?.icon || '❓'}</b></p>
+            <button onclick="wishStar()" style="background:#fbc02d; color:#5d4037; border:none; padding:8px 15px; border-radius:12px; font-weight:bold; cursor:pointer; font-size:12px; width:100%;">願望星碎</button>
+            <div style="font-size:10px; color:#f57f17; margin-top:5px;">
+                ${f.lastWishDate === new Date().toLocaleDateString() ? '💤 沉睡中' : '✨ 今日可用'}
             </div>
         </div>
 
+    </div>
+
+            <div style="margin-top: 30px; display: flex; justify-content: center; gap: 15px;">
+                <button onclick="toggleGardenModal('farm-inv')" style="background: #795548; color: white; padding: 12px 20px; border: none; border-radius: 8px; flex: 1; cursor:pointer;">📦 儲存箱</button>
+                <button onclick="toggleGardenModal('recipe-book')" style="background: #e67e22; color: white; padding: 12px 20px; border: none; border-radius: 8px; flex: 1; cursor:pointer;">📜 食譜圖鑑</button>
+            </div>
+        </div>
+
+        
         <div id="farm-inv-modal" class="garden-modal" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:85%; max-width:350px; background:white; border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:10001; padding:20px;">
             <h3 style="margin:0 0 15px 0; color:#5d4037; text-align:center;">🧺 素材儲存箱</h3>
             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
@@ -1516,6 +1721,175 @@ function renderGarden() {
     `;
 }
 
+function renderChallengeSection(rid, curStats) {
+    const data = WORLD_DATA[rid];
+    const beaten = curStats.gymsBeaten || 0;
+    const isCompleted = beaten >= 13;
+    const regionColor = data.color || "#ffcb05";
+
+    // --- 1. 【最上方】質感圓點徽章盒 (4x2) ---
+    let badgesHtml = `
+    <div style="background: #2a2a2a; border: 3px inset #444; border-radius: 12px; padding: 12px; margin-bottom: 15px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">`;
+
+    for (let i = 0; i < 8; i++) {
+        const isWon = beaten > i;
+        badgesHtml += `
+            <div style="
+                width: 32px; height: 32px; border-radius: 50%; 
+                background: ${isWon ? `radial-gradient(circle at 30% 30%, ${regionColor}, #000)` : '#1a1a1a'};
+                border: 2px solid ${isWon ? '#fff' : '#444'};
+                box-shadow: ${isWon ? `0 0 8px ${regionColor}, inset -2px -2px 5px rgba(0,0,0,0.5)` : 'inset 2px 2px 5px rgba(0,0,0,0.8)'};
+                display: flex; align-items: center; justify-content: center;">
+                ${isWon ? '<span style="color:white; font-size:12px; font-weight:bold;">✔</span>' : ''}
+            </div>`;
+    }
+    badgesHtml += '</div>';
+
+    // 天王進度 (5個星星)
+    badgesHtml += `<div style="display: flex; justify-content: center; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #555;">`;
+    for (let i = 8; i < 13; i++) {
+        const isWon = beaten > i;
+        badgesHtml += `<div style="font-size: 16px; color: ${isWon ? '#ffeb3b' : '#444'}; text-shadow: ${isWon ? '0 0 5px #fff' : 'none'};">★</div>`;
+    }
+    badgesHtml += '</div></div>';
+
+    // --- 2. 處理通關或挑戰狀態 ---
+    if (isCompleted) {
+        return `
+            <div style="text-align:center;">
+                ${badgesHtml}
+                <h3 style="color:${regionColor}; margin:10px 0 0 0;">🏆 ${data.name} 殿堂元勳</h3>
+            </div>`;
+    }
+
+    const target = data.challengers[beaten];
+    
+    // --- 3. 組合最終 HTML (徽章 -> 名字/語錄 -> 按鈕) ---
+    return `
+        <div style="text-align:center; padding: 5px;">
+            ${badgesHtml}
+
+            <div style="margin: 10px 0;">
+                <div style="font-size:11px; color:#888; letter-spacing:1px; margin-bottom:4px;">NEXT CHALLENGER (${beaten}/13)</div>
+                <div style="font-size:22px; font-weight:bold; color:#333;">${target.name}</div>
+                <div style="color:${regionColor}; font-size:14px; font-style:italic; margin-top:6px; min-height:40px; display:flex; align-items:center; justify-content:center; padding:0 10px;">
+                    「 ${target.taunt} 」
+                </div>
+            </div>
+
+            <button onclick="executeChallenge('${rid}', ${beaten})" style="
+                margin-top:5px; padding:15px; border-radius:25px; border:none; 
+                background:${regionColor}; color:white; font-weight:bold; font-size:16px;
+                cursor:pointer; width:100%; box-shadow:0 4px 0 rgba(0,0,0,0.2);
+                transition: transform 0.1s;
+            " onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                進行挑戰：${target.badge}
+            </button>
+        </div>
+    `;
+}
+
+/* --- 萬用挑戰邏輯：一套公式處理所有地區 --- */
+function executeChallenge(regionId, beatenCount) {
+    const f = s.farm;
+    const knownCount = f.knownRecipes.length;
+    
+    // 1. 門檻檢查：必須解鎖 8 種以上食譜
+    if (knownCount < 8) {
+        alert(`❌ 實力不足！你需要研發出至少 8 種食譜才能開始挑戰。（目前：${knownCount}/8）`);
+        return;
+    }
+
+    // 2. 判定目前的消耗規則
+    let cost = {}; // 用來記錄要扣掉哪些料理與數量
+    
+    if (beatenCount < 8) {
+        // --- 道館階段：任意料理 * 10 ---
+        // 找到玩家身上總數最多的那種料理來扣
+        const bestDish = Object.entries(f.dishes).find(([name, count]) => count >= 10);
+        if (!bestDish) {
+            alert("❌ 挑戰失敗！你需要至少 10 個相同的料理作為門票。");
+            return;
+        }
+        cost[bestDish[0]] = 10;
+
+    } else {
+        // --- 四天王 (8-11) 或 冠軍 (12) 階段 ---
+        const requiredCount = (beatenCount < 12) ? 5 : 8; // 四天王 5 種, 冠軍 8 種
+        
+        // 篩選出目前玩家身上持有的料理種類
+        const availableDishes = Object.entries(f.dishes)
+            .filter(([name, count]) => count >= 1)
+            .map(([name]) => name);
+
+        if (availableDishes.length < requiredCount) {
+            alert(`❌ 挑戰失敗！你需要準備 ${requiredCount} 種不同的料理各 1 個。（目前持有：${availableDishes.length} 種）`);
+            return;
+        }
+
+        // 從持有的料理中隨機抽取指定數量
+        const selected = availableDishes.sort(() => 0.5 - Math.random()).slice(0, requiredCount);
+        selected.forEach(name => cost[name] = 1);
+    }
+
+    // 3. 執行扣除並更新進度
+    const confirmMsg = beatenCount < 12 ? `準備好挑戰 ${WORLD_DATA[regionId].challengers[beatenCount].name} 了嗎？` : "這就是最後的冠軍戰了！準備好了嗎？";
+    
+    if (confirm(confirmMsg)) {
+        // 扣除料理
+        for (let [dishName, amount] of Object.entries(cost)) {
+            f.dishes[dishName] -= amount;
+        }
+
+        // 增加進度
+        s.farm.regionProg.stats[regionId].gymsBeaten += 1;
+        
+        // 檢查是否擊敗冠軍
+        if (s.farm.regionProg.stats[regionId].gymsBeaten === 13) {
+            s.farm.regionProg.stats[regionId].isChampion = true;
+            // 如果通關，可以自動開啟下一個地區的解鎖權限（例如自動開啟城都）
+            unlockNextRegion(regionId);
+            alert(`🎊 太強了！你擊敗了冠軍，成為 ${WORLD_DATA[regionId].name} 地區的新傳說！\n採集與烹飪位已獲得全面提升！`);
+        } else {
+            alert(`🎉 成功擊敗 ${WORLD_DATA[regionId].challengers[beatenCount].name}！\n獲得了 ${WORLD_DATA[regionId].challengers[beatenCount].badge}！`);
+        }
+
+        // 重新渲染畫面
+        renderGarden();
+    }
+}
+
+/* 輔助函式：自動解鎖下一個邏輯 */
+function unlockNextRegion(currentId) {
+    const regions = Object.keys(WORLD_DATA);
+    const currentIndex = regions.indexOf(currentId);
+    if (currentIndex !== -1 && currentIndex < regions.length - 1) {
+        const nextId = regions[currentIndex + 1];
+        if (!s.farm.regionProg.unlockedRegions.includes(nextId)) {
+            s.farm.regionProg.unlockedRegions.push(nextId);
+        }
+    }
+}
+
+/* --- 擴充初始化：確保多地區與多料理線結構 --- */
+function initExtendedFarm() {
+    if (!s.farm.prod) s.farm.prod = {};
+    
+    // 每個地區固定 3 個工人位 (例如: Kanto_w1, Kanto_w2, Kanto_w3)
+    Object.keys(WORLD_DATA).forEach(rid => {
+        for (let i = 1; i <= 3; i++) {
+            const key = `${rid}_w${i}`;
+            if (!s.farm.prod[key]) s.farm.prod[key] = { type: null, end: 0 };
+        }
+    });
+
+    // 4 條獨立料理線 (cook_0 到 cook_3)
+    for (let i = 0; i < 4; i++) {
+        const key = `cook_${i}`;
+        if (!s.farm.prod[key]) s.farm.prod[key] = { type: null, end: 0, slots: [null, null, null] };
+    }
+}
 // 每秒更新一次後花園內的計時器文字
 setInterval(() => {
     const timerEl = document.getElementById('patrol-timer');
@@ -1540,78 +1914,194 @@ function getPatrolTimeStr() {
     return `${h}h ${String(m).padStart(2, '0')}m ${String(sec).padStart(2, '0')}s`;
 }
 
+function renderCookingLines() {
+    const completedCount = Object.values(s.farm.regionProg.stats).filter(stat => stat.gymsBeaten >= 13).length;
+    let html = '';
+
+    for (let i = 0; i < 4; i++) {
+        const isUnlocked = (i === 0 || i <= completedCount);
+        const p = s.farm.prod[`cook_${i}`];
+        const isBusy = p.end > Date.now();
+        const isDone = p.end !== 0 && !isBusy;
+
+        // 定義每一格的循環選項
+        const slotOptions = [
+            ['🌾', '🥗'], // 第一格：草屬
+            ['🐟', '🦐'], // 第二格：水屬
+            ['🥩', '🥚']  // 第三格：火屬
+        ];
+
+        html += `
+            <div style="margin:10px 0; padding:10px; background:${isUnlocked ? '#fff9f0' : '#f5f5f5'}; border-radius:12px; border:1px solid ${isUnlocked ? '#ffe0b2' : '#ddd'};">
+                <div style="font-size:11px; color:#e67e22; margin-bottom:5px; text-align:left;">料理 #${i+1}</div>
+                ${isUnlocked ? `
+                    <div style="display:flex; justify-content:center; gap:8px;">
+                        ${p.slots.map((slt, sIdx) => `
+                            <div onclick="${isBusy ? '' : `cycleSlot(${i}, ${sIdx})`}" 
+                                 style="width:45px; height:45px; background:white; border:2px dashed ${sIdx==0?'#4caf50':sIdx==1?'#2196f3':'#f44336'}; border-radius:10px; line-height:45px; font-size:24px; cursor:pointer;">
+                                 ${slt || '？'}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top:10px;">
+                        ${isDone ? `<button onclick="collectDish(${i})" style="background:#ff9800; color:white; border:none; padding:8px 20px; border-radius:10px; cursor:pointer; font-weight:bold;">完成領取</button>` :
+                          isBusy ? `<span style="font-size:13px; color:#666; font-weight:bold;">⏳ ${GARDEN.getTimeStr(p.end)}</span>` :
+                          `<button onclick="startCook(${i})" style="background:#4caf50; color:white; border:none; padding:8px 20px; border-radius:10px; cursor:pointer; font-weight:bold;">開始烹飪</button>`}
+                    </div>
+                ` : `<div style="font-size:12px; color:#999; padding:15px;">🔒 尚未解鎖 (需通關前一地區)</div>`}
+            </div>
+        `;
+    }
+    return html;
+}
+
 /* --- 生產、料理與餵食控制 --- */
 
-// 1. 渲染生產工人 (御三家)
-function renderWorker(key, id, opts) {
+function renderWorker(key, id, opts, name) {
+    if (!s.farm.prod[key]) s.farm.prod[key] = { type: null, end: 0 };
     const p = s.farm.prod[key];
     const isDone = p.end !== 0 && p.end <= Date.now();
     const isBusy = p.end > Date.now();
-    
-    return `<div style="width:32%;">
-        <img src="${GARDEN.getGif(id)}" style="width:50px; image-rendering:pixelated; ${isBusy ? 'filter:grayscale(1); opacity:0.5' : ''}">
-        <div style="margin-top:5px;">
+
+    return `
+    <div style="width:30%; text-align:center; display:flex; flex-direction:column; align-items:center;">
+        <div style="font-size:10px; color:#666; margin-bottom:4px; font-weight:bold;">${name}</div>
+        
+        <div style="
+            width: 55px; height: 55px; 
+            background: radial-gradient(circle, #fff 0%, #f0f0f0 100%); 
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 5px;
+        ">
+            <img src="${GARDEN.getGif(id)}" style="
+                width: 42px; 
+                height: 42px; 
+                object-fit: contain; /* 關鍵：確保圖片比例正常，不壓扁 */
+                image-rendering: pixelated; 
+                ${isBusy ? 'filter:grayscale(0.8); opacity:0.6' : ''}
+            ">
+        </div>
+
+        <div style="margin-top:2px; width:100%;">
             ${isDone ? 
-                `<button onclick="collectFarm('${key}')" style="background:#ffd700; border:none; border-radius:8px; font-size:12px; padding:5px 8px; cursor:pointer; font-weight:bold;">領取${p.type}</button>` : 
+                `<button onclick="collectFarm('${key}')" style="background:#ffd700; border:none; border-radius:8px; font-size:10px; padding:6px 0; cursor:pointer; font-weight:bold; width:100%; box-shadow:0 2px 0 #b89b00;">領取</button>` : 
               isBusy ? 
-                `<span style="font-size:11px; display:block; color:#666;">${GARDEN.getTimeStr(p.end)}</span>` : 
-                `<div style="display:flex; gap:2px; justify-content:center;">
-                    <button onclick="startFarm('${key}','${opts[0]}')" style="padding:5px; border-radius:5px; border:1px solid #ddd; background:white; cursor:pointer;">${opts[0]}</button>
-                    <button onclick="startFarm('${key}','${opts[1]}')" style="padding:5px; border-radius:5px; border:1px solid #ddd; background:white; cursor:pointer;">${opts[1]}</button>
+                `<div style="font-size:10px; color:#777; font-weight:bold; background:#eee; border-radius:10px; padding:2px 0;">${GARDEN.getTimeStr(p.end)}</div>` : 
+                `<div style="display:flex; gap:3px; justify-content:center;">
+                    <button onclick="startFarm('${key}','${opts[0]}')" style="flex:1; padding:4px 0; border-radius:6px; border:1px solid #ddd; background:white; cursor:pointer; font-size:12px; font-family:inherit;">${opts[0]}</button>
+                    <button onclick="startFarm('${key}','${opts[1]}')" style="flex:1; padding:4px 0; border-radius:6px; border:1px solid #ddd; background:white; cursor:pointer; font-size:12px; font-family:inherit;">${opts[1]}</button>
                 </div>`}
         </div>
     </div>`;
 }
 
-// 2. 開始生產 (4小時)
+// 2. 開始生產 (基礎 4 小時，隨道館進度縮短)
 function startFarm(pk, type) {
+    // 預防重疊點擊
     if(s.farm.prod[pk].end > Date.now()) return;
+
+    const baseTime = 14400000; // 原本的 4 * 60 * 60 * 1000
+    
+    // 計算加速：打贏越多道館，時間越短
+    // 假設 buff 為 0.1 (10%)，時間會變成 4 * 0.9 = 3.6 小時
+    const buff = typeof getGlobalSpeedBuff === 'function' ? getGlobalSpeedBuff() : 0;
+    const actualWaitTime = baseTime * (1 - buff);
+
     s.farm.prod[pk].type = type;
-    s.farm.prod[pk].end = Date.now() + 14400000; // 4 * 60 * 60 * 1000
+    s.farm.prod[pk].end = Date.now() + actualWaitTime;
+
     renderGarden();
+    
+    // 確保存檔
     if(typeof saveGameData === 'function') saveGameData();
 }
 
-// 3. 領取素材
+// 3. 領取素材 (保持原本邏輯，確保安全性)
 function collectFarm(pk) {
     const p = s.farm.prod[pk];
+    
+    // 安全檢查：時間還沒到或沒在生產就跳出
     if(p.end > Date.now() || p.end === 0) return;
-    s.farm.inv[p.type] = (s.farm.inv[p.type] || 0) + 1;
+
+    // 領取獎勵：保持原本的 inv 邏輯
+    const type = p.type;
+    s.farm.inv[type] = (s.farm.inv[type] || 0) + 1;
+
+    // 重置狀態
     p.type = null;
     p.end = 0;
+
     renderGarden();
+
+    // 確保存檔
     if(typeof saveGameData === 'function') saveGameData();
+    
+    // 提示玩家
+    console.log(`[Farm] 成功領取了 ${type}！`);
 }
 
 // 4. 皮卡丘料理槽點擊 (手動選擇)
-function setCookSlot(i, a, b) {
-    const p = s.farm.prod.pikachu;
-    if(p.end > Date.now()) return;
-    p.slots[i] = (p.slots[i] === a) ? b : a;
-    renderGarden();
+// 紀錄當前正在操作哪一條線、哪一個格子
+let currentEditingLine = 0;
+let currentEditingSlot = 0;
+
+function cycleSlot(lineIdx, slotIdx) {
+    const p = s.farm.prod[`cook_${lineIdx}`];
+    // 固定的屬性清單
+    const options = [
+        ['🌾', '🥗'], // 第一格：草
+        ['🐟', '🦐'], // 第二格：水
+        ['🥩', '🥚']  // 第三格：火
+    ];
+    
+    const possible = options[slotIdx];
+    const current = p.slots[slotIdx];
+
+    // 如果當前是第一個選項就換第二個，否則換第一個
+    p.slots[slotIdx] = (current === possible[0]) ? possible[1] : possible[0];
+
+    renderGarden(); 
+    console.log(`線路 ${lineIdx} 第 ${slotIdx} 格已切換為: ${p.slots[slotIdx]}`);
+}
+
+function setCookSlot(lineIdx, slotIdx) {
+    currentEditingLine = lineIdx;
+    currentEditingSlot = slotIdx;
+    
+    // 開啟儲存箱 Modal
+    toggleGardenModal('farm-inv');
 }
 
 // 5. 倉庫快速填充邏輯
 function autoFillSlot(emoji) {
-    const p = s.farm.prod.pikachu;
-    if (p.end > Date.now()) return;
-    const slotMap = { '🌾':0,'🥗':0, '🐟':1,'🦐':1, '🥩':2,'🥚':2 };
-    const targetSlot = slotMap[emoji];
-    if (targetSlot !== undefined) {
-        p.slots[targetSlot] = emoji;
-        renderGarden();
-    }
+    const f = s.farm;
+    const lineKey = `cook_${currentEditingLine}`;
+    
+    // 僅純粹顯示在格子上，不扣庫存
+    f.prod[lineKey].slots[currentEditingSlot] = emoji;
+
+    closeAllGardenModals();
+    renderGarden();
 }
 
-// 6. 開始料理 (1小時)
-function startCook() {
-    const p = s.farm.prod.pikachu;
-    if (p.slots.includes(null)) return alert("請放滿三種材料！");
-    if (s.farm.inv[p.slots[0]] > 0 && s.farm.inv[p.slots[1]] > 0 && s.farm.inv[p.slots[2]] > 0) {
-        s.farm.inv[p.slots[0]]--;
-        s.farm.inv[p.slots[1]]--;
-        s.farm.inv[p.slots[2]]--;
+function startCook(i) {
+    const p = s.farm.prod[`cook_${i}`];
+    
+    // 檢查三格是否都有選東西 (非 null 或 ？)
+    if (p.slots.some(s => s === null)) return alert("請放滿三種材料！");
+    
+    const [s1, s2, s3] = p.slots;
+    
+    // 原版扣除判定
+    if (s.farm.inv[s1] > 0 && s.farm.inv[s2] > 0 && s.farm.inv[s3] > 0) {
+        s.farm.inv[s1]--;
+        s.farm.inv[s2]--;
+        s.farm.inv[s3]--;
+        
         p.end = Date.now() + 3600000; // 1小時
+        
         renderGarden();
         if(typeof saveGameData === 'function') saveGameData();
     } else {
@@ -1619,26 +2109,48 @@ function startCook() {
     }
 }
 
-// 7. 完成料理並解鎖食譜
-function collectDish() {
-    const p = s.farm.prod.pikachu;
-    if (p.end > Date.now() || p.end === 0) return;
-    const formula = p.slots.join("");
-    const res = GARDEN.recipes[formula];
-    const tasty = Math.random() < 0.1; // 10% 雙倍產量
+function collectDish(lineIdx) {
+    const f = s.farm;
+    const lineKey = `cook_${lineIdx}`;
+    const p = f.prod[lineKey];
     
-    s.farm.dishes[res.icon] = (s.farm.dishes[res.icon] || 0) + (tasty ? 2 : 1);
-    
-    // 解鎖圖鑑
-    if(!s.farm.knownRecipes.includes(formula)) {
-        s.farm.knownRecipes.push(formula);
+    // 取得格子內容
+    const s1 = p.slots[0]; // 草
+    const s2 = p.slots[1]; // 水
+    const s3 = p.slots[2]; // 火
+
+    // 強制按照你菜單的「草水火」順序組合字串，確保 100% 匹配
+    const formula = s1 + s2 + s3;
+    const dish = GARDEN.recipes[formula];
+
+    if (dish) {
+        // 1. 10% 機率出兩份
+        const isDouble = Math.random() < 0.1;
+        const amount = isDouble ? 2 : 1;
+
+        // 2. 增加料理庫存
+        f.dishes[dish.icon] = (f.dishes[dish.icon] || 0) + amount;
+        
+        // 3. 紀錄到已知食譜
+        if (!f.knownRecipes.includes(formula)) {
+            f.knownRecipes.push(formula);
+        }
+
+        // 4. 增加邂逅進度 (1/5)
+        if (f.feedCount === undefined) f.feedCount = 0;
+        f.feedCount = Math.min(5, f.feedCount + 1);
+
+        // 5. 提示訊息 (拿掉飯糰，只顯示你的料理)
+        let msg = isDouble ? `✨ 雙倍驚喜！獲得了 2 份 ${dish.icon} ${dish.name}！` : `😋 獲得了 ${dish.icon} ${dish.name}！`;
+        if (f.feedCount >= 5) msg += `\n💖 驚喜邂逅已準備就緒！`;
+        alert(msg);
     }
+
+    // --- 重置線路狀態 ---
+    p.end = 0; 
     
-    alert(`${tasty ? '✨手感極佳！(獲得2份)' : '🍳'} 料理好了：${res.name}`);
-    p.end = 0;
-    p.slots = [null, null, null];
     renderGarden();
-    if(typeof saveGameData === 'function') saveGameData();
+    if (typeof saveGameData === 'function') saveGameData();
 }
 
 // 8. 餵食夥伴 (親密度增加)
@@ -1649,32 +2161,24 @@ function submitQuest() {
 
     if (!recipe) return;
 
-    // 1. 檢查是否有足夠料理
     if (f.dishes[recipe.icon] > 0) {
-        // 扣除料理與增加親密度
+        // 扣除料理、增加親密度、增加邂逅進度
         f.dishes[recipe.icon]--;
         f.friendship += 20; 
-        
-        // 📈 2. 增加特殊戰鬥進度
         f.feedCount++;
 
-        // ⚔️ 3. 判斷是否滿 5 次，觸發必閃戰鬥
-        if (f.feedCount >= f.maxFeed) {
-            f.feedCount = 0; // 重置計數
-            
+        // 判斷是否滿 5 次，觸發必閃戰鬥
+        if (f.feedCount >= (f.maxFeed || 5)) {
+            f.feedCount = 0;
             alert("✨ 夥伴感受到了極大的誠意！一場特殊的邂逅開始了！");
-            
-            // 讀取當前夥伴 ID 並設為必閃 (isChampion = true)
             const partnerId = s.buddyId || 25;
             executeClaimGift('GARDEN_BONUS', partnerId, true);
-            
-            // 關閉花園頁面以進入戰鬥
             const overlay = document.getElementById('garden-overlay');
             if (overlay) overlay.remove();
-            return; // 結束函式，不執行後續換菜邏輯
+            return;
         }
 
-        // 🔄 4. 更換隨機任務（加入「必不重複」邏輯）
+        // 更換隨機任務（必不重複）
         const keys = Object.keys(GARDEN.recipes);
         let nextQuest = targetFormula;
         if (keys.length > 1) {
@@ -1684,15 +2188,53 @@ function submitQuest() {
         }
         f.quest = nextQuest;
 
-        alert(`❤️ 餵食成功！進度：${f.feedCount}/${f.maxFeed}`);
-        
-        // 刷新 UI 與存檔
+        alert(`❤️ 餵食成功！夥伴進度：${f.feedCount}/${f.maxFeed || 5}`);
         renderGarden();
         if(typeof updateUI === 'function') updateUI();
         if(typeof saveGameData === 'function') saveGameData();
-        
     } else {
-        alert(`你還沒做好這道料理喔！你需要 ${recipe.icon} ${recipe.name}`);
+        alert(`你需要 ${recipe.icon} ${recipe.name} 才能餵食夥伴喔！`);
+    }
+}
+
+function wishStar() {
+    const f = s.farm;
+    const today = new Date().toLocaleDateString();
+    
+    // 每日限一次檢查
+    if (f.lastWishDate === today) return alert("🌟 基拉祈正在沉睡... 明天再試吧！");
+
+    // 取得基拉祈想吃的料理 (設定為獨立於夥伴的 quest_jirachi)
+    const targetFormula = f.quest_jirachi || Object.keys(GARDEN.recipes)[0];
+    const recipe = GARDEN.recipes[targetFormula];
+
+    if (f.dishes[recipe.icon] > 0) {
+        if (!confirm(`是否消耗 ${recipe.icon} 向管家基拉祈許願發動【願望星碎】？\n(將瞬間完成全地區素材採集)`)) return;
+
+        f.dishes[recipe.icon]--;
+        f.lastWishDate = today;
+
+        // 【願望星碎】核心邏輯
+        Object.keys(f.prod).forEach(key => {
+            if (key.includes('_w')) {
+                const worker = f.prod[key];
+                if (worker.type) {
+                    const isLucky = Math.random() < 0.2;
+                    f.inv[worker.type] = (f.inv[worker.type] || 0) + (isLucky ? 2 : 1);
+                    worker.end = 0;
+                }
+            }
+        });
+
+        // 刷新基拉祈下一次想吃的料理
+        const keys = Object.keys(GARDEN.recipes);
+        f.quest_jirachi = keys[Math.floor(Math.random() * keys.length)];
+
+        alert(`🌠 願望實現了！全地區素材已瞬移至儲存箱！`);
+        renderGarden();
+        if(typeof saveGameData === 'function') saveGameData();
+    } else {
+        alert(`管家基拉祈想吃 ${recipe.icon} ${recipe.name}，目前庫存不足！`);
     }
 }
 
@@ -3192,81 +3734,32 @@ function claimTask(id) {
 }
 
 let chartInstance = null;
-
 function switchChart(type) { 
     currentChartType = type; 
-    
-    // 🚩 修正：當類型是 'month' 或 'cat' 時，都顯示月份選擇器
-    const controls = document.getElementById('chartControls');
-    const isMonthlyNeeded = (type === 'month' || type === 'cat');
-    controls.style.display = isMonthlyNeeded ? 'flex' : 'none'; 
-    
-    // 🚩 優化：如果切換到需要月份的圖表，但選擇器是空的，自動帶入今天日期
-    const picker = document.getElementById('chartMonthPicker');
-    if (isMonthlyNeeded && !picker.value) {
-        const now = new Date();
-        const yearMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-        picker.value = yearMonth;
-    }
-
+    document.getElementById('chartControls').style.display = (type==='month') ? 'flex' : 'none'; 
     renderCharts(); 
 }
 
 function renderCharts() {
-    const canvas = document.getElementById('chartCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    
-    // 🚩 銷毀舊實例，防止記憶體洩漏與圖表重疊
-    if (chartInstance) chartInstance.destroy();
-    
+    const ctx = document.getElementById('chartCanvas').getContext('2d');
+    if(chartInstance) chartInstance.destroy();
     let labels = [], data = [], chartType = 'line';
-    const targetMonth = document.getElementById('chartMonthPicker').value;
-    const history = s.hist || []; // 防呆：確保 hist 存在
-
-    if (currentChartType === 'year') { 
-        labels = Object.keys(s.yearSums || {}).sort(); 
+    if(currentChartType === 'year') { 
+        labels = Object.keys(s.yearSums).sort(); 
         data = labels.map(l => s.yearSums[l]); 
-        chartType = 'bar'; // 年統計通常用長條圖較清楚
-    } 
-    else if (currentChartType === 'month') { 
-        // 過濾該月份每日支出 (折線圖)
-        const filtered = history.filter(h => h.date && h.date.startsWith(targetMonth)); 
+    }
+    else if(currentChartType === 'month') { 
+        const target = document.getElementById('chartMonthPicker').value; 
+        const filtered = s.hist.filter(h => h.date.startsWith(target)); 
         const days = {}; 
-        filtered.forEach(h => days[h.date] = (days[h.date] || 0) + h.amt); 
+        filtered.forEach(h => days[h.date] = (days[h.date]||0) + h.amt); 
         labels = Object.keys(days).sort(); 
         data = labels.map(l => days[l]); 
-        chartType = 'line';
-    } 
+    }
     else { 
-        // --- 🟢 類別統計：按月分開做圓餅圖 ---
-        chartType = 'pie';
-        
-        // 1. 取得選擇器月份 (例如 "2026-03")
-        const targetMonth = document.getElementById('chartMonthPicker').value;
-        
-        // 2. 過濾數據
-        const filtered = history.filter(h => h.date && h.date.startsWith(targetMonth));
-        
-        // 3. 建立分類加總物件
-        const monthlyCat = {};
-        filtered.forEach(h => {
-            // 🚩 關鍵修正：將 h.category 改為 h.cat (與你的數據結構一致)
-            const catName = h.cat || "未分類"; 
-            
-            // 🚩 確保金額是數字相加，而非字串拼接
-            const amount = Number(h.amt) || 0;
-            
-            monthlyCat[catName] = (monthlyCat[catName] || 0) + amount;
-        });
-
-        // 4. 將結果轉換為 Chart.js 需要的格式
-        labels = Object.keys(monthlyCat);
-        data = labels.map(l => monthlyCat[l]);
-
-        if (labels.length === 0) {
-            console.warn(targetMonth + " 查無支出紀錄");
-        }
+        labels = Object.keys(s.catSums); 
+        data = labels.map(l => s.catSums[l]); 
+        chartType = 'pie'; 
     }
 
     chartInstance = new Chart(ctx, { 
@@ -3274,23 +3767,16 @@ function renderCharts() {
         data: { 
             labels, 
             datasets: [{ 
-                label: '金額', 
+                label: '支出金額', 
                 data, 
-                backgroundColor: chartType === 'pie' ? 
-        ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#26C6DA', '#9CCC65', '#BDBDBD'] : 
-        'rgba(46, 204, 113, 0.4)',
+                backgroundColor: ['#ff6384','#36a2eb','#cc65fe','#ffce56','#4bc0c0','#f1c40f','#e67e22'], 
                 borderColor: '#2d5a27', 
-                borderWidth: 2,
-                fill: true, // 折線圖開啟填充
-                tension: 0.3 
+                tension: 0.1 
             }] 
         }, 
         options: { 
             responsive: true, 
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: chartType === 'pie' } // 只有圓餅圖顯示側邊標註
-            }
+            maintainAspectRatio: false 
         } 
     });
 }
@@ -3519,50 +4005,32 @@ function exportData() {
                     now.getHours().toString().padStart(2, '0') + 
                     now.getMinutes().toString().padStart(2, '0');
 
-    const fileName = `PM_Save_${timeStr}.pkms`;
-
-    // 🚩 修正點 A：改用 octet-stream，這在手機端最能強制執行下載並保留檔名
-    const blob = new Blob([JSON.stringify(s)], {type: "application/octet-stream"});
-    const url = URL.createObjectURL(blob);
-    
+    // 2. 轉換為 JSON 字串
+    const blob = new Blob([JSON.stringify(s)], {type: "application/json"});
     const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName; 
+    a.href = URL.createObjectURL(blob);
     
-    // 🚩 修正點 B：針對 iOS/手機端補強，確保點擊前屬性已完全寫入
-    a.rel = "noopener"; 
+    // 3. 設定自訂副檔名 .pkms (方便手機查找)
+    a.download = `PM_Save_${timeStr}.pkms`; 
     
     // 4. 執行下載
-    document.body.appendChild(a);
-    
-    // 🚩 修正點 C：有些手機瀏覽器需要稍微延遲點擊
-    try {
-        a.click();
-    } catch (e) {
-        console.error("下載觸發失敗", e);
-    }
+    document.body.appendChild(a); // 部分手機瀏覽器需要將元素加入 DOM 才能點擊
+    a.click();
     
     // 5. 清理與釋放記憶體
     setTimeout(() => {
         document.body.removeChild(a);
-        URL.revokeObjectURL(url); 
-    }, 500); // 稍微增加延遲確保手機完成喚起下載動作
+        URL.revokeObjectURL(a.href); 
+    }, 100);
 }
 
 function importData(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // 🚩 1. 放寬檢查條件
-    // 手機端常會亂改副檔名，我們增加對 .txt 的容忍，主要還是看內容
-    const validExts = ['.pkms', '.json', '.txt'];
-    const isStandard = validExts.some(ext => file.name.toLowerCase().endsWith(ext));
-    
-    if (!isStandard) {
-        if (!confirm("這看起來不是標準的存檔格式，是否仍要嘗試讀取？")) {
-            e.target.value = "";
-            return;
-        }
+    // 🚩 檢查副檔名 (非強制，但可提醒玩家)
+    if (!file.name.endsWith('.pkms') && !file.name.endsWith('.json')) {
+        if (!confirm("這看起來不是標準的存檔格式，是否仍要嘗試讀取？")) return;
     }
 
     const reader = new FileReader();
@@ -3570,39 +4038,32 @@ function importData(e) {
         try {
             const loaded = JSON.parse(ev.target.result);
             
-            // 🚩 2. 強大合併邏輯：確保舊存檔不會刷掉新功能的預設值
-            // 使用「深度合併」的概念，確保 tasks 等巢狀物件不會整塊消失
+            // 🚩 [關鍵修改] 使用與 window.onload 一致的合併邏輯
+            // 這樣能保證「舊存檔」匯入「新遊戲」時，新功能變數（如 dailyWild）不會消失
             s = { 
-                ...s, 
-                ...loaded,
-                // 針對容易丟失的巢狀物件做特別保護
-                tasks: { ...(s.tasks || {}), ...(loaded.tasks || {}) },
-                items: { ...(s.items || {}), ...(loaded.items || {}) },
-                claimedGifts: Array.from(new Set([...(s.claimedGifts || []), ...(loaded.claimedGifts || [])]))
+                ...s,              // 先放目前新版本的預設結構
+                ...loaded,         // 用讀取的資料覆蓋
+                claimedGifts: (loaded.claimedGifts || s.claimedGifts || []) // 確保陣列欄位存在
             };
 
-            // 🚩 3. 統一存檔標籤
+            // 🚩 匯入後立即存檔到 LocalStorage，確保手機關閉 APP 後資料還在
             localStorage.setItem('pokemaster_v60', JSON.stringify(s));
 
-            // 🚩 4. 關鍵：匯入後建議重新整理或初始化
-            // 有時候 updateUI 沒辦法更新所有監聽器，執行 init 或 location.reload 最保險
+            // 更新 UI 顯示新資料
+            updateUI(); 
+            
             alert("✅ 存檔匯入成功！");
             
-            if (typeof updateUI === 'function') updateUI();
-            if (typeof renderTasks === "function") renderTasks();
-            if (typeof lockClaimedGifts === "function") lockClaimedGifts();
-
+            // 重設上傳按鈕，方便下次重複選取相同檔案
             e.target.value = ""; 
 
         } catch (err) {
             console.error("Import Error:", err);
-            alert("❌ 讀取失敗：內容格式錯誤 (非正確的 JSON)");
-            e.target.value = "";
+            alert("❌ 讀取失敗：存檔內容損壞或格式不符");
         }
     };
     reader.readAsText(file);
 }
-
 function lighten() { /* 簡化清理邏輯保留 */ const start = document.getElementById('lightStart').value; const end = document.getElementById('lightEnd').value; if(!start || !end) return; exportData(); s.hist = s.hist.filter(h => h.date < start || h.date > end); updateUI(); alert("清理完成並已匯出備份。"); }
 function resetAll() { if(confirm("🔥 確定重置？這會永久刪除所有紀錄與圖鑑！")) { localStorage.removeItem('pokemaster_v60'); location.reload(); } }
 </script>
