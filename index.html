@@ -1741,14 +1741,13 @@ function renderChallengeSection(rid, curStats) {
     for (let i = 0; i < 8; i++) {
         const isWon = beaten > i;
         badgesHtml += `
-            <div style="
-                width: 32px; height: 32px; border-radius: 50%; 
-                background: ${isWon ? `radial-gradient(circle at 30% 30%, ${regionColor}, #000)` : '#1a1a1a'};
-                border: 2px solid ${isWon ? '#fff' : '#444'};
-                box-shadow: ${isWon ? `0 0 8px ${regionColor}, inset -2px -2px 5px rgba(0,0,0,0.5)` : 'inset 2px 2px 5px rgba(0,0,0,0.8)'};
-                display: flex; align-items: center; justify-content: center;">
-                ${isWon ? '<span style="color:white; font-size:12px; font-weight:bold;">✔</span>' : ''}
-            </div>`;
+    <div style="
+        width: 32px; height: 32px; border-radius: 50%; 
+        background: ${isWon ? `radial-gradient(circle at 30% 30%, #fff 0%, ${regionColor} 20%, ${regionColor} 50%, #000 55%, ${regionColor} 60%, #000 100%)` : '#1a1a1a'};
+        border: 2px solid ${isWon ? '#fff' : '#444'};
+        box-shadow: ${isWon ? `0 0 8px ${regionColor}, inset -2px -2px 5px rgba(0,0,0,0.5)` : 'inset 2px 2px 5px rgba(0,0,0,0.8)'};
+        display: flex; align-items: center; justify-content: center;">
+    </div>`;
     }
     badgesHtml += '</div>';
 
@@ -2357,9 +2356,9 @@ function showAnnouncement() {
     
     <div style="max-height: 250px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; text-align: left; font-size: 14px; line-height: 1.6;">
         <b style="color: #e67e22;">【系統更新內容】</b><br>
+        • 🍱 舌尖上的冠軍聯盟，與料理團隊一起攻克各個地區!<br>
         • 👤 玩家頁面新增徽章系統，快來蒐集圖鑑，獲取最適合自己的徽章。<br>
         • 👤 玩家頁面新增秘密花園系統！想與特殊的夥伴來一場邂逅嗎?<br>
-        • 🍱 由大廚皮卡丘帶領的團隊現在可以烹飪 8 種不同的料理。<br>
         • ❤️ 增加親密度系統，提高親密度有助於增加掛機獎勵的機率。<br>
         • 🎒 調整背包配置，將進化石進度與mega石進度移至背包頁面。<br>
         • 📖 再次遇到已捕捉過的寶可夢時，編號前方會帶有寶貝球的標記。<br>
