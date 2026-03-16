@@ -744,26 +744,30 @@
 
 
 <div id="statusPage" class="page">
-    <div class="card" style="position: relative; padding-top: 30px;"> <div id="selected-badge-display" class="badge-avatar-wrap" onclick="openBadgeModal()">
+    <div class="card" style="position: relative; padding-top: 30px;"> 
+        <div id="selected-badge-display" class="badge-avatar-wrap" onclick="openBadgeModal()">
             <img id="current-badge-img" src="" style="display: none;">
             <div id="no-badge-txt">配戴<br>勳章</div>
         </div>
+
         <h3>👤 訓練家資訊</h3>
-               <div style="margin-right: 110px;"> </div> <p>當前稱號：<b id="st-title" style="color:var(--mega);">初出茅廬</b></p>
-        <p>訓練家等級：<b id="st-level" style="color:var(--accent);">Lv. 1</b></p>
-        <p>圖鑑進度：<span id="st-dex-count">0</span> / 493</p>
         
-           <div style="font-size:14px; line-height:1.8;">
+        <div style="font-size: 14px; line-height: 2.2; margin-top: 10px;">
+            <div>當前稱號：<b id="st-title" style="color:var(--mega);">初出茅廬</b></div>
+            <div>訓練家等級：<b id="st-level" style="color:var(--accent);">Lv. 1</b></div>
+            <div>夥伴親密度：<b id="st-friendship" style="color:#ff5e62;">❤️ 0</b></div>
+            <div>圖鑑進度：<span id="st-dex-count">0</span> / 493</div>
             <div>🎯 綜合捕捉率：<b id="st-catch-rate">30%</b></div>
             <div>✨ 綜合閃光率：<b id="st-shiny-rate">5%</b></div>
-            <div id="mega-timer" style="color:var(--mega); display:none;">🧬 Mega 強化中：<span id="mega-time-left">00:00</span></div>
+            
+            <div id="mega-timer" style="color:var(--mega); display:none;">
+                🧬 Mega 強化中：<span id="mega-time-left">00:00</span>
+            </div>
         </div>
-    </div>
-
-<button onclick="renderGarden(); GARDEN.processLoot();" 
-    style="background:#2ecc71; color:white; width:calc(100% - 20px); padding:15px; border:none; border-radius:10px; font-weight:bold; margin:10px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
-    <span>🌿</span> 進入秘密花園
-</button>
+    </div> <button onclick="renderGarden(); GARDEN.processLoot();" 
+        style="background:#2ecc71; color:white; width:calc(100% - 20px); padding:15px; border:none; border-radius:10px; font-weight:bold; margin:10px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
+        <span>🌿</span> 進入秘密花園
+    </button>
 
     <button class="btn-back" onclick="back()">✖ 關閉</button>
 </div>
@@ -2851,6 +2855,14 @@ function updateUI() {
             console.warn(`[圖片加載警告]: 找不到資源 ${bImg}，已切換備援。`);
             bEl.onerror = null;
         };
+    }
+
+// 更新親密度顯示
+    const friendshipEl = document.getElementById('st-friendship');
+    if (friendshipEl && s.farm) {
+        // 直接抓取 s.farm.friendship 的數值
+        const fs = s.farm.friendship || 0;
+        friendshipEl.innerText = `❤️ ${fs}`;
     }
 
     // 5. 渲染背包
