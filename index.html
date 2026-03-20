@@ -2436,11 +2436,10 @@ function showAnnouncement() {
     
     <div style="max-height: 250px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; text-align: left; font-size: 14px; line-height: 1.6;">
         <b style="color: #e67e22;">【系統更新內容】</b><br>
+        • 🍱 冒險小隊開放啦!快來製作好吃的料理吸引新夥伴!<br>
         • 🍱 舌尖上的冠軍聯盟，與料理團隊一起攻克各個地區!<br>
         • 👤 玩家頁面新增徽章系統，快來蒐集圖鑑，獲取最適合自己的徽章。<br>
-        • 👤 玩家頁面新增秘密花園系統！想與特殊的夥伴來一場邂逅嗎?<br>
         • ❤️ 增加親密度系統，提高親密度有助於增加掛機獎勵的機率。<br>
-        • 🎒 調整背包配置，將進化石進度與mega石進度移至背包頁面。<br>
         • 📖 再次遇到已捕捉過的寶可夢時，編號前方會帶有寶貝球的標記。<br>
         • ⚙️ 隨機野怪以及每日任務的重置時間調整為午夜12點。<br>
     </div>
@@ -4430,7 +4429,7 @@ const POKE_NAME_MAP = {
     196:'太陽精靈',
     255:'火稚雞',256:'力壯雞',257:'火焰雞',
     322:'呆火駝',323:'噴火駝',
-    390:'小火猴',391:'猛火猴',392:'烈焰猴',467:'鴨嘴炎獸',
+    390:'小火猴',391:'猛火猴',392:'烈焰猴',
 
     // 🔵 藍標 (水系)
     7:'傑尼龜',8:'卡咪龜',9:'水箭龜',
@@ -4439,11 +4438,11 @@ const POKE_NAME_MAP = {
     134:'水精靈',
     158:'小鋸鱷',159:'藍鱷',160:'大力鱷',
     183:'瑪力露',184:'瑪力露麗',
-    258:'水躍魚',259:'沼躍魚',260:'巨沼怪',
+    258:'水躍魚',259:'沼躍魚',260:'巨沼躍魚',
     341:'龍蝦小兵',342:'鐵螯龍蝦',
     393:'波加曼',394:'波皇子',395:'帝王拿波',
     418:'泳氣鼬',419:'浮潛鼬',
-    456:'螢光魚',457:'霓虹魚',
+    456:'霓虹魚',457:'霓虹魚改',
     471:'冰精靈',
 
     // 🟢 綠標 (草系)
@@ -4464,10 +4463,10 @@ const POKE_NAME_MAP = {
     94:'耿鬼',
     147:'迷你龍',148:'哈克龍',149:'快龍',
     214:'赫拉克羅斯',
-    246:'幼基拉斯',247:'沙基拉斯',248:'班基拉斯',
-    304:'可可多拉',305:'可多拉',306:'波士可多拉',
-    371:'寶貝龍',372:'甲殼龍',373:'暴飛龍',
-    374:'鐵啞鈴',375:'金屬怪',376:'巨金怪',
+    246:'由基拉',247:'劈斧拉',248:'基拉拉',
+    304:'波士可多拉',305:'重磅多拉',306:'鐵甲暴龍',
+    371:'寶貝龍',372:'甲賀龍',373:'暴鯉龍',
+    374:'鐵啞鈴',375:'金屬啞鈴',376:'巨金怪',
     417:'帕奇利茲',
     443:'圓陸鯊',444:'尖牙陸鯊',445:'烈咬陸鯊',
     447:'利歐路',448:'路卡利歐',
@@ -4738,10 +4737,11 @@ function generateEncounter(region, selectedDish) {
     const randomLegend = legendPool.length ? legendPool[Math.floor(Math.random() * legendPool.length)] : null;
 
     if (rand < 0.7 || !randomLegend) {
-        // 普通寶可夢
-        return {
+        const randomNormal = normalPool[Math.floor(Math.random() * normalPool.length)];
+    return {
             id: randomNormal,
-            name: `No.${randomNormal}`,
+            // ✨ 核心修正：從 POKE_NAME_MAP 抓名字，找不到才顯示 No.
+            name: POKE_NAME_MAP[randomNormal] || `No.${randomNormal}`, 
             type: 'normal',
             color: getPkmTagById(randomNormal),
             hearts: 3
@@ -4777,9 +4777,9 @@ function finishExpedition() {
         if (!p) return;
 
         switch (p.color) {
-            case '紅': baseResources['🥩'] += 2; baseResources['🥚'] += 2; break;
-            case '藍': baseResources['🐟'] += 2; baseResources['🦐'] += 2; break;
-            case '綠': baseResources['🌾'] += 2; baseResources['🥗'] += 2; break;
+            case '紅': baseResources['🥩'] += 1; baseResources['🥚'] += 1; break;
+            case '藍': baseResources['🐟'] += 1; baseResources['🦐'] += 1; break;
+            case '綠': baseResources['🌾'] += 1; baseResources['🥗'] += 1; break;
             case '黑':
                 hoursReduction += 1;
                 const keys = Object.keys(baseResources);
