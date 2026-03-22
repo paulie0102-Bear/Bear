@@ -2395,13 +2395,11 @@ function submitQuest() {
 
         // 更換隨機任務（必不重複）
         const keys = Object.keys(GARDEN.recipes);
-        let nextQuest = targetFormula;
-        if (keys.length > 1) {
-            while (nextQuest === targetFormula) {
-                nextQuest = keys[Math.floor(Math.random() * keys.length)];
-            }
-        }
-        f.quest = nextQuest;
+const filtered = keys.filter(k => k !== targetFormula);
+
+f.quest = filtered.length > 0
+    ? filtered[Math.floor(Math.random() * filtered.length)]
+    : targetFormula;
 
         alert(`❤️ 餵食成功！夥伴進度：${f.feedCount}/${f.maxFeed || 5}`);
         renderGarden();
