@@ -2371,6 +2371,7 @@ function collectDish(lineIdx) {
 // 8. 餵食夥伴 (親密度增加)
 function submitQuest() {
     const f = s.farm;
+    GARDEN.recipes = GARDEN.recipes || {};
     const targetFormula = f.quest;
     const recipe = GARDEN.recipes[targetFormula];
 
@@ -2414,6 +2415,7 @@ f.quest = filtered.length > 0
 function wishStar() {
     const f = s.farm;
     const today = new Date().toLocaleDateString();
+    GARDEN.recipes = GARDEN.recipes || {};
     // 🔒 防呆：先檢查 recipes
     const keys = Object.keys(GARDEN.recipes || {});
     if (keys.length === 0) {
