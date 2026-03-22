@@ -684,17 +684,25 @@
                 </div>
 
                 <div id="dexCtrl" style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%;">
-                    <button onclick="setDexShiny(false)" class="btn-dex-sm">一般型態</button>
-                    <button onclick="setDexShiny(true)" id="shinyBtn" class="btn-dex-sm">✨ 閃光</button>
-                    
-                    <div id="megaGroup" style="grid-column: span 2; display: none; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 5px;">
-                        <button id="mBtnSingle" onclick="toggleMega('mega')" style="grid-column: span 2; background: #9b59b6; color: white; border: 2px solid #333; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px;">🧬 Mega 進化</button>
-                        <button id="mBtnX" onclick="toggleMega('x')" style="background: #3498db; color: white; border: 2px solid #333; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px;">Mega X</button>
-                        <button id="mBtnY" onclick="toggleMega('y')" style="background: #e67e22; color: white; border: 2px solid #333; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px;">Mega Y</button>
-                    </div>
+    <button onclick="setDexShiny(false)" class="btn-dex-sm">一般型態</button>
+    <button onclick="setDexShiny(true)" id="shinyBtn" class="btn-dex-sm">✨ 閃光</button>
+    
+    <div id="megaGroup" style="grid-column: span 2; display: none; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 5px;">
+        
+        <button id="mBtnSingle" onclick="toggleMega('mega')" style="grid-column: span 2; background: #9b59b6; color: white; border: 2px solid #333; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px;">🧬 Mega 進化</button>
+        
+        <button id="mBtnX" onclick="toggleMega('x')" style="background: #3498db; color: white; border: 2px solid #333; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px;">Mega X</button>
+        <button id="mBtnY" onclick="toggleMega('y')" style="background: #e67e22; color: white; border: 2px solid #333; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px;">Mega Y</button>
+        
+        <button id="mBtnBlack" onclick="toggleMega('black')" style="background: #2c3e50; color: white; border: 2px solid #333; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px;"> 暗黑形態</button>
+        <button id="mBtnWhite" onclick="toggleMega('white')" style="background: #ecf0f1; color: #2c3e50; border: 2px solid #333; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px;"> 焰白形態</button>
+        
+        <button id="mBtnAsh" onclick="toggleMega('ash')" style="grid-column: span 2; background: #2980b9; color: white; border: 2px solid #333; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px;"> 羈絆進化 (小智版)</button>
 
-                    <button onclick="assignBuddy()" style="grid-column: span 2; background: #dc0a2d; color: white; padding: 12px; border: 2px solid #333; border-radius: 25px; margin-top: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 4px rgba(0,0,0,0.2);">就決定是你了！</button>
-                </div>
+    </div>
+
+    <button onclick="assignBuddy()" style="grid-column: span 2; background: #dc0a2d; color: white; padding: 12px; border: 2px solid #333; border-radius: 25px; margin-top: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 4px rgba(0,0,0,0.2);">就決定是你了！</button>
+</div>
             </div> 
         </div> <div class="dex-b-button-wrapper" onclick="back()">
             <div class="dex-close-btn">B</div>
@@ -751,7 +759,7 @@
         <h3>👤 訓練家資訊</h3>
                <div style="margin-right: 110px;"> </div> <p>當前稱號：<b id="st-title" style="color:var(--mega);">初出茅廬</b></p>
         <p>訓練家等級：<b id="st-level" style="color:var(--accent);">Lv. 1</b></p>
-        <p>圖鑑進度：<span id="st-dex-count">0</span> / 493</p>
+        <p>圖鑑進度：<span id="st-dex-count">0</span> / 721</p>
         
            <div style="font-size:14px; line-height:1.8;">
             <div>🎯 綜合捕捉率：<b id="st-catch-rate">30%</b></div>
@@ -857,6 +865,20 @@
             </div>
             <span style="font-weight:bold; font-size:13px; color:#2c3e50;">神奧地區｜山梨博士啟程禮</span>
         </button>
+
+        <button id="btn-gift-juniper" onclick="openGiftSelector('juniper', false)" class="btn-doc" style="display:flex; align-items:center; gap:8px; padding: 8px; text-align:left; border: 1.5px dashed #3498db; background:#fff; border-radius:12px;">
+            <div style="width:35px; height:35px; flex-shrink:0; background:rgba(0,0,0,0.05); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/494.png" style="width:100%; height:auto;">
+            </div>
+            <span style="font-weight:bold; font-size:13px; color:#2c3e50;">合眾地區｜紅豆杉博士的啟程禮</span>
+        </button>
+
+        <button id="btn-gift-sycamore" onclick="openGiftSelector('sycamore', false)" class="btn-doc" style="display:flex; align-items:center; gap:8px; padding: 8px; text-align:left; border: 1.5px dashed #3498db; background:#fff; border-radius:12px;">
+            <div style="width:35px; height:35px; flex-shrink:0; background:rgba(0,0,0,0.05); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/716.png" style="width:100%; height:auto;">
+            </div>
+            <span style="font-weight:bold; font-size:13px; color:#2c3e50;">卡洛斯地區｜布拉塔諾博士的啟程禮</span>
+        </button>
     </div>
 </div>
 
@@ -891,6 +913,20 @@
                 <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/445.png" style="width:100%; height:auto;">
             </div>
             <span style="font-weight:bold; font-size:13px; color:#b8860b;">神奧地區｜竹蘭的遺跡之魂</span>
+        </button>
+
+        <button id="btn-gift-alder" onclick="onChampionBtnClick('alder')" class="btn-champion" style="display:flex; align-items:center; gap:8px; padding: 8px; text-align:left; border: 1.5px solid #f1c40f; background:#fff; border-radius:12px;">
+            <div style="width:35px; height:35px; flex-shrink:0; background:rgba(212,175,55,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/637.png" style="width:100%; height:auto;">
+            </div>
+            <span style="font-weight:bold; font-size:13px; color:#b8860b;">合眾地區｜阿戴克的自然守護</span>
+        </button>
+
+        <button id="btn-gift-diantha" onclick="onChampionBtnClick('diantha')" class="btn-champion" style="display:flex; align-items:center; gap:8px; padding: 8px; text-align:left; border: 1.5px solid #f1c40f; background:#fff; border-radius:12px;">
+            <div style="width:35px; height:35px; flex-shrink:0; background:rgba(212,175,55,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/282.png" style="width:100%; height:auto;">
+            </div>
+            <span style="font-weight:bold; font-size:13px; color:#b8860b;">卡洛斯地區｜卡露妮的華麗演繹</span>
         </button>
     </div>
 </div>
@@ -1177,6 +1213,29 @@ const POKEMON_NAMES = [
     "冰伊布","天蠍王","象牙豬","多邊獸Ｚ","艾路雷朵","大朝北鼻","黑夜魔靈","雪妖女","洛托姆","由克希",
     "艾姆利多","亞克諾姆","帝牙盧卡","帕路奇亞","席多藍恩","雷吉奇卡斯","騎拉帝納","克雷色利亞","霏歐納","瑪納霏",
     "達克萊伊","謝米","阿爾宙斯"
+    ,"比克提尼","藤藤蛇","青藤蛇","君主蛇","暖暖豬","炒炒豬","炎武王"
+,"水水獺","雙刃丸","大劍鬼","探探鼠","步哨鼠","小約克","哈約克","長毛狗","扒手貓","酷豹"
+,"花椰猴","花椰猿","爆香猴","爆香猿","冷水猴","冷水猿","食夢夢","夢夢蝕","豆豆鴿","咕咕鴿"
+,"高傲雉雞","斑斑馬","雷電斑馬","石丸子","地幔岩","龐岩怪","滾滾蝙蝠","心蝙蝠","螺釘地鼠","龍頭地鼠"
+,"差不多娃娃","搬運小匠","鐵骨土人","修建老匠","圓蝌蚪","藍蟾蜍","蟾蜍王","投摔鬼","打擊鬼","蟲寶包"
+,"寶包繭","保母蟲","百足蜈蚣","車輪毬","蜈蚣王","木棉球","風妖精","百合根娃娃","裙兒小姐","野蠻鱸魚"
+,"黑眼鱷","混混鱷","流氓鱷","火紅不倒翁","達摩狒狒","沙鈴仙人掌","石居蟹","岩殿居蟹","滑滑小子","頭巾混混"
+,"象徵鳥","哭哭面具","死神棺","原蓋海龜","肋骨海龜","始祖小鳥","始祖大鳥","破破袋","灰塵山","索羅亞"
+,"索羅亞克","泡沫栗鼠","奇諾栗鼠","哥德寶寶","哥德小童","哥德小姐","單卵細胞球","雙卵細胞球","人造細胞卵","鴨寶寶"
+,"舞天鵝","迷你冰","多多冰","雙倍多多冰","四季鹿","萌芽鹿","電飛鼠","蓋蓋蟲","騎士蝸牛","哎呀球菇"
+,"敗露球菇","輕飄飄","胖嘟嘟","保母曼波","電電蟲","電蜘蛛","種子鐵球","堅果啞鈴","齒輪兒","齒輪組"
+,"齒輪怪","麻麻小魚","麻麻鰻","麻麻鰻魚王","小灰怪","大宇怪","燭光靈","燈火幽靈","水晶燈火靈","牙牙"
+,"斧牙龍","雙斧戰龍","噴嚏熊","凍原熊","幾何雪花","小嘴蝸","敏捷蟲","泥巴魚","功夫鼬","師父鼬"
+,"赤面龍","泥偶小人","泥偶巨人","駒刀小兵","劈斬司令","爆炸頭水牛","毛頭小鷹","勇士雄鷹","禿鷹丫頭","禿鷹娜"
+,"熔蟻獸","鐵蟻","單首龍","雙首暴龍","三首惡龍","燃燒蟲","火神蛾","勾帕路翁","代拉基翁","畢力吉翁"
+,"龍捲雲","雷電雲","萊希拉姆","捷克羅姆","土地雲","酋雷姆","凱路迪歐","美洛耶塔","蓋諾賽克特","哈力栗"
+,"胖胖哈力","布里卡隆","火狐狸","長尾火狐","妖火紅狐","呱呱泡蛙","呱頭蛙","甲賀忍蛙","掘掘兔","掘地兔"
+,"小箭雀","火箭雀","烈箭鷹","粉蝶蟲","粉蝶蛹","彩粉蝶","小獅獅","火炎獅","花蓓蓓","花葉蒂"
+,"花潔夫人","坐騎小羊","坐騎山羊","頑皮熊貓","流氓熊貓","多麗米亞","妙喵","超能妙喵","獨劍鞘","雙劍鞘"
+,"堅盾劍怪","粉香香","芳香精","綿綿泡芙","胖甜妮","好啦鱿","烏賊王","龜腳腳","龜足巨鎧","垃垃藻"
+,"毒藻龍","鐵臂槍蝦","鋼炮臂蝦","傘電蜥","光電傘蜥","寶寶暴龍","怪顎龍","冰雪龍","冰雪巨龍","仙子伊布"
+,"摔角鷹人","咚咚鼠","小碎鑽","黏黏寶","黏美兒","黏美龍","鑰圈兒","小木靈","朽木妖","南瓜精"
+,"南瓜怪人","冰寶","冰岩怪","嗡蝠","音波龍","哲爾尼亞斯","伊裴爾塔爾","基格爾德","蒂安希","胡帕","波爾凱尼恩"
 ];
 // 安全獲取名字的函式，防止 ID 超過 493 時報錯
 // ==========================================
@@ -1246,11 +1305,13 @@ const MEGA_ABLE = [
     443, 444, 445, // 圓陸鯊、尖牙陸鯊、烈咬陸鯊
     447, 448,    // 利歐路、路卡利歐
     459, 460,    // 雪笠怪、暴雪王
-    475          // 艾路雷朵
+    475,         // 艾路雷朵
+    646,         // 酋雷姆
+    656, 657, 658  // 呱呱泡蛙、呱頭蛙、忍者蛙
 ];
 // 分支進化字典
 const EVO_BRANCHES = {
-    60: [61, 186], 79: [80, 199], 133: [134, 135, 136, 196, 197, 470, 471],
+    60: [61, 186], 79: [80, 199], 133: [134, 135, 136, 196, 197, 470, 471, 700],
     236: [237, 106, 107], 280: [281, 475], 290: [291, 292], 361: [362, 478],
     125: [466], 126: [467], 114: [465], 113: [242], 137: [233]
 };
@@ -1304,14 +1365,18 @@ const DOCTOR_DATA = {
     'oak':   { name: '關都地區｜大木博士的啟程禮', ids: [1, 4, 7], sceneIconId: 151 }, 
     'elm':   { name: '城都地區｜空木博士的啟程禮', ids: [152, 155, 158], sceneIconId: 175 },
     'birch': { name: '豐緣地區｜小田卷博士的啟程禮', ids: [252, 255, 258], sceneIconId: 261 }, 
-    'rowan': { name: '神奧地區｜山梨博士的啟程禮', ids: [387, 390, 393], sceneIconId: 396 }
+    'rowan': { name: '神奧地區｜山梨博士的啟程禮', ids: [387, 390, 393], sceneIconId: 396 }, 
+    'juniper': { name: '合眾地區｜紅豆杉博士的啟程禮', ids: [495, 498, 501], sceneIconId: 494 }, 
+    'sycamore': { name: '卡洛斯地區｜布拉塔諾博士的啟程禮', ids: [650, 653, 656], sceneIconId: 716 }
 };
 
 const CHAMPION_DATA = {
     'red':    { name: '關都地區｜赤紅的傳奇祝福', ids: [131, 143, 149] }, // 拉普拉斯、卡比獸、快龍
     'lance':  { name: '城都地區｜阿渡的龍之覺醒', ids: [230, 248, 212] }, // 刺龍王、班基拉斯、巨鉗螳螂
     'steven': { name: '豐緣地區｜大吾的鋼鐵意志', ids: [376, 373, 306] }, // 巨金怪、暴飛龍、波士可多拉
-    'cynthia':{ name: '神奧地區｜竹蘭的遺跡之魂', ids: [445, 448, 350] }  // 烈咬陸鯊、路卡利歐、美納斯
+    'cynthia':{ name: '神奧地區｜竹蘭的遺跡之魂', ids: [445, 448, 350] }, // 烈咬陸鯊、路卡利歐、美納斯
+    'alder':  { name: '合眾地區｜阿戴克的自然守護', ids: [637, 612, 621] }, // 火神蛾、雙斧戰龍、赤面龍
+    'diantha':{ name: '卡洛斯地區｜卡露妮的華麗演繹', ids: [282, 706, 697] }  // 沙奈朵、黏美龍、怪顎龍
 };
 
 const GARDEN = {
@@ -1689,6 +1754,27 @@ function renderGarden() {
     const progressPercent = (f.feedCount / 5) * 100;
     const starterNames = curData.starters.map(n => n.includes(' ') ? n.split(' ')[1] : n);
     const starterIds = curData.starterIds || [1, 7, 4];
+
+if (typeof GARDEN !== 'undefined') {
+    GARDEN.getGif = function(id) {
+        if (!id) return '';
+        const numId = parseInt(id);
+
+        // --- 第 1 ~ 5 世代 (1-649): 採用像素動態圖 (Animated) ---
+        if (numId <= 649) {
+            return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${numId}.gif`;
+        }
+
+        // --- 第 6 世代 (650-721, 卡洛斯): 採用官方靜態圖 (Static) ---
+        if (numId <= 721) {
+            return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${numId}.png`;
+        }
+
+        // --- 超過 721 號 (或其他後備方案): 顯示標準靜態圖 ---
+        return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${numId}.png`;
+    };
+}
+
 
     // 4. 渲染主內容
     overlay.innerHTML = `
@@ -2677,14 +2763,16 @@ function lockClaimedGifts() {
     if (!s.claimedGifts) return;
     
     const days = getAccountAge();
-    const champions = ['red', 'lance', 'steven', 'cynthia'];
+    const champions = ['red', 'lance', 'steven', 'cynthia', 'alder', 'diantha'];
 
     // 1. 定義每個冠軍專屬的台詞
     const championMessages = {
         'red': '赤紅正在白銀山巔修練...',
         'lance': '龍之使者的試煉尚未開啟',
         'steven': '大吾正忙於挖掘罕見原石',
-        'cynthia': '竹蘭正在調查神奧的神話'
+        'cynthia': '竹蘭正在調查神奧的神話',
+        'alder': '阿戴克正於合眾原野與自然同行',
+    'diantha': '卡露妮正忙於新電影的全球首映'
     };
 
     // 處理已領取的獎勵
@@ -2889,48 +2977,59 @@ function updateUI() {
 
     // 4. 夥伴圖片渲染邏輯 (對接 GitHub 伺服器)
     const bEl = document.getElementById('buddyImg');
-    if (bEl) {
-        let bImg;
-        const statusFolder = s.isShinyBuddy ? 'shiny' : 'normal';
+if (bEl) {
+    let bImg;
+    const statusFolder = s.isShinyBuddy ? 'shiny' : 'normal';
 
-        // 🚩 修正 1：直接檢查存檔中的 buddyMega 變數是否有值
-        const isMegaActive = (s.buddyMega && s.buddyMega !== "");
+    // 🚩 修正 1：檢查存檔中的 buddyMega 變數是否有值
+    const isMegaActive = (s.buddyMega && s.buddyMega !== "");
 
+    if (isMegaActive) {
+        // --- 特殊/Mega 狀態：放大並增加特效 ---
+        bEl.style.width = "150px";
+        bEl.style.height = "150px";
+        bEl.classList.add('mega-fx');
+
+        // 🚩 修正 2：放寬後綴判定
+        // 只要不是單純的 'mega'，就將 s.buddyMega 作為檔名後綴 (如: x, y, black, white, ash)
+        let suffix = (s.buddyMega === 'mega') ? "" : s.buddyMega;
+
+        // 🚩 修正 3：組合自定義 GitHub 檔名 (例如: 646black.png)
+        const fileName = `${s.buddyId}${suffix}`;
+        bImg = `https://paulie0102-bear.github.io/Bear/img/mega/${statusFolder}/${fileName}.png`;
+
+    } else {
+        // --- 一般狀態 ---
+        bEl.style.width = "100px";
+        bEl.style.height = "100px";
+        bEl.classList.remove('mega-fx');
+
+        const shinyPath = s.isShinyBuddy ? 'shiny/' : '';
+        // 優先使用官方高清繪圖
+        bImg = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${shinyPath}${s.buddyId}.png`;
+    }
+
+    bEl.src = bImg;
+
+    // 🚩 修正 4：自動補丁備援邏輯
+    bEl.onerror = () => {
+        const apiPath = s.isShinyBuddy ? 'shiny/' : '';
+        let fallbackId = s.buddyId;
+
+        // 如果是特殊型態但 GitHub 沒圖，自動轉向 PokeAPI 的特殊 ID
         if (isMegaActive) {
-            // --- Mega 狀態 ---
-            bEl.style.width = "150px";
-            bEl.style.height = "150px";
-            bEl.classList.add('mega-fx');
-
-            // 🚩 修正 2：統一使用 s.buddyMega 作為後綴判定
-            let suffix = "";
-            if (s.buddyMega === 'x' || s.buddyMega === 'y') {
-                suffix = s.buddyMega;
+            if (s.buddyId === 646) {
+                fallbackId = (s.buddyMega === 'black') ? 10022 : 10023;
+            } else if (s.buddyId === 658 && s.buddyMega === 'ash') {
+                fallbackId = 10117;
             }
-
-            // 🚩 修正 3：組合檔名 (例如: 6x.png 或 3.png)
-            const fileName = `${s.buddyId}${suffix}`;
-            bImg = `https://paulie0102-bear.github.io/Bear/img/mega/${statusFolder}/${fileName}.png`;
-
-        } else {
-            // --- 一般狀態 ---
-            bEl.style.width = "100px";
-            bEl.style.height = "100px";
-            bEl.classList.remove('mega-fx');
-
-            const shinyPath = s.isShinyBuddy ? 'shiny/' : '';
-            bImg = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${shinyPath}${s.buddyId}.png`;
         }
 
-        bEl.src = bImg;
-
-        bEl.onerror = () => {
-            const apiPath = s.isShinyBuddy ? 'shiny/' : '';
-            bEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${apiPath}${s.buddyId}.png`;
-            console.warn(`[圖片加載警告]: 找不到資源 ${bImg}，已切換備援。`);
-            bEl.onerror = null;
-        };
-    }
+        bEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${apiPath}${fallbackId}.png`;
+        console.warn(`[圖片加載警告]: 資源 ${bImg} 讀取失敗，已嘗試切換備援 ID: ${fallbackId}`);
+        bEl.onerror = null;
+    };
+}
 
     // 5. 渲染背包
     if (typeof renderBag === 'function') renderBag();
@@ -3002,8 +3101,8 @@ function renderDailyWild() {
 }
 
 function spawnDailyWildIcon() {
-    // 隨機選一個 ID (1-493)
-    const randomId = Math.floor(Math.random() * 493) + 1;
+    // 隨機選一個 ID (1-721)
+    const randomId = Math.floor(Math.random() * 721) + 1;
     // 隨機決定閃光 (5% 機率)
     const isShiny = Math.random() < 0.05;
     // 隨機決定水平位置 (15% - 85% 避開邊緣)
@@ -3082,7 +3181,7 @@ function performEvolve() {
     const curId = s.buddyId;
     let targets = EVO_BRANCHES[curId] || [curId + 1];
 
-    if (targets[0] > 493) { alert("已達目前圖鑑上限"); return; }
+    if (targets[0] > 721) { alert("已達目前圖鑑上限"); return; }
 
     // --- 內部小工具：安全獲取名字 ---
     const getPName = (id) => POKEMON_NAMES[id] || `No.${id}`;
@@ -3140,22 +3239,35 @@ function tryMega() {
     if (Date.now() < s.megaUntil) { alert("已經在 Mega 狀態了！"); return; }
 
     const curId = s.buddyId;
-    const dual = [6, 150]; // 噴火龍與超夢
     
-    // 💡 獲取當前夥伴中文名字
+    // 💡 定義具備特殊型態或分歧進化的配置
+    const dualConfigs = {
+        6: ['x', 'y'],          // 噴火龍
+        150: ['x', 'y'],        // 超夢
+        646: ['black', 'white'], // 酋雷姆
+        658: ['ash']            // 甲賀忍蛙 (小智版)
+    };
+
     const curName = POKEMON_NAMES[curId] || `No.${curId}`;
 
-    if (dual.includes(curId)) {
-        // 1. 修改標題為：[夥伴名字] 的 Mega 進化型態
+    // 檢查目前夥伴是否在特殊配置名單中
+    if (dualConfigs[curId]) {
         const titleEl = document.getElementById('evoTitle');
         if (titleEl) {
-            titleEl.innerText = `✨ ${curName} 的 Mega 進化`;
+            // 針對不同角色切換標題文字
+            if (curId === 646) {
+                titleEl.innerText = `✨ ${curName} 的合體型態`;
+            } else if (curId === 658) {
+                titleEl.innerText = `✨ ${curName} 的羈絆進化`;
+            } else {
+                titleEl.innerText = `✨ ${curName} 的 Mega 進化`;
+            }
         }
         
         const container = document.getElementById('evoOptions');
         container.innerHTML = "";
 
-        ['x', 'y'].forEach(type => {
+        dualConfigs[curId].forEach(type => {
             const card = document.createElement('div');
             card.className = 'evo-card';
             
@@ -3163,8 +3275,15 @@ function tryMega() {
             const fileName = `${curId}${type}`;
             const bImg = `https://paulie0102-bear.github.io/Bear/img/mega/${statusFolder}/${fileName}.png`;
 
-            // 💡 顯示為 "Mega 噴火龍 X" 這種格式
-            const displayName = `Mega ${curName} ${type.toUpperCase()}`;
+            // 💡 根據 ID 與型態決定顯示名稱
+            let displayName = "";
+            if (curId === 646) {
+                displayName = type === 'black' ? "暗黑酋雷姆" : "焰白酋雷姆";
+            } else if (curId === 658) {
+                displayName = "小智版甲賀忍蛙";
+            } else {
+                displayName = `Mega ${curName} ${type.toUpperCase()}`;
+            }
 
             card.innerHTML = `
                 <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 10px;">
@@ -3175,13 +3294,19 @@ function tryMega() {
 
             const imgEl = card.querySelector('img');
             imgEl.onerror = () => {
-                imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${curId}.png`;
+                // 如果 GitHub 沒圖，小智忍蛙跳轉到 10117，其餘維持原 ID
+                let fallbackId = curId;
+                if (curId === 658) fallbackId = 10117;
+                else if (curId === 646) fallbackId = (type === 'black') ? 10022 : 10023;
+                
+                imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${s.isShinyBuddy ? 'shiny/' : ''}${fallbackId}.png`;
                 imgEl.onerror = null;
             };
 
             card.onclick = () => {
-                if (confirm(`確定進行 ${displayName} 嗎？`)) {
-                    executeMega(type);
+                const confirmMsg = curId === 658 ? `確定要發動羈絆進化成為 ${displayName} 嗎？` : `確定轉換為 ${displayName} 嗎？`;
+                if (confirm(confirmMsg)) {
+                    executeMega(type); // 會傳入 'x', 'y', 'black', 'white' 或 'ash'
                     document.getElementById('evoDialog').close();
                 }
             };
@@ -3189,7 +3314,7 @@ function tryMega() {
         });
         document.getElementById('evoDialog').showModal();
     } else {
-        // 單一路線 Mega
+        // 單一路線 Mega (例如路卡利歐)
         if (confirm(`消耗 1 顆 Mega 石讓 ${curName} 超進化？`)) {
             executeMega("");
         }
@@ -3303,7 +3428,7 @@ function record() {
 // --- [ 戰鬥核心：修正版 ] ---
 // --- [ 戰鬥核心：修正版 ] ---
 function spawnEnemy(targetId) { // 🔴 增加參數
-    const id = targetId || Math.floor(Math.random() * 493) + 1; 
+    const id = targetId || Math.floor(Math.random() * 721) + 1; 
     const isMega = (typeof s !== 'undefined') ? (Date.now() < s.megaUntil) : false;
     
     // --- 🟢 核心修改：判斷是否必閃 ---
@@ -3614,8 +3739,8 @@ let dexId = 1;        // 當前選中 ID
 let dexShiny = false; // 是否閃光
 let dexMega = "";     // Mega 型態: "", "x", "y"
 
-// 根據官方 493 前的資料預設的 Mega 名單 (可依你的需求增減)
-const MEGA_LIST = [3, 6, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142, 150, 181, 208, 212, 214, 229, 248, 254, 257, 260, 282, 302, 303, 306, 308, 310, 319, 323, 334, 354, 359, 362, 373, 376, 380, 381, 382, 383, 384, 428, 445, 448, 460, 475];
+// 根據官方的資料預設的 Mega 名單 (可依你的需求增減)
+const MEGA_LIST = [3, 6, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142, 150, 181, 208, 212, 214, 229, 248, 254, 257, 260, 282, 302, 303, 306, 308, 310, 319, 323, 334, 354, 359, 362, 373, 376, 380, 381, 382, 383, 384, 428, 445, 448, 460, 475, 646, 658];
 
 // --- 🎨 核心渲染函式 ---
 function renderDex() {
@@ -3624,7 +3749,7 @@ function renderDex() {
     if (!nav) return;
 
     let listHtml = "";
-    for (let i = 1; i <= 493; i++) {
+    for (let i = 1; i <= 721; i++) {
         const caught = s.owned.includes(i);
         const nameText = caught ? (POKEMON_NAMES[i] || "???") : "???";
         const activeClass = (i === dexId) ? "active" : "";
@@ -3658,67 +3783,123 @@ function updateDexDetail() {
     const detailName = caught ? (POKEMON_NAMES[dexId] || "???") : "???";
     const shinyOwned = s.shinyOwned.includes(dexId);
 
-    // 1. 更新標題 (若 Mega 則顯示名字前綴)
-    let prefix = dexMega ? `Mega ${dexMega.toUpperCase()} ` : "";
+    // --- 1. 更新標題 (優化名稱顯示，支援忍蛙與酋雷姆) ---
+    let prefix = "";
+    if (dexMega !== "") {
+        if (dexId === 646) {
+            prefix = dexMega === 'black' ? "暗黑" : "焰白";
+        } else if (dexId === 658 && dexMega === 'ash') {
+            prefix = "小智版";
+        } else {
+            // 其餘顯示為 "Mega X " 或 "Mega "
+            prefix = (dexMega === 'x' || dexMega === 'y') ? `Mega ${dexMega.toUpperCase()} ` : "Mega ";
+        }
+    }
     document.getElementById('dexTitle').innerText = `No.${String(dexId).padStart(3, '0')} ${prefix}${detailName}`;
 
-    // 2. 圖片路徑邏輯 (修正後版本)
+    // --- 2. 圖片路徑邏輯 (含自動補丁) ---
     const imgEl = document.getElementById('dexImg');
     if (!caught) {
-        // 未捕捉顯示 0 號圖 (或替換為問號圖)
         imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png`;
     } else if (dexMega !== "") {
-        // --- 🧬 抓取你的 GitHub Mega 庫 ---
         const folder = dexShiny ? 'shiny' : 'normal';
-        
-        // 🚩 修正點：如果是 'mega' 則後綴為空字串，如果是 'x'/'y' 則保留後綴
-        let suffix = (dexMega === 'x' || dexMega === 'y') ? dexMega : "";
-        
-        // 🚩 修正點：這裡原本是 ${dexMega}，現在改為 ${suffix}
+        let suffix = (dexMega === 'mega') ? "" : dexMega;
         const url = `https://paulie0102-bear.github.io/Bear/img/mega/${folder}/${dexId}${suffix}.png`;
         
-        console.log("正在嘗試讀取 Mega 圖片網址:", url); // 方便你按 F12 檢查網址是否正確
         imgEl.src = url;
 
-        // 防破圖：如果 GitHub 沒這張圖，自動跳回 PokeAPI 普通版
+        // 🚩 修正點：如果 GitHub 沒圖，自動轉換為 PokeAPI 的特殊 ID
         imgEl.onerror = () => { 
-            console.error("Mega 圖片讀取失敗，跳回普通版。網址為:", url);
-            imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${dexShiny ? 'shiny/' : ''}${dexId}.png`; 
+            let fallbackId = dexId;
+            if (dexId === 646) fallbackId = (dexMega === 'black') ? 10022 : 10023;
+            if (dexId === 658) fallbackId = 10117; // 小智忍蛙 ID
+
+            imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${dexShiny ? 'shiny/' : ''}${fallbackId}.png`; 
             imgEl.onerror = null; 
         };
     } else {
-        // --- 🏠 抓標準 PokeAPI 普通/閃光圖 ---
         imgEl.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${dexShiny ? 'shiny/' : ''}${dexId}.png`;
         imgEl.onerror = null;
     }
 
-    // 3. 按鈕權限控制
+    // --- 3. 按鈕權限控制 ---
     const shinyBtn = document.getElementById('shinyBtn');
-    shinyBtn.disabled = !shinyOwned;
-    shinyBtn.style.opacity = shinyOwned ? "1" : "0.3";
+    if(shinyBtn) {
+        shinyBtn.disabled = !shinyOwned;
+        shinyBtn.style.opacity = shinyOwned ? "1" : "0.3";
+    }
 
-    // 4. Mega 按鈕顯示判定
-    const hasMega = MEGA_LIST.includes(dexId) && caught;
-    const isDual = [6, 150].includes(dexId); // 噴火龍, 超夢
+    // --- 4. 型態按鈕顯示判定 ---
+    const hasMega = (MEGA_LIST.includes(dexId) || dexId === 646 || dexId === 658) && caught;
+    const isDualXY = [6, 150].includes(dexId); // 噴火龍, 超夢
+    const isDualBW = (dexId === 646);          // 酋雷姆
+    const isAsh = (dexId === 658);             // 甲賀忍蛙
     
     document.getElementById('megaGroup').style.display = hasMega ? "grid" : "none";
-    document.getElementById('mBtnSingle').style.display = (hasMega && !isDual) ? "block" : "none";
-    document.getElementById('mBtnX').style.display = isDual ? "block" : "none";
-    document.getElementById('mBtnY').style.display = isDual ? "block" : "none";
+    
+    // 單一路線按鈕 (如路卡利歐)
+    const btnSingle = document.getElementById('mBtnSingle');
+    if (btnSingle) {
+        btnSingle.style.display = (hasMega && !isDualXY && !isDualBW && !isAsh) ? "block" : "none";
+    }
+
+    // X/Y 按鈕 (噴火龍、超夢)
+    const btnX = document.getElementById('mBtnX');
+    const btnY = document.getElementById('mBtnY');
+    if (btnX && btnY) {
+        btnX.style.display = isDualXY ? "block" : "none";
+        btnY.style.display = isDualXY ? "block" : "none";
+    }
+
+    // Black/White 按鈕 (酋雷姆)
+    const btnBlack = document.getElementById('mBtnBlack');
+    const btnWhite = document.getElementById('mBtnWhite');
+    if (btnBlack && btnWhite) {
+        btnBlack.style.display = isDualBW ? "block" : "none";
+        btnWhite.style.display = isDualBW ? "block" : "none";
+    }
+
+    // 小智版按鈕 (甲賀忍蛙)
+    const btnAsh = document.getElementById('mBtnAsh');
+    if (btnAsh) {
+        btnAsh.style.display = isAsh ? "block" : "none";
+    }
+
     document.getElementById('megaTag').style.display = hasMega ? "block" : "none";
 }
 
-// --- 🧬 切換 Mega 型態 ---
+// --- 🔄 切換 Mega / 特殊型態 ---
 function toggleMega(type) {
-    // 這裡可以加上檢查 s.items.mstone 是否足夠的邏輯
-    dexMega = (dexMega === type) ? "" : type; // 再次點擊則取消
+    // 💡 邏輯 A：檢查是否為「非 Mega」的特殊型態 (忍蛙與酋雷姆不需要消耗 Mega 石)
+    const isSpecialForm = (dexId === 658 || dexId === 646);
+    
+    // 💡 邏輯 B：如果是普通 Mega 寶可夢且要開啟型態 (不是取消)
+    if (!isSpecialForm && dexMega !== type && type !== "") {
+        if (s.items.mstone <= 0) {
+            alert("圖鑑預覽不消耗道具，但你的背包中目前沒有 Mega 石喔！");
+            // 這裡視你的需求，可以只給提示但不 return，或是強制檢查
+        }
+    }
+
+    // 💡 邏輯 C：切換狀態 (再次點擊同一型態則重置為空)
+    dexMega = (dexMega === type) ? "" : type; 
+    
+    // 更新介面
     updateDexDetail();
 }
 
 // --- ✨ 切換閃光 ---
 function setDexShiny(v) {
-    if (v && !s.shinyOwned.includes(dexId)) return;
+    // 檢查是否擁有該寶可夢的閃光版本
+    if (v && !s.shinyOwned.includes(dexId)) {
+        alert("你尚未收服此寶可夢的閃光版本！");
+        return;
+    }
+    
     dexShiny = v;
+    
+    // 🚩 額外優化：切換閃光時，如果正在看 Mega 形態，
+    // 確保 updateDexDetail 會去抓最新 (shiny/normal) 資料夾下的圖片
     updateDexDetail();
 }
 
@@ -4228,19 +4409,24 @@ function updateGiftButtons() {
     const championKeys = Object.keys(CHAMPION_DATA);
     const doctorKeys = Object.keys(DOCTOR_DATA);
 
-    const aceMap = { 'red': 6, 'lance': 149, 'steven': 376, 'cynthia': 445 };
+    const aceMap = { 'red': 6, 'lance': 149, 'steven': 376, 'cynthia': 445, 'alder': 637, 'diantha': 282 };
     const championNames = {
         'red': '關都地區｜赤紅的傳記祝福',
         'lance': '城都地區｜阿渡的龍之覺醒',
         'steven': '豐緣地區｜大吾的鋼鐵意志',
-        'cynthia': '神奧地區｜竹蘭的遺跡之魂'
+        'cynthia': '神奧地區｜竹蘭的遺跡之魂',
+        'alder': '合眾地區｜阿戴克的自然守護',
+        'diantha': '卡洛斯地區｜卡露妮的華麗演繹'
     };
 
     const lockMessages = {
     'red': '赤紅正在白銀山巔修練...',
     'lance': '龍之使者的試煉尚未開啟',
     'steven': '大吾正忙於挖掘罕見原石',
-    'cynthia': '竹蘭正在調查神奧的神話'
+    'cynthia': '竹蘭正在調查神奧的神話',
+    'alder': '阿戴克正於合眾原野與自然同行',
+    'diantha': '卡露妮正忙於新電影的全球首映'
+
 };
 
     [...doctorKeys, ...championKeys].forEach(key => {
@@ -4351,20 +4537,26 @@ const PKM_TAG_MAP = {
         37, 38,        // 六尾家族
         58, 59,        // 卡蒂狗家族
         77, 78,        // 小火馬家族
-        126, 467,      // 鴨嘴火獸家族
         136,           // 火精靈
         155, 156, 157, // 火球鼠家族
         196,           // 太陽精靈 (企劃歸類)
         255, 256, 257, // 火稚雞家族
         322, 323,      // 呆火駝家族
-        390, 391, 392  // 小火猴家族
+        390, 391, 392, // 小火猴家族
+        498, 499, 500, 
+        570, 
+        607, 
+        636, 637, 
+        653, 654, 655, 
+        661, 662, 663 
+
+
     ],
 
     // 🔵 藍標 (水系) - 產出：魚類/蝦類
     '藍': [
         7, 8, 9,       // 傑尼龜家族
         54, 55,        // 可達鴨家族
-        60, 61, 62,    // 蚊香蝌蚪家族
         134,           // 水精靈
         158, 159, 160, // 小鋸鱷家族
         183, 184,      // 瑪力露家族
@@ -4372,8 +4564,16 @@ const PKM_TAG_MAP = {
         341, 342,      // 龍蝦小兵家族
         393, 394, 395, // 波加曼家族
         418, 419,      // 泳氣鼬家族
-        456, 457,      // 霓虹魚家族
-        471             // 冰精靈
+        471,           // 冰精靈
+        501, 502, 503, 
+        564,
+        580, 
+        582, 
+        615, 
+        656, 657, 658, 
+        692, 693,
+        698
+
     ],
 
     // 🟢 綠標 (草系) - 產出：稻米/蔬菜
@@ -4382,29 +4582,42 @@ const PKM_TAG_MAP = {
         135,           // 雷精靈 (企劃歸類)
         152, 153, 154, // 菊草葉家族
         197,           // 月亮精靈 (企劃歸類)
+        214,           // 赫拉克羅斯
         252, 253, 254, // 木守宮家族
         280, 281, 282, // 拉魯拉斯家族 (沙奈朵)
         387, 388, 389, // 草苗龜家族
         407,           // 羅絲雷朵
         470,           // 葉精靈
-        475            // 艾路雷朵
+        475,           // 艾路雷朵
+        495, 496, 497, // 藤藤蛇
+        546, 547,
+        577,
+        585, 
+        650, 651, 652, 
+        672, 673,
+        674,  
+        714
     ],
 
     // ⚫ 黑標 (幫手系) - 功能：減少 1 小時回歸時間
     '黑': [
-        25, 172,       // 皮卡丘家族
+        25,        // 皮卡丘家族
         133,           // 伊布 (原始態)
-        81, 82, 462,   // 小磁怪家族
         94,            // 耿鬼
         147, 148, 149, // 迷你龍家族
-        214,           // 赫拉克羅斯
         246, 247, 248, // 由基拉家族
         304, 305, 306, // 波士可多拉家族
         371, 372, 373, // 寶貝龍家族
         374, 375, 376, // 鐵啞鈴家族
         417,           // 帕奇利茲
         443, 444, 445, // 圓陸鯊家族
-        447, 448       // 利歐路家族
+        447, 448,      // 利歐路家族
+        610, 611, 612, 
+        633, 634, 635, 
+        678,
+        702,
+        704, 705, 706 
+
     ],
 
     // ⚪ 白標 (神獸系) - 功能：提供全局產量加成 (1.5x ~ 2.0x)
@@ -4412,74 +4625,179 @@ const PKM_TAG_MAP = {
         144, 145, 146, 150, 151,             // 關都五神 (含超夢)
         243, 244, 245, 249, 250, 251,       // 城都六神 (含洛奇亞、鳳王)
         377, 378, 379, 380, 381, 382, 383, 384, 385, 386, // 芳緣十神
-        480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493 // 神奧眾神
+        480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, // 神奧眾神
+        494, 638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649, 
+        716, 717, 718, 719, 720, 721
     ]
 };
 
 // --- 1️⃣ 編號對應中文名稱 ---
 const POKE_NAME_MAP = {
     // 🔴 紅標 (火系)
-    4:'小火龍',5:'火恐龍',6:'噴火龍',
-    37:'六尾',38:'九尾',
-    58:'卡蒂狗',59:'風速狗',
-    77:'小火馬',78:'烈焰馬',
-    126:'鴨嘴火獸',
-    136:'火精靈',
-    155:'火球鼠',156:'火岩鼠',157:'火暴獸',
-    196:'太陽精靈',
-    255:'火稚雞',256:'力壯雞',257:'火焰雞',
-    322:'呆火駝',323:'噴火駝',
-    390:'小火猴',391:'猛火猴',392:'烈焰猴',
-    467:'鴨嘴炎獸',
+    // 關都 (Gen 1)
+    4: '小火龍', 5: '火恐龍', 6: '噴火龍',
+    37: '六尾', 38: '九尾',
+    58: '卡蒂狗', 59: '風速狗',
+    77: '小火馬', 78: '烈焰馬',
+    136: '火伊布',
+
+    // 城都 (Gen 2)
+    155: '火球鼠', 156: '火岩鼠', 157: '火暴獸',
+    196: '太陽伊布',
+
+    // 豐緣 (Gen 3)
+    255: '木守宮', 256: '力壯雞', 257: '火焰雞',
+    322: '呆火駝', 323: '噴火駝',
+
+    // 神奧 (Gen 4)
+    390: '小火猴', 391: '猛火猴', 392: '烈焰猴',
+
+    // 合眾 (Gen 5)
+    498: '暖暖豬', 499: '炒炒豬', 500: '炎武王',
+    570: '索羅亞',
+    607: '燭光靈',
+    636: '燃燒蟲', 637: '火神蛾',
+
+    // 卡洛斯 (Gen 6)
+    653: '火狐狸', 654: '長尾火狐', 655: '妖火紅狐',
+    661: '小箭雀', 662: '火箭雀', 663: '烈箭鷹',
 
     // 🔵 藍標 (水系)
-    7:'傑尼龜',8:'卡咪龜',9:'水箭龜',
-    54:'可達鴨',55:'哥達鴨',
-    60:'蚊香蝌蚪',61:'蚊香君',62:'快泳蛙',
-    134:'水精靈',
-    158:'小鋸鱷',159:'藍鱷',160:'大力鱷',
-    183:'瑪力露',184:'瑪力露麗',
-    258:'水躍魚',259:'沼躍魚',260:'巨沼怪',
-    341:'龍蝦小兵',342:'鐵螯龍蝦',
-    393:'波加曼',394:'波皇子',395:'帝王拿波',
-    418:'泳氣鼬',419:'浮潛鼬',
-    456:'螢光魚',457:'霓虹魚',
-    471:'冰精靈',
+    // 關都 (Gen 1)
+    7: '傑尼龜', 8: '卡咪龜', 9: '水箭龜',
+    54: '可達鴨', 55: '哥達鴨',
+    134: '水伊布',
+
+    // 城都 (Gen 2)
+    158: '小鋸鱷', 159: '藍鱷', 160: '大力鱷',
+    183: '瑪力露', 184: '瑪力露麗',
+
+    // 豐緣 (Gen 3)
+    258: '水躍魚', 259: '沼躍魚', 260: '巨沼怪',
+    341: '龍蝦小兵', 342: '鐵螯龍蝦',
+
+    // 神奧 (Gen 4)
+    393: '波加曼', 394: '波皇子', 395: '帝王拿波',
+    418: '泳圈鼬', 419: '浮潛鼬',
+    471: '冰伊布', // 雖然是冰系，但在水系過濾中常被提及
+
+    // 合眾 (Gen 5)
+    501: '水水獺', 502: '雙刃丸', 503: '大劍鬼',
+    564: '原蓋海龜',
+    580: '鴨寶寶',
+    582: '多多冰', // 冰系代表
+    615: '幾何雪花', // 冰系代表
+
+    // 卡洛斯 (Gen 6)
+    656: '呱呱泡蛙', 657: '呱頭蛙', 658: '甲賀忍蛙',
+    692: '鐵臂槍蝦', 693: '鋼炮臂蝦',
+    698: '冰雪龍',
 
     // 🟢 綠標 (草系)
-    1:'妙蛙種子',2:'妙蛙草',3:'妙蛙花',
-    135:'雷精靈',
-    152:'菊草葉',153:'月桂葉',154:'大竺葵',
-    197:'月亮精靈',
-    252:'木守宮',253:'森林蜥蜴',254:'蜥蜴王',
-    280:'拉魯拉斯',281:'奇魯莉安',282:'沙奈朵',
-    387:'草苗龜',388:'樹林龜',389:'土台龜',
-    407:'羅絲雷朵',
-    470:'葉精靈',
-    475:'艾路雷朵',
+    // 關都 (Gen 1)
+    1: '妙蛙種子', 2: '妙蛙草', 3: '妙蛙花',
+    135: '雷伊布', // 電系，但常與御三家伊布組合成對
+
+    // 城都 (Gen 2)
+    152: '菊草葉', 153: '月桂葉', 154: '大竺葵',
+    197: '月亮伊布', // 惡系代表
+    214: '赫拉克羅斯', // 蟲/格鬥強手
+
+    // 豐緣 (Gen 3)
+    252: '木守宮', 253: '森林蜥蜴', 254: '蜥蜴王',
+    280: '拉魯拉絲', 281: '奇魯莉安', 282: '沙奈朵', // 卡露妮的王牌
+
+    // 神奧 (Gen 4)
+    387: '草苗龜', 388: '樹林龜', 389: '土台龜',
+    407: '羅絲雷朵',
+    470: '葉伊布', // 草系伊布
+    475: '艾路雷朵', // 超能力/格鬥
+
+    // 合眾 (Gen 5)
+    495: '藤藤蛇', 496: '青藤蛇', 497: '君主蛇',
+    546: '木棉球', 547: '風妖精',
+    577: '單卵細胞球', // 超能力系
+    585: '四季鹿', // 隨季節變換外型
+
+    // 卡洛斯 (Gen 6)
+    650: '哈力栗', 651: '胖胖哈力', 652: '布里卡隆',
+    672: '坐騎小羊', 673: '坐騎山羊',
+    674: '頑皮熊貓',
+    714: '嗡嗡蝠',
 
     // ⚫ 黑標 (幫手)
-    25:'皮卡丘',172:'皮丘',133:'伊布',
-    81:'小磁怪',82:'三合一磁怪',462:'自爆磁怪',
-    94:'耿鬼',
-    147:'迷你龍',148:'哈克龍',149:'快龍',
-    214:'赫拉克羅斯',
-    246:'幼基拉斯',247:'沙基拉斯',248:'班基拉斯',
-    304:'可可多拉',305:'可多拉',306:'波士可多拉',
-    371:'寶貝龍',372:'甲殼龍',373:'暴飛龍',
-    374:'鐵啞鈴',375:'金屬怪',376:'巨金怪',
-    417:'帕奇利茲',
-    443:'圓陸鯊',444:'尖牙陸鯊',445:'烈咬陸鯊',
-    447:'利歐路',448:'路卡利歐',
+    25: '皮卡丘', 
+    133: '伊布',
+    94: '耿鬼', // 幽靈系人氣王
+
+    // 關都準神：快龍線
+    147: '迷你龍', 148: '哈克龍', 149: '快龍',
+
+    // 城都準神：班基拉斯線 (阿渡/小茂常客)
+    246: '幼基拉斯', 247: '沙基拉斯', 248: '班基拉斯',
+
+    // 豐緣鋼鐵：波士可多拉線 (大吾愛將)
+    304: '可可多拉', 305: '可多拉', 306: '波士可多拉',
+
+    // 豐緣準神：暴飛龍線
+    371: '寶貝龍', 372: '甲殼龍', 373: '暴飛龍',
+
+    // 豐緣準神：巨金怪線 (大吾王牌)
+    374: '鐵啞鈴', 375: '金屬怪', 376: '巨金怪',
+
+    // 神奧人氣：電松鼠與路卡利歐
+    417: '帕奇利茲', // 紅豆杉博士或電系代表
+    447: '利歐路', 448: '路卡利歐', // 波導勇者，竹蘭與布拉塔諾的好搭檔
+
+    // 神奧準神：烈咬陸鯊線 (竹蘭王牌)
+    443: '圓陸鯊', 444: '尖牙陸鯊', 445: '烈咬陸鯊',
+
+    // 合眾強者：雙斧戰龍線 (艾莉絲王牌)
+    610: '牙牙', 611: '斧牙龍', 612: '雙斧戰龍',
+
+    // 合眾準神：三首惡龍線
+    633: '單首龍', 634: '雙首暴龍', 635: '三首惡龍',
+
+    // 卡洛斯特色
+    678: '超能妙喵', // 超能力系可愛代表
+    702: '咚咚鼠', // 卡洛斯電鼠代表
+    
+    // 卡洛斯準神：黏美龍線 (卡露妮主力)
+    704: '黏黏寶', 705: '黏美兒', 706: '黏美龍',
 
     // ⚪ 白標 (神獸)
-    144:'急凍鳥',145:'閃電鳥',146:'火焰鳥',150:'超夢',151:'夢幻',
-    243:'雷公',244:'炎帝',245:'水君',249:'洛奇亞',250:'鳳王',251:'時拉比',
-    377:'雷吉洛克',378:'雷吉艾斯',379:'雷吉斯奇魯',380:'拉帝亞斯',381:'拉帝歐斯',
-    382:'蓋歐卡',383:'固拉多',384:'烈空坐',385:'基拉祈',386:'代歐奇希斯',
-    480:'由克希',481:'艾姆利多',482:'亞克諾姆',483:'帝牙盧卡',484:'帕路奇亞',
-    486:'雷吉奇卡斯',487:'騎拉帝納',488:'克雷色利亞',489:'菲歐納',490:'瑪納霏',
-    491:'達克萊伊',492:'謝米',493:'阿爾宙斯'
+    // 關都 (Gen 1)：三神鳥與超夢
+    144: '急凍鳥', 145: '閃電鳥', 146: '火焰鳥',
+    150: '超夢', 151: '夢幻',
+
+    // 城都 (Gen 2)：三聖獸與洛奇亞、鳳王、時拉比
+    243: '雷公', 244: '炎帝', 245: '水君',
+    249: '洛奇亞', 250: '鳳王', 251: '時拉比',
+
+    // 豐緣 (Gen 3)：三神柱、拉帝兄妹、超古代神、基拉祈、代歐奇希斯
+    377: '雷吉洛克', 378: '雷吉艾斯', 379: '雷吉斯奇魯',
+    380: '拉帝亞斯', 381: '拉帝歐斯',
+    382: '蓋歐卡', 383: '固拉多', 384: '烈空坐',
+    385: '基拉祈', 386: '代歐奇希斯',
+
+    // 神奧 (Gen 4)：湖之眾神、時空神、騎拉帝納、阿爾宙斯等
+    480: '由克希', 481: '艾姆利多', 482: '亞克諾姆',
+    483: '帝牙盧卡', 484: '帕路奇亞',
+    485: '席多藍恩', 486: '雷吉奇卡斯',
+    487: '騎拉帝納', 488: '克雷色利亞',
+    489: '霏歐納', 490: '瑪納霏', 491: '達克萊伊',
+    492: '謝米', 493: '阿爾宙斯',
+
+    // 合眾 (Gen 5)：維庫蒂尼、三聖劍、雲神、道之三龍、凱路迪歐等
+    494: '比克提尼',
+    638: '勾帕路翁', 639: '代拉基翁', 640: '畢力吉翁',
+    641: '龍捲雲', 642: '雷電雲',
+    643: '萊希拉姆', 644: '捷克羅姆', 645: '土地雲',
+    646: '酋雷姆', 647: '凱路迪歐', 648: '美洛耶塔', 649: '蓋諾賽克特',
+
+    // 卡洛斯 (Gen 6)：生命/破壞/秩序神、幻之寶可夢
+    716: '哲爾尼亞斯', 717: '伊裴爾塔爾', 718: '基格爾德',
+    719: '蒂安希', 720: '胡帕', 721: '波爾凱尼恩'
 };
 
 // --- 2️⃣ 建立圖鑑資料 ---
@@ -4549,7 +4867,29 @@ const LEGENDARY_POOL = [
     { id: 490, name: '瑪納霏', area: '神奧地區', food: '時蔬魚排歐姆蛋', power: 1.5 },
     { id: 491, name: '達克萊伊', area: '神奧地區', food: '海陸健身沙拉', power: 1.5 },
     { id: 492, name: '謝米', area: '神奧地區', food: '嫩蝦蔬菜蒸蛋', power: 1.5 },
-    { id: 493, name: '阿爾宙斯', area: '神奧地區', food: '黃金蝦仁炒飯', power: 2.0 }
+    { id: 493, name: '阿爾宙斯', area: '神奧地區', food: '黃金蝦仁炒飯', power: 2.0 },
+    //合眾
+    { id: 494, name: '比克提尼', area: '合眾地區', food: '黃金蝦仁炒飯', power: 1.5 }, // 勝利之星
+    { id: 638, name: '勾帕路翁', area: '合眾地區', food: '嫩蝦蔬菜蒸蛋', power: 1.5 }, // 三聖劍
+    { id: 639, name: '代拉基翁', area: '合眾地區', food: '鮮蝦燒肉飯', power: 1.5 },   // 三聖劍
+    { id: 640, name: '畢力吉翁', area: '合眾地區', food: '海陸健身沙拉', power: 1.5 }, // 三聖劍
+    { id: 641, name: '龍捲雲', area: '合眾地區', food: '鮮蝦時蔬快炒', power: 1.5 },   // 三雲神
+    { id: 642, name: '雷電雲', area: '合眾地區', food: '鮮蝦時蔬快炒', power: 1.5 },   // 三雲神
+    { id: 643, name: '萊希拉姆', area: '合眾地區', food: '陸海空豪華便當', power: 2.0 }, // 一級神 (真實)
+    { id: 644, name: '捷克羅姆', area: '合眾地區', food: '鮮蝦燒肉飯', power: 2.0 },   // 一級神 (理想)
+    { id: 645, name: '土地雲', area: '合眾地區', food: '時蔬魚排歐姆蛋', power: 1.5 }, // 三雲神
+    { id: 646, name: '酋雷姆', area: '合眾地區', food: '滑蛋鮮魚粥', power: 2.0 },     // 一級神 (最強之龍)
+    { id: 647, name: '凱路迪歐', area: '合眾地區', food: '滑蛋鮮魚粥', power: 1.5 },   // 幻之寶可夢
+    { id: 648, name: '美洛耶塔', area: '合眾地區', food: '嫩蝦蔬菜蒸蛋', power: 1.5 }, // 幻之寶可夢
+    { id: 649, name: '蓋諾賽克特', area: '合眾地區', food: '黃金蝦仁炒飯', power: 1.5 }, // 幻之寶可夢
+    //卡洛斯
+    { id: 716, name: '哲爾尼亞斯', area: '卡洛斯地區', food: '海陸健身沙拉', power: 2.0 }, // 一級神 (生命)
+    { id: 717, name: '伊裴爾塔爾', area: '卡洛斯地區', food: '鮮蝦燒肉飯', power: 2.0 },   // 一級神 (破壞)
+    { id: 718, name: '基格爾德', area: '卡洛斯地區', food: '時蔬魚排歐姆蛋', power: 2.0 }, // 一級神 (秩序)
+    { id: 719, name: '蒂安希', area: '卡洛斯地區', food: '嫩蝦蔬菜蒸蛋', power: 1.5 },     // 幻之寶可夢
+    { id: 720, name: '胡帕', area: '卡洛斯地區', food: '黃金蝦仁炒飯', power: 1.5 },       // 幻之寶可夢
+    { id: 721, name: '波爾凱尼恩', area: '卡洛斯地區', food: '滑蛋鮮魚粥', power: 1.5 }     // 幻之寶可夢
+    
 ];
 
 function getPokemonColor(id) {
@@ -4578,7 +4918,7 @@ LEGENDARY_POOL.forEach(l=>{
 /* --- 2. 核心 UI 渲染函數 --- */
 function renderExpeditionUI() {
     const ex = s.farm.expedition;
-    const regions = ['關都地區', '城都地區', '芳緣地區', '神奧地區'];
+    const regions = ['關都地區', '城都地區', '芳緣地區', '神奧地區', '合眾地區', '卡洛斯地區'];
     const dishes = s.farm.dishes || {};
 
     // 1. 處理容器
@@ -4894,6 +5234,7 @@ function finishAndReloadExpedition() {
     // 重新打開探險 UI（此時會顯示為空隊伍，因為已經重置了）
     renderExpeditionUI(); 
 }
+
 
 /* --- 1. 打開派遣頁面 --- */
 function selectTeamMember(slotIndex) {
