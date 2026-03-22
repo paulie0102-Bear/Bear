@@ -2414,15 +2414,23 @@ f.quest = filtered.length > 0
 function wishStar() {
     const f = s.farm;
     const today = new Date().toLocaleDateString();
-    
+    // 🔒 防呆：先檢查 recipes
+    const keys = Object.keys(GARDEN.recipes || {});
+    if (keys.length === 0) {
+        return alert("目前沒有可用料理資料！");
+    }
+
+    const targetFormula = f.quest_jirachi || keys[0];
+    const recipe = GARDEN.recipes[targetFormula];
+
+    if (!recipe) {
+        return alert("料理資料錯誤！");
+    }
     // 每日限一次檢查
     if (f.lastWishDate === today) return alert("🌟 基拉祈正在沉睡... 明天再試吧！");
 
     // 取得基拉祈想吃的料理 (設定為獨立於夥伴的 quest_jirachi)
-    const targetFormula = f.quest_jirachi || Object.keys(GARDEN.recipes)[0];
-    const recipe = GARDEN.recipes[targetFormula];
-
-    if (f.dishes[recipe.icon] > 0) {
+        if (f.dishes[recipe.icon] > 0) {
         if (!confirm(`是否消耗 ${recipe.icon} 向管家基拉祈許願發動【願望星碎】？\n(將瞬間完成全地區素材採集)`)) return;
 
         f.dishes[recipe.icon]--;
