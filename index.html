@@ -767,6 +767,12 @@
         <p>圖鑑進度：<span id="st-dex-count">0</span> / 721</p>
         
            <div style="font-size:14px; line-height:1.8;">
+            <div style="margin-bottom: 8px; background: #eee; border-radius: 10px; height: 14px; position: relative; overflow: hidden; border: 1px solid #ccc;">
+        <div id="storage-bar" style="width: 0%; height: 100%; background: #4caf50; transition: width 0.5s ease;"></div>
+        <span style="position: absolute; width: 100%; text-align: center; font-size: 10px; line-height: 12px; top: 0; left: 0; color: #333; font-weight: bold;">
+            儲存空間: <span id="storage-percent">0%</span>
+        </span>
+    </div>
             <div>🎯 綜合捕捉率：<b id="st-catch-rate">30%</b></div>
             <div>✨ 綜合閃光率：<b id="st-shiny-rate">5%</b></div>
             <div id="mega-timer" style="color:var(--mega); display:none;">🧬 Mega 強化中：<span id="mega-time-left">00:00</span></div>
@@ -2415,6 +2421,7 @@ f.quest = filtered.length > 0
 function wishStar() {
     const f = s.farm;
     const today = new Date().toLocaleDateString();
+
     GARDEN.recipes = GARDEN.recipes || {};
     // 🔒 防呆：先檢查 recipes
     const keys = Object.keys(GARDEN.recipes || {});
@@ -2428,11 +2435,13 @@ function wishStar() {
     if (!recipe) {
         return alert("料理資料錯誤！");
     }
+
     // 每日限一次檢查
     if (f.lastWishDate === today) return alert("🌟 基拉祈正在沉睡... 明天再試吧！");
 
     // 取得基拉祈想吃的料理 (設定為獨立於夥伴的 quest_jirachi)
-        if (f.dishes[recipe.icon] > 0) {
+    
+    if (f.dishes[recipe.icon] > 0) {
         if (!confirm(`是否消耗 ${recipe.icon} 向管家基拉祈許願發動【願望星碎】？\n(將瞬間完成全地區素材採集)`)) return;
 
         f.dishes[recipe.icon]--;
@@ -4422,13 +4431,51 @@ function getAccountAge() {
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
 }
 
+function updateStorageUI() {
+    try {
+        const dataStr = JSON.stringify(s);
+        const usedBytes = dataStr.length * 2; 
+        const limitBytes = 5 * 1024 * 1024; // 5MB
+        let percent = (usedBytes / limitBytes * 100).toFixed(1);
+        
+        // 防止超過 100% 導致 UI 破裂
+        if (percent > 100) percent = 100;
+
+        const bar = document.getElementById('storage-bar');
+        const text = document.getElementById('storage-percent');
+
+        if (bar && text) {
+            bar.style.width = percent + '%';
+            text.innerText = percent + '%';
+
+            // 根據比例切換顏色
+            if (percent > 90) {
+                bar.style.background = '#f44336'; // 危急紅色
+            } else if (percent > 70) {
+                bar.style.background = '#ff9800'; // 警告橘色
+            } else {
+                bar.style.background = '#4caf50'; // 安全綠色
+            }
+        }
+    } catch (e) {
+        console.error("無法更新空間進度條", e);
+    }
+}
+
+// 修改你原本的 saveGameData，讓它存檔後自動更新進度條
 function saveGameData() {
     if (typeof saveData === 'function') {
         saveData();
     } else {
         localStorage.setItem('pokemaster_v60', JSON.stringify(s));
     }
+    
+    // ✨ 存檔後立即更新進度條
+    updateStorageUI();
 }
+
+// 介面初始化時也執行一次
+updateStorageUI();
 
 // ==========================================
 // 3. UI 渲染：更新商店按鈕狀態
