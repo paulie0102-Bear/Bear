@@ -3021,7 +3021,12 @@ if (bEl) {
     const statusFolder = s.isShinyBuddy ? 'shiny' : 'normal';
 
     // 🚩 修正 1：檢查存檔中的 buddyMega 變數是否有值
-    const isMegaActive = (s.buddyMega && s.buddyMega !== "");
+    // 建議直接將判斷合併
+const isMegaShowing = (s.buddyMega && s.buddyMega !== "" && Date.now() < s.megaUntil);
+
+if (isMegaShowing) {
+   // 執行變大換圖邏輯...
+}
 
     if (isMegaActive) {
         // --- 特殊/Mega 狀態：放大並增加特效 ---
@@ -3203,14 +3208,30 @@ function getTitle(count) {
 function tickMega() {
     const remain = s.megaUntil - Date.now();
     const el = document.getElementById('mega-timer');
-    if(remain > 0) {
-        el.style.display = "block";
-        const m = Math.floor(remain/60000);
-        const sec = Math.floor((remain%60000)/1000);
-        document.getElementById('mega-time-left').innerText = `${m}:${sec<10?'0':''}${sec}`;
+    
+    if (remain > 0) {
+        // --- 顯示計時器 ---
+        if (el) el.style.display = "block";
+        
+        const m = Math.floor(remain / 60000);
+        const sec = Math.floor((remain % 60000) / 1000);
+        
+        const timeEl = document.getElementById('mega-time-left');
+        if (timeEl) {
+            timeEl.innerText = `${m}:${sec < 10 ? '0' : ''}${sec}`;
+        }
     } else {
-        el.style.display = "none";
-        if(s.currentMegaType) s.currentMegaType = ""; // 重設型態
+        // --- 時間結束 ---
+        if (el) el.style.display = "none";
+
+        // 🚩 關鍵修正 1：檢查是否需要重置型態 (統一使用 s.buddyMega)
+        if (s.buddyMega && s.buddyMega !== "") {
+            s.buddyMega = ""; // 清空特殊型態
+            
+            // 🚩 關鍵修正 2：立即觸發更新，讓夥伴縮小並換回一般圖案
+            console.log("🧬 進化能量耗盡，恢復原始型態！");
+            updateUI(); 
+        }
     }
 }
 
@@ -3364,7 +3385,7 @@ function executeMega(type) {
     // 1. 消耗道具與設定狀態
     s.items.mstone--;
     s.megaUntil = Date.now() + 7200000; // 2 小時有效期
-    s.currentMegaType = type;
+    s.buddyMega = type;
 
     // 2. 核心邏輯：觸發能量吸引效果 (吸怪機制)
     const bonusBattles = 5;
@@ -3375,7 +3396,7 @@ function executeMega(type) {
 
     // 3. UI 渲染 (更新圖片、特效、機率顯示)
     updateUI(); 
-
+    
     // 4. 立即檢查並啟動戰鬥 (如果當前沒在戰鬥中)
     // 這裡判斷 isInBattle 是否為 false，若是則啟動第一場
     if (typeof isInBattle !== 'undefined' && !isInBattle) {
@@ -3415,6 +3436,7 @@ function openPage(id) {
         if (lvlEl) lvlEl.innerText = s.lvl || 1;
     }
 }
+
 
 function back() { 
     // 移除所有頁面的 "active" 類別，即會回到主畫面
