@@ -271,6 +271,23 @@ body {
     color: #ccc;
     margin-top: 2px;
 }
+/* 讓返回按鈕在滑鼠移上去時稍微變亮 */
+.side-btn[style*="background: rgb(68, 68, 68)"]:hover {
+    background: #555 !important;
+    filter: brightness(1.2);
+}
+
+/* 點擊時的縮小效果 */
+.side-btn:active {
+    transform: scale(0.95);
+    transition: transform 0.1s;
+}
+
+/* 確保 hr 分隔線在深色背景下看得到 */
+#region-btns hr {
+    opacity: 0.5;
+}
+
 
     </style>
 </head>
@@ -549,6 +566,17 @@ let currentSelectingSlot = 0;
     setInterval(updateStamina, 1000);
 }
 
+function goBackToMain() {
+    // 1. 儲存副本進度
+    if (typeof save === 'function') {
+        save();
+        console.log("副本進度已儲存...");
+    }
+
+    // 2. 跳轉回上一層的主程式
+    window.location.href = "../index.html";
+}
+
     function renderRegionButtons() {
         const container = document.getElementById('region-btns');
         container.innerHTML = '';
@@ -560,6 +588,22 @@ let currentSelectingSlot = 0;
             btn.onclick = () => { if(isUnlocked) switchRegion(index); };
             container.appendChild(btn);
         });
+        // 2. 【新增】插入分隔線與返回按鈕
+    const hr = document.createElement('hr');
+    hr.style.cssText = "border:0; border-top:1px solid #555; margin:10px 5px;";
+    container.appendChild(hr);
+
+    const backBtn = document.createElement('div');
+    backBtn.className = 'side-btn'; 
+    backBtn.style.background = '#444'; // 深色區分
+    backBtn.style.color = '#ffcc00';   // 金色文字更有質感
+    backBtn.innerHTML = '🏠 返回';
+    backBtn.onclick = () => {
+        if(typeof save === 'function') save();
+        window.location.href = '../index.html'; // 回到上一層
+    };
+    container.appendChild(backBtn);
+
     }
 
     function isRegionUnlocked(index) {
@@ -841,7 +885,7 @@ function startBattleLogic() {
     battleData.isEnding = false;       // 確保戰鬥鎖定解除
     
     const p = POKEMON_DATA.find(x => x.id === gameState.lastPlayed);
-    battleData.maxHP = (gameState.isHardMode) ? 5000 : (p.type === "Legendary" ? 3500 : 2500);
+    battleData.maxHP = (gameState.isHardMode) ? 6000 : (p.type === "Legendary" ? 4000 : 2500);
     battleData.currentHP = battleData.maxHP;
     battleData.moves = 15;
     battleData.board = [];
@@ -1550,8 +1594,8 @@ function openPrep(p) {
     
     // 1. 判定目標 HP (模式分流)
     let hp = 2500;
-    if (gameState.isHardMode) hp = 5000;
-    else if (p.type === "Legendary") hp = 3500;
+    if (gameState.isHardMode) hp = 6000;
+    else if (p.type === "Legendary") hp = 4000;
     if (stageHp) stageHp.innerText = `目標 HP: ${hp} (模式: ${gameState.isHardMode ? '困難' : '普通'})`;
 
     // 2. 顯示隊伍 (點擊觸發隊員更換)
