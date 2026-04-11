@@ -5262,41 +5262,53 @@ function finishExpedition() {
         baseResources[k] = Math.floor(baseResources[k] * whiteMultiplier);
     });
 
+    
     // 3️⃣ 產生遇到的寶可夢（普通或神獸、料理召喚）
     const encounter = generateEncounter(ex.region, ex.selectedDish);
 
-    // 初始化好感資料
+    // 🚩 新增：檢查玩家是否已經擁有這隻寶可夢
+    const alreadyOwned = s.pkm.some(p => p.id === encounter.id);
+
+    // 初始化好感資料與倉庫
     if (!s.farm.friendshipData) s.farm.friendshipData = {};
+    if (!s.farm.inv) s.farm.inv = {};
 
-    // ⭐ 累加好感
-    s.farm.friendshipData[encounter.id] =
-        (s.farm.friendshipData[encounter.id] || 0) + 1;
-
-    // 好感上限
-    const maxHearts = encounter.type === 'legend' ? 5 : 3;
-    const currentHearts = Math.min(s.farm.friendshipData[encounter.id], maxHearts);
-
-    // 顯示愛心
-    const heartsDisplay = "🧡".repeat(currentHearts) + "🤍".repeat(maxHearts - currentHearts);
-
-    // ⭐ 判斷是否加入小隊
     let isJoin = false;
-    if (currentHearts >= maxHearts) {
-        isJoin = true;
+    let heartsDisplay = "";
 
-        // 避免重複加入
-        const alreadyOwned = s.pkm.some(p => p.id === encounter.id);
-        if (!alreadyOwned) {
+    if (alreadyOwned) {
+        // 💡 情況 A：已經有了 -> 發放隨機 1 個補償資源，不再增加好感
+        const resourceIcons = Object.keys(keyMap); // ['🥩', '🥚', '🐟', '🦐', '🌾', '🥗']
+        const randomIcon = resourceIcons[Math.floor(Math.random() * resourceIcons.length)];
+        
+        // 發放補償並記錄
+        s.farm.inv[randomIcon] = (s.farm.inv[randomIcon] || 0) + 1;
+        
+        // 更新日誌顯示文字
+        heartsDisplay = `💖 已收服 (獲得額外 ${randomIcon} x 1)`; 
+    } else {
+        // 💡 情況 B：還沒擁有 -> 累加好感
+        s.farm.friendshipData[encounter.id] = (s.farm.friendshipData[encounter.id] || 0) + 1;
+
+        const maxHearts = encounter.type === 'legend' ? 5 : 3;
+        const currentHearts = Math.min(s.farm.friendshipData[encounter.id], maxHearts);
+
+        // 顯示愛心
+        heartsDisplay = "🧡".repeat(currentHearts) + "🤍".repeat(maxHearts - currentHearts);
+
+        // 判斷是否加入小隊
+        if (currentHearts >= maxHearts) {
+            isJoin = true;
             s.pkm.push({
                 id: encounter.id,
-                name: encounter.name,
+                name: encounter.name, // 建議保留名字方便顯示，或依妳之前的習慣移除
                 uniqueId: Date.now() + "_" + Math.random().toString(36).slice(2),
                 color: encounter.color
             });
-        }
 
-        // 重置好感
-        s.farm.friendshipData[encounter.id] = 0;
+            // 加入後直接刪除好感紀錄，節省 localStorage 空間
+            delete s.farm.friendshipData[encounter.id];
+        }
     }
 
     // 4️⃣ 發放資源
