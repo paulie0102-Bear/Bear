@@ -784,6 +784,12 @@
     <span>🌿</span> 進入秘密花園
 </button>
 
+<button onclick="goToShuffle();" 
+    style="background:#9b59b6; color:white; width:calc(100% - 20px); padding:15px; border:none; border-radius:10px; font-weight:bold; margin:0 10px 10px 10px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px #8e44ad;">
+    <span>🧩</span> 寶可夢消消樂副本
+</button>
+
+
     <button class="btn-back" onclick="back()">✖ 關閉</button>
 </div>
 <div id="badgeModal" class="badge-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; backdrop-filter:blur(5px);">
@@ -1318,7 +1324,8 @@ const MEGA_ABLE = [
     459, 460,    // 雪笠怪、暴雪王
     475,         // 艾路雷朵
     646,         // 酋雷姆
-    656, 657, 658  // 呱呱泡蛙、呱頭蛙、忍者蛙
+    656, 657, 658,  // 呱呱泡蛙、呱頭蛙、忍者蛙
+    719
 ];
 // 分支進化字典
 const EVO_BRANCHES = {
@@ -2560,10 +2567,10 @@ function showAnnouncement() {
     
     <div style="max-height: 250px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; text-align: left; font-size: 14px; line-height: 1.6;">
         <b style="color: #e67e22;">【系統更新內容】</b><br>
+        • 🎮 新增寶可夢消消樂，腦力激盪的時間到了!<br>
         • 📖 重大更新!寶可夢圖鑑開放到No.721<br>
         • 🍱 因應圖鑑擴增，調整冒險小隊可遭遇的地區以及寶可夢。<br>
         • ⚙️ 移除的小隊寶可夢愛心會直接消失，對於受影響的玩家深感抱歉。<br>
-        • 👤 徽章系統未來會陸續補齊。<br>
         • 🎓 博士啟程禮，新增合眾地區、卡洛斯地區。<br>
         • 🏆 冠軍的認可，新增合眾地區、卡洛斯地區。<br>
         • 🍱 美食冠軍聯盟範圍包含關都、城都、豐緣以及神奧地區，不再調整。<br>
@@ -2917,7 +2924,13 @@ window.onChampionBtnClick = function(key) {
     }
 };
 
-
+function goToShuffle() {
+    // 儲存主程式進度 (存入 pokemaster_v60)
+    if (typeof save === 'function') save(); 
+    
+    // 跳轉到子資料夾下的 HTML
+    window.location.href = "shuffle/index.html";
+}
 
 // 2. 在 updateUI 附近加入這三個載具專用函式
 function initCarrier() {
@@ -3801,7 +3814,7 @@ let dexShiny = false; // 是否閃光
 let dexMega = "";     // Mega 型態: "", "x", "y"
 
 // 根據官方的資料預設的 Mega 名單 (可依你的需求增減)
-const MEGA_LIST = [3, 6, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142, 150, 181, 208, 212, 214, 229, 248, 254, 257, 260, 282, 302, 303, 306, 308, 310, 319, 323, 334, 354, 359, 362, 373, 376, 380, 381, 382, 383, 384, 428, 445, 448, 460, 475, 646, 658];
+const MEGA_LIST = [3, 6, 9, 15, 18, 65, 80, 94, 115, 127, 130, 142, 150, 181, 208, 212, 214, 229, 248, 254, 257, 260, 282, 302, 303, 306, 308, 310, 319, 323, 334, 354, 359, 362, 373, 376, 380, 381, 382, 383, 384, 428, 445, 448, 460, 475, 646, 658, 719];
 
 // --- 🎨 核心渲染函式 ---
 function renderDex() {
