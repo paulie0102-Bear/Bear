@@ -26,56 +26,71 @@ body {
     user-select: none;
 }
 
+@media screen and (max-width: 600px) {
+
 #status-bar {
     position: fixed;
-    top: 0; left: 0; width: 100%;
-    height: calc(var(--status-height) + var(--safe-top));
-    padding-top: var(--safe-top);
+    top: 0; 
+    left: 0; 
+    width: 100%;
+    /* 增加一點高度確保容納兩行，約 60px-70px */
+    height: auto; 
+    min-height: 60px; 
+    padding: var(--safe-top) 50px 5px 10px; /* 右邊留 50px 給齒輪 */
     background: rgba(0, 0, 0, 0.95);
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    justify-content: space-around; /* 讓兩行均勻分布 */
+    align-items: stretch; /* 讓子元素撐開到 100% 寬 */
     z-index: 100;
     border-bottom: 2px solid var(--accent-color);
     box-sizing: border-box;
 }
 
-.status-row { display: flex; gap: 15px; margin-bottom: 5px; }
+.status-row { 
+    display: flex; 
+    justify-content: space-between; /* 讓資訊分開到左右兩端 */
+    align-items: center;
+    width: 100%; 
+    padding: 0 10px; /* 留一點左右內距，不要貼死邊緣 */
+    margin-bottom: 2px; /* 縮小間距，省點空間 */
+    box-sizing: border-box;
+}
 
 #sidebar {
     position: fixed;
     left: 0;
-    top: calc(var(--status-height) + var(--safe-top));
-    bottom: var(--safe-bottom);
-    width: var(--sidebar-width);
-    background: #222;
+    /* 確保從狀態欄下方開始 */
+    top: 65px; /* 直接給個估計值或確定的狀態欄高度 */
+    bottom: 0;
+    width: 70px; /* 手機版建議窄一點 */
+    background: rgba(34, 34, 34, 0.9); /* 微透明更有質感 */
     overflow-y: auto;
     border-right: 1px solid #444;
     z-index: 90;
     scrollbar-width: none;
-    -ms-overflow-style: none;
 }
 #sidebar::-webkit-scrollbar { display: none; }
 
 .side-btn {
-    padding: 22px 5px;
+    padding: 15px 5px; /* 減少上下高度，讓手機畫面一次能看到更多地區 */
     text-align: center;
-    font-size: 12px;
+    font-size: 11px; /* 字體縮小一點點 */
     cursor: pointer;
     border-bottom: 1px solid #333;
-    color: #888;
+    color: #bbb; /* 稍微亮一點，手機比較好讀 */
     touch-action: manipulation;
 }
 .side-btn.active { background: var(--accent-color); color: black; font-weight: bold; }
 .side-btn.unlocked { color: white; }
 
 #map-container {
-    margin-left: var(--sidebar-width);
-    margin-top: calc(var(--status-height) + var(--safe-top));
-    height: calc(100vh - (var(--status-height) + var(--safe-top) + var(--safe-bottom)));
+    margin-left: 70px; /* 必須等於 sidebar 的寬度 */
+    margin-top: 65px;  /* 必須等於 status-bar 的高度 */
+    /* 使用動態高度，扣掉頂部高度 */
+    height: calc(100vh - 65px); 
     overflow-y: scroll;
-    background: #333;
+    background: #1a1a1a; /* 稍微深一點，跟側邊欄區分 */
     position: relative;
     scroll-behavior: smooth;
 }
@@ -111,6 +126,16 @@ body {
     flex-shrink: 0;     /* 防止被 FlexBox 壓縮 */
 }
 
+#settings-trigger {
+    position: fixed;
+    top: 5px; 
+    right: 5px; 
+    z-index: 101; /* 必須大於 status-bar 的 100 */
+    background: rgba(0,0,0,0.3);
+    border-radius: 5px;
+    padding: 2px;
+}
+}
 /* 2. 圖示：保留你的圓形背景與大小設定 */
 .pkmn-icon {
     width: 55px; 
@@ -189,21 +214,23 @@ body {
 
 #nav-arrows {
     position: fixed;
-    right: 20px;
-    bottom: calc(30px + var(--safe-bottom));
+    right: 15px; /* 靠右一點 */
+    bottom: 25px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px; /* 縮短箭頭距離 */
     z-index: 100;
 }
 
 .arrow-btn {
-    width: 60px; height: 60px;
-    background: rgba(0, 0, 0, 0.75);
-    border: 2px solid var(--accent-color);
-    border-radius: 50%;
-    display: flex; justify-content: center; align-items: center;
-    font-size: 30px; cursor: pointer;
+    background: rgba(0, 0, 0, 0.5); /* 半透明背景 */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%; /* 圓形比較像手遊 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #666;
 }
 
 .ball-icon {
