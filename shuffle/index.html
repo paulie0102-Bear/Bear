@@ -315,6 +315,43 @@ body {
     opacity: 0.5;
 }
 
+/* 棋盤震動效果 */
+.skill-shake {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* 技能標籤樣式 */
+.skill-toast {
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 15px 30px;
+    border-radius: 50px;
+    border: 2px solid #ffcb05; /* 寶可夢金色 */
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 9999;
+    animation: toast-in-out 0.8s ease forwards;
+    pointer-events: none;
+    text-shadow: 0 0 10px rgba(255, 203, 5, 0.5);
+}
+
+@keyframes toast-in-out {
+    0% { transform: translate(-50%, -30%); opacity: 0; }
+    20% { transform: translate(-50%, -50%); opacity: 1; }
+    80% { transform: translate(-50%, -50%); opacity: 1; }
+    100% { transform: translate(-50%, -70%); opacity: 0; }
+}
 
     </style>
 </head>
@@ -360,6 +397,104 @@ body {
         { name: "合眾", range: [494, 649], id: "unova" },
         { name: "卡洛斯", range: [650, 721], id: "kalos" }
     ];
+
+
+
+    const MEGA_SKILL_DATABASE = {
+    "搖手指": {
+        name: "搖手指",
+        logic: (p, context) => {
+            // 1. 定義可能抽中的技能池 (這裡的名稱必須跟下方的 Key 完全一致)
+            const pool = ["根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞"];
+            const randomKey = pool[Math.floor(Math.random() * pool.length)];
+            const targetSkill = MEGA_SKILL_DATABASE[randomKey];
+
+            console.log(`搖手指發動了：${randomKey}`);
+            
+            // 2. 執行抽中的技能
+            if (["根源波動", "斷崖之劍", "地震"].includes(randomKey)) {
+                // 從 context 中傳入的 leaderPositions 抓第一個點作為中心
+                const fallbackP = (context.leaderPositions && context.leaderPositions.length > 0) 
+                                  ? context.leaderPositions[0] 
+                                  : { x: 2, y: 2 };
+                targetSkill.logic(fallbackP, context);
+            } else {
+                targetSkill.logic(null, context);
+            }
+        }
+    },
+    "根源波動": {
+        name: "根源波動",
+        region: "關都",
+        logic: (p, ctx) => {
+            // 橫向消除
+            for (let c = 0; c < ctx.COLS; c++) ctx.matches.add(p.y * ctx.COLS + c);
+        }
+    },
+    "斷崖之劍": {
+        name: "斷崖之劍",
+        region: "城都",
+        logic: (p, ctx) => {
+            // 縱向消除
+            for (let r = 0; r < ctx.ROWS; r++) ctx.matches.add(r * ctx.COLS + p.x);
+        }
+    },
+    "地震": {
+        name: "地震",
+        region: "豐緣",
+        logic: (p, ctx) => {
+            // 周圍爆破
+            for (let r = -1; r <= 1; r++) {
+                for (let c = -1; c <= 1; c++) {
+                    let nr = p.y + r, nc = p.x + c;
+                    if (nr >= 0 && nr < ctx.ROWS && nc >= 0 && nc < ctx.COLS) {
+                        ctx.matches.add(nr * ctx.COLS + nc);
+                    }
+                }
+            }
+        }
+    },
+    "大字爆炎": {
+        name: "大字爆炎",
+        region: "神奧",
+        logic: (p, ctx) => {
+            // 大X型消除
+            for (let i = 0; i < ctx.ROWS; i++) {
+                ctx.matches.add(i * ctx.COLS + i);
+                ctx.matches.add(i * ctx.COLS + (ctx.COLS - 1 - i));
+            }
+        }
+    },
+    "畫龍點睛": {
+        name: "畫龍點睛",
+        region: "合眾",
+        logic: (p, ctx) => {
+            // 隊長全清
+            ctx.board.forEach((tile, idx) => {
+                if (parseInt(tile.pokemonId) === parseInt(ctx.leaderId)) ctx.matches.add(idx);
+            });
+        }
+    },
+    "異次元洞": {
+        name: "異次元洞",
+        region: "卡洛斯",
+        logic: (p, ctx) => {
+            // 再來一次 (洗牌)
+            battleData.triggerBoardReset = true;
+        }
+    }
+};
+
+// 建立索引對照表 (地區 ID -> 技能 Key)
+const REGION_SKILL_MAP = [
+    "搖手指", 
+    "根源波動", 
+    "斷崖之劍", 
+    "地震", 
+    "大字爆炎", 
+    "畫龍點睛", 
+    "異次元洞"
+];
 
     /** 1. 在這裡貼上你的名字清單 **/
 const POKEMON_NAMES = [
@@ -542,7 +677,8 @@ function getEliteFourData(regionName) {
     lastPlayed: "001",
     currentRegionIdx: 0,
     isHardMode: false,
-    
+    unlockedSkillIdx: 0,
+    currentSkillKey: "搖手指",
     // --- 在這裡加入隊伍資料 ---
     // 預設隊伍：妙蛙種子(001)、小火龍(004)、傑尼龜(007)、皮卡丘(025)
     team: ["001", "004", "007", "025"] 
@@ -935,7 +1071,7 @@ function startBattleLogic() {
     }
     
     const p = POKEMON_DATA.find(x => x.id === gameState.lastPlayed);
-    battleData.maxHP = (gameState.isHardMode) ? 6000 : (p.type === "Legendary" ? 4000 : 2500);
+    battleData.maxHP = (gameState.isHardMode) ? 10000 : (p.type === "Legendary" ? 5000 : 3000);
     battleData.currentHP = battleData.maxHP;
     battleData.moves = 15;
     battleData.board = [];
@@ -1187,12 +1323,56 @@ function getMegaSpriteUrl(pokemonId, branch = 'X') {
     return `${baseUrl}${fileName}`;
 }
 
+function applyMegaSkill(matchSet, leaderId) {
+    if (!battleData.isMegaEvolved) return;
+
+    // 取得發動位置
+    let leaderPositions = [];
+    matchSet.forEach(idx => {
+        if (parseInt(battleData.board[idx].pokemonId) === parseInt(leaderId)) {
+            leaderPositions.push({ x: idx % 6, y: Math.floor(idx / 6) });
+        }
+    });
+
+    if (leaderPositions.length === 0) return;
+
+    // --- 【修改重點：從讀取進度改為讀取「當前裝備」】 ---
+    // 優先使用玩家在準備畫面選定的技能，若無則預設為搖手指
+    const skillKey = gameState.currentSkillKey || "搖手指";
+    const skill = MEGA_SKILL_DATABASE[skillKey];
+
+    // 如果剛好選到的技能還沒解鎖（安全性檢查），則強制回退到搖手指
+    const skillIdx = REGION_SKILL_MAP.indexOf(skillKey);
+    if (skillIdx > (gameState.unlockedSkillIdx || 0)) {
+        console.warn("嘗試使用未解鎖技能，回退至搖手指");
+        applyMegaSkillWithKey("搖手指", matchSet, leaderId); // 或是直接在這裡處理
+        return;
+    }
+    // --------------------------------------------------
+
+    // 播放震動與文字特效
+    playSkillEffect(skill.name);
+
+    const context = { matches: matchSet, COLS: 6, ROWS: 6, board: battleData.board, leaderId: leaderId };
+
+    // 執行邏輯
+    if (["搖手指", "大X型消除", "隊長全清", "再來一次"].includes(skillKey)) {
+        skill.logic(null, context);
+    } else {
+        leaderPositions.forEach(p => skill.logic(p, context));
+    }
+}
+
 function handleElimination(matchSet) {
     battleData.combo++;
     const leaderId = gameState.team[0];
-    const barFill = document.getElementById('mega-bar-fill');
-    
-    // --- 1. 核心數據掃描 ---
+
+    // --- 關鍵插入點：先發動 Mega 技能擴張消除範圍 ---
+    if (battleData.isMegaEvolved) {
+        applyMegaSkill(matchSet, leaderId);
+    }
+
+    // --- 之後的數據掃描就會包含被技能炸掉的方塊 ---
     const countsPerPkmn = {}; 
     matchSet.forEach(idx => {
         const id = battleData.board[idx].pokemonId;
@@ -1201,7 +1381,20 @@ function handleElimination(matchSet) {
         }
     });
 
-    // --- 2. 針對「隊長」進行 Mega 進度結算 ---
+    if (battleData.isMegaEvolved && countsPerPkmn[leaderId]) {
+    const regionNames = ["關都", "城都", "豐緣", "神奧", "合眾", "卡洛斯"];
+    // 修改後的招式名稱陣列 (按照地區解鎖順序排列)
+const skillNames = ["搖手指", "根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞"];
+    const currentIdx = gameState.currentRegionIdx || 0;
+    
+    // 找一個 UI 位置顯示
+    console.log(`【${regionNames[currentIdx]}技能】${skillNames[currentIdx]} 發動！`);
+    // 如果你有一個訊息欄位，可以用 innerText 顯示出來
+}
+
+    const barFill = document.getElementById('mega-bar-fill');
+    
+        // --- 2. 針對「隊長」進行 Mega 進度結算 ---
     Object.keys(countsPerPkmn).forEach(pkmnId => {
         const count = countsPerPkmn[pkmnId];
         // 修正：使用 parseInt 確保比對 ID 時不會因為字串/數字型態出錯
@@ -1404,9 +1597,30 @@ function showCombo() {
 }
 
 function refillBoard() {
+    // --- 技能：卡洛斯地區「再來一次」 ---
+    if (battleData.triggerBoardReset) {
+        battleData.triggerBoardReset = false; // 重置旗標
+        
+        // 1. 清空盤面
+        battleData.board.forEach(tile => tile.pokemonId = null);
+        
+        // 2. 重新填滿隨機方塊 (呼叫你原本初始化盤面的函式)
+        initBoard(); 
+        
+        // 3. 全面更新 UI 與棋盤視覺
+        renderBoard(); // 確保畫面上出現新方塊
+        updateBattleUI(); // 更新介面狀態
+        
+        // 4. 強制結束此回合判定，不觸發天降 checkMatches
+        return; 
+    }
+
+    // --- 以下為正常的方塊掉落邏輯 ---
     if (battleData.currentHP <= 0) return;
+
     for (let c = 0; c < 6; c++) {
         let emptySpaces = 0;
+        // 垂直掉落運算
         for (let r = 5; r >= 0; r--) {
             let idx = r * 6 + c;
             if (battleData.board[idx].pokemonId === null) {
@@ -1416,6 +1630,7 @@ function refillBoard() {
                 battleData.board[idx].pokemonId = null;
             }
         }
+        // 頂部遞補新方塊
         for (let r = 0; r < emptySpaces; r++) {
             battleData.board[r * 6 + c].pokemonId = gameState.team[Math.floor(Math.random() * 4)];
         }
@@ -1423,7 +1638,7 @@ function refillBoard() {
 
     renderBoard();
 
-    // 觸發天降判定，讓 checkMatches 重新判斷狀態
+    // 正常的連鎖判定：觸發天降判定，讓 checkMatches 重新判斷
     setTimeout(() => {
         checkMatches();
     }, 300);
@@ -1475,6 +1690,30 @@ function checkBattleEnd() {
                 unlockMsg = `下一關 ${nextId} 已解鎖！`; 
             }
         }
+        if (!gameState.isHardMode && parseInt(nextId) <= 721) {
+    if (!gameState.unlocked.includes(nextId)) {
+        gameState.unlocked.push(nextId);
+        unlockMsg = `下一關 ${nextId} 已解鎖！`; 
+    }
+}
+
+// --- 【關鍵插入：地區通關與技能覺醒邏輯】 ---
+const currentReg = REGION_CONFIG[gameState.currentRegionIdx];
+// 檢查是否剛好擊敗了該地區的最後一隻寶可夢
+if (parseInt(pId) === currentReg.range[1]) {
+    // 只有當「目前地區索引」等於「已解鎖技能索引」時，才代表是第一次通關並升級技能
+    if (gameState.currentRegionIdx === gameState.unlockedSkillIdx) {
+        gameState.unlockedSkillIdx++; 
+        const newSkillName = ["搖手指", "根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞"][gameState.unlockedSkillIdx];
+        
+        // 將技能解鎖訊息併入 unlockMsg，讓玩家在結算時看到
+        const skillAlert = `★ 力量覺醒：解鎖新技能「${newSkillName}」！`;
+        unlockMsg = unlockMsg ? `${unlockMsg} ${skillAlert}` : skillAlert;
+        
+        // 如果你希望有更強烈的視覺回饋，也可以用 setTimeout 彈窗
+        console.log(`地區通關！新技能解鎖: ${newSkillName}`);
+    }
+}
 
         // --- 2. 移除計數邏輯與隱藏進度文字 ---
         // (此處不再執行 clearCounts++，也不再組合 progress 字串)
@@ -1603,6 +1842,35 @@ function handleBattleWin() {
     }
 }
 
+// 視覺特效處理器
+function playSkillEffect(skillName) {
+    // 1. 取得元素並檢查是否存在
+    const board = document.getElementById('board');
+    
+    // 如果找不到 board (null)，就只顯示文字特效，不執行震動，避免程式報錯
+    if (board) {
+        board.classList.add('skill-shake');
+        setTimeout(() => {
+            // 再次檢查 board 是否還在畫面上（防止玩家在 500ms 內關閉戰鬥）
+            if (board) board.classList.remove('skill-shake');
+        }, 500);
+    } else {
+        console.warn("提醒：找不到 id='game-board' 的元素，已跳過震動特效。");
+    }
+
+    // 2. 顯示技能文字特效 (這是加在 document.body，通常不會失敗)
+    const msg = document.createElement('div');
+    msg.className = 'skill-toast';
+    msg.innerText = `MEGA SKILL: ${skillName}`;
+    document.body.appendChild(msg);
+
+    // 3. 移除文字
+    setTimeout(() => {
+        if (msg && msg.parentNode) {
+            msg.remove();
+        }
+    }, 800);
+}
 
 function openCatchUI(p, bonus) {
     document.getElementById('battle-screen').style.display = 'none';
@@ -1689,7 +1957,35 @@ function exitCatch() {
     renderMap(); // 刷新地圖紅白球狀態
 }
 
+function cycleSkill() {
+    const skillKeys = ["搖手指", "根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞"];
+    
+    // 找到當前技能的索引
+    let currentIdx = skillKeys.indexOf(gameState.currentSkillKey);
+    
+    // 下一個索引
+    currentIdx++;
+    
+    // 如果超過玩家已解鎖的上限，就回到 0 (搖手指)
+    if (currentIdx > gameState.unlockedSkillIdx) {
+        currentIdx = 0;
+    }
+    
+    // 更新選定技能並存檔
+    gameState.currentSkillKey = skillKeys[currentIdx];
+    save(); 
+    
+    // 重新渲染準備畫面，讓玩家看到變化 (假設你傳入的是當前關卡 p)
+    // 這裡我們直接呼叫 openPrep，但需要拿到原本的關卡資料
+    // 建議：在 openPrep 開頭把 p 存到一個暫存變數，方便這裡呼叫
+    if (window.currentStageData) {
+        openPrep(window.currentStageData);
+    }
+}
+
+
 function openPrep(p) {
+    window.currentStageData = p;
     const overlay = document.getElementById('prep-overlay');
     
     // 安全檢查：確保元素存在
@@ -1706,9 +2002,9 @@ function openPrep(p) {
     }
     
     // 1. 判定目標 HP (模式分流)
-    let hp = 2500;
-    if (gameState.isHardMode) hp = 6000;
-    else if (p.type === "Legendary") hp = 4000;
+    let hp = 3000;
+    if (gameState.isHardMode) hp = 10000;
+    else if (p.type === "Legendary") hp = 5000;
     if (stageHp) stageHp.innerText = `目標 HP: ${hp} (模式: ${gameState.isHardMode ? '困難' : '普通'})`;
 
     // 2. 顯示隊伍 (點擊觸發隊員更換)
@@ -1731,8 +2027,42 @@ function openPrep(p) {
     });
 }
 
-    // 3. 判定「隊長」是否具備 Mega 進化資格
+
+   
     if (formOptions) {
+    const existingSkill = overlay.querySelector('.skill-preview-box');
+    if (existingSkill) existingSkill.remove();
+
+    // 取得所有技能 Key
+    const skillKeys = ["搖手指", "根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞"];
+    
+    // 確保當前選中的技能是合法的（防止舊存檔錯誤）
+    if (!gameState.currentSkillKey) gameState.currentSkillKey = "搖手指";
+    
+    const skillKey = gameState.currentSkillKey;
+    const skillData = MEGA_SKILL_DATABASE[skillKey];
+    const skillIdx = skillKeys.indexOf(skillKey);
+
+    const skillHtml = `
+        <div class="mega-toggle-container skill-preview-box" 
+             onclick="cycleSkill()" 
+             style="margin: 10px 0; flex-direction: column; align-items: flex-start; gap: 4px; border-color: #ffcc00; cursor: pointer; position: relative;">
+            
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                <span class="mega-label" style="color: #ffcc00; font-size: 11px;">◈ 已裝備技能 (點擊切換)</span>
+                <span style="background: #333; color: #eee; font-size: 10px; padding: 1px 6px; border-radius: 4px;">
+                    解鎖進度: ${gameState.unlockedSkillIdx + 1} / 7
+                </span>
+            </div>
+            
+            <div style="color: #ffcc00; font-weight: bold; font-size: 16px;">${skillKey}</div>
+            <div style="color: #ccc; font-size: 11px; line-height: 1.4;">${getSkillDescription(skillKey)}</div>
+            
+            <div style="position: absolute; right: 10px; bottom: 10px; color: #ffcc00; font-size: 12px;">Next ❯</div>
+        </div>
+    `;
+
+    formOptions.insertAdjacentHTML('beforebegin', skillHtml);
     formOptions.innerHTML = '';
     const leaderId = gameState.team[0];
     const leaderInfo = POKEMON_DATA.find(x => x.id === leaderId);
@@ -1853,6 +2183,21 @@ if (keyOption) {
 
     overlay.style.display = 'block';
 }
+
+// 輔助函式：根據技能 Key 回傳中文描述
+function getSkillDescription(key) {
+    const descMap = {
+        "搖手指": "隨機發動其他的招式，充滿驚喜感。",
+        "根源波動": "【橫向消除】遠古大海的波動橫掃，消除整橫列方塊。",
+        "斷崖之劍": "【縱向消除】地底突起的巨石刃，垂直貫穿整縱欄。",
+        "地震": "【周圍爆破】引發強烈地震，炸開中心點周圍 3x3 方塊。",
+        "大字爆炎": "【大X型消除】大字型烈焰燃燒，消除交叉範圍內的方塊。",
+        "畫龍點睛": "【隊長全清】究極招式從天而降，消除畫面上所有隊長。",
+        "異次元洞": "【重新洗牌】透過異次元空間，清空並重新填充所有方塊。"
+    };
+    return descMap[key] || "神秘招式";
+}
+
 /**
  * 打開隊員選擇清單
  * @param {number} slotIndex - 正在更換哪一個位置 (0~3)
@@ -2183,7 +2528,7 @@ function manualLoad() {
         <div id="enemy-hp-bar" style="width:80%; height:10px; background:#444; border-radius:5px; margin-bottom:10px; overflow:hidden;">
             <div id="enemy-hp-fill" style="width:100%; height:100%; background:#ff4444; transition:width 0.3s;"></div>
         </div>
-        <div id="enemy-hp-text" style="font-size:12px; color:#ccc;">HP: 2500 / 2500</div>
+        <div id="enemy-hp-text" style="font-size:12px; color:#ccc;">HP: 3000 / 3000</div>
         <img id="enemy-sprite" src="" style="width:120px; height:120px; object-fit:contain; margin:10px 0;">
         <div id="combo-text" style="position:absolute; right:20px; top:50%; font-size:24px; color:var(--accent-color); font-weight:bold; display:none;">0 COMBO</div>
     </div>
@@ -2276,7 +2621,7 @@ function manualLoad() {
         </div>
 
         <div style="display:flex; flex-direction:column; gap:12px; margin-top: 10px;">
-            <button onclick="manualSave()" class="side-btn unlocked" style="width:100%; cursor:pointer; padding:12px; border-radius:8px; font-weight: bold; border: none; background: #ffcc00; color: #000;">手動儲存存檔</button>
+            <button onclick="manualSave()" class="side-btn unlocked" style="width:100%; cursor:pointer; padding:12px; border-radius:8px; font-weight: bold; border: none; background: #ffcc00; color: #000;">儲存存檔</button>
             
             <button onclick="manualLoad()" class="side-btn" style="width:100%; cursor:pointer; padding:12px; border-radius:8px; font-weight: bold; border: 1px solid #666; background: #444; color: #fff;">讀取存檔檔案</button>
             
