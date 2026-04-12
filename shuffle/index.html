@@ -793,7 +793,8 @@ function renderNormalModeLayout(list, config) {
         const isUnlocked = gameState.unlocked.includes(p.id);
         const isCaptured = gameState.captured.includes(p.id);
         const megaHtml = getMegaIconHtml(p);
-        const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${parseInt(p.id)}.png`;
+        // 直接使用 p.id (字串格式)，確保 001 不會變成 1
+const spriteUrl = `https://paulie0102-bear.github.io/Bear/shuffle/${p.id}.png`;
         
         const div = document.createElement('div');
         div.id = `stage-${p.id}`;
@@ -832,13 +833,19 @@ function renderNormalModeLayout(list, config) {
 function renderHardModeLayout(list, config) {
     const eliteData = getEliteFourData(config.name); 
     
-    // --- 佈局修正：與普通模式保持一致的邊距與對齊 ---
+    // --- 【關鍵修正】進入關卡列表時，先清除舊的 Mega 分支設定 ---
+    // 這樣可以防止上一次選的噴火龍 Y 影響到這一次的關卡預覽
+    if (gameState) {
+        gameState.currentMegaBranch = 'X'; // 或是設為 null，由準備畫面重新決定
+    }
+
+    // --- 佈局樣式 ---
     list.style.display = "flex";
     list.style.flexDirection = "column-reverse"; 
-    list.style.alignItems = "center";  // 改為 center，讓方塊在剩餘空間置中
-    list.style.paddingLeft = "40px";   // 縮小左側留白 (同步普通模式)
+    list.style.alignItems = "center";
+    list.style.paddingLeft = "40px";
     list.style.paddingRight = "15px";  
-    list.style.paddingTop = "100px";   // 頂部留白 (冠軍上方)
+    list.style.paddingTop = "100px";
     list.style.paddingBottom = "40px"; 
     list.style.boxSizing = "border-box";
     list.style.gap = "20px";
@@ -848,15 +855,16 @@ function renderHardModeLayout(list, config) {
 
     eliteData.forEach((p, index) => {
         const isPrevClear = index === 0 || (gameState.clearCounts && gameState.clearCounts[eliteData[index-1].id] > 0);
+        
+        // 取得該關卡頭目的 Mega 圖標 (用於預覽)
         const megaHtml = getMegaIconHtml(p);
 
         const div = document.createElement('div');
         div.id = `hard-stage-${index}`;
         
-        // --- 核心修正處：不再縮過頭，寬度填滿剩餘空間 ---
         div.style = `
-            width: 100%;            /* 使用 100% 配合父層 Padding 自動填滿 */
-            max-width: 420px;       /* 困難模式方塊稍微大一點點增加氣勢 */
+            width: 100%;
+            max-width: 420px;
             margin: 0; 
             background: #1a1a1a; 
             border: 2px solid ${p.isChampion ? '#ffcc00' : '#555'};
@@ -869,14 +877,17 @@ function renderHardModeLayout(list, config) {
             transition: 0.3s; 
             flex-shrink: 0;
             box-sizing: border-box; 
-            ${!isPrevClear ? 'filter: grayscale(1) opacity(0.5);' : ''}
+            ${!isPrevClear ? 'filter: grayscale(1) opacity(0.5); pointer-events: none;' : ''}
             box-shadow: ${p.isChampion ? '0 0 20px rgba(255,204,0,0.3)' : 'none'};
         `;
 
+        // 格式化 ID 為 001, 006 格式
+        const formattedId = p.id.toString().padStart(3, '0');
+
         div.innerHTML = `
             <div style="font-size: 9px; color: #666; position: absolute; top: 5px; right: 10px;">STAGE 0${index+1}</div>
-            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${parseInt(p.id)}.png" 
-                 style="width: 60px; height: 60px; background: #222; border-radius: 8px; margin-right: 12px;">
+            <img src="https://paulie0102-bear.github.io/Bear/shuffle/${formattedId}.png" 
+                 style="width: 60px; height: 60px; background: #222; border-radius: 8px; margin-right: 12px; object-fit: contain;">
             <div style="text-align: left; flex: 1; min-width: 0;"> 
                 <div style="color: ${p.isChampion ? '#ffcc00' : '#eee'}; font-weight: bold; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     ${p.stageName}
@@ -890,8 +901,12 @@ function renderHardModeLayout(list, config) {
         div.onclick = () => {
             if (!isPrevClear) return;
             gameState.lastPlayed = p.id;
+            
+            // --- 【關鍵修正】確保點擊進入準備畫面時，重設分支變數 ---
+            gameState.currentMegaBranch = 'X'; 
+            
             save();
-            openPrep(p);
+            openPrep(p); // 進入戰前準備畫面
         };
         list.appendChild(div);
     });
@@ -910,6 +925,14 @@ function startBattleLogic() {
     battleData.megaProgress = 0;       // 清除上一場的 Mega 進度
     battleData.isMegaEvolved = false; // 重置進化狀態
     battleData.isEnding = false;       // 確保戰鬥鎖定解除
+
+    const branchSelect = document.getElementById('mega-branch');
+    if (branchSelect) {
+        battleData.selectedMegaBranch = branchSelect.value; 
+    } else {
+        // 如果沒有選單（一般只有單一形態的寶可夢），預設給 X 即可
+        battleData.selectedMegaBranch = 'X';
+    }
     
     const p = POKEMON_DATA.find(x => x.id === gameState.lastPlayed);
     battleData.maxHP = (gameState.isHardMode) ? 6000 : (p.type === "Legendary" ? 4000 : 2500);
@@ -933,18 +956,32 @@ function startBattleLogic() {
     }
 
     // 重置隊長圖片 (換回普通形態，避免上一場 Mega 圖片殘留)
-    const leaderId = gameState.team[0];
-    const leaderImg = document.getElementById('team-img-0'); 
-    if (leaderImg) {
-        // 使用普通圖片路徑
-        leaderImg.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${parseInt(leaderId)}.png`;
-        leaderImg.style.filter = ""; // 移除發光效果
-    }
+    // --- 2. UI 狀態重置 ---
+const leaderId = gameState.team[0];
+const leaderImg = document.getElementById('team-img-0'); 
 
-    // 3. 切換畫面
-    document.getElementById('prep-overlay').style.display = 'none';
-    document.getElementById('battle-screen').style.display = 'flex';
-    document.getElementById('enemy-sprite').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${parseInt(p.id)}.png`;
+if (leaderImg) {
+    // 優化：統一呼叫 getTileImageUrl 取得路徑
+    // 因為此時 battleData.isMegaEvolved 已在上方重置為 false，
+    // 所以這個函式會自動回傳該 ID 的「普通形態」圖片。
+    leaderImg.src = getTileImageUrl(leaderId);
+    
+    // 重置視覺特效
+    leaderImg.style.filter = ""; 
+    leaderImg.style.transform = "scale(1)"; 
+}
+
+// --- 3. 切換畫面 ---
+document.getElementById('prep-overlay').style.display = 'none';
+document.getElementById('battle-screen').style.display = 'flex';
+
+// 優化：處理敵人（對手）的圖片
+const enemySprite = document.getElementById('enemy-sprite');
+if (enemySprite && p) {
+    // 強制補零確保網址正確 (例如 6 -> 006)
+    const enemyId = p.id.toString().padStart(3, '0');
+    enemySprite.src = `https://paulie0102-bear.github.io/Bear/shuffle/${enemyId}.png`;
+}
     
     updateBattleUI();
     initBoard();
@@ -955,18 +992,27 @@ function startBattleLogic() {
 
 function initBoard() {
     const boardEl = document.getElementById('board');
+    if (!boardEl) return;
+    
     boardEl.innerHTML = '';
+    battleData.board = []; // 清空舊的資料陣列
     
     // 生成 36 個棋子 (隨機從隊伍 4 人中挑選)
     for (let i = 0; i < 36; i++) {
-        const randomMemberId = gameState.team[Math.floor(Math.random() * 4)];
+        // 從目前的隊伍中隨機挑選一位成員 ID
+        const randomMemberId = gameState.team[Math.floor(Math.random() * gameState.team.length)];
+        
+        // 儲存邏輯數據
         const tileData = { id: i, pokemonId: randomMemberId };
         battleData.board.push(tileData);
         
+        // 建立前端元件
         const div = document.createElement('div');
         div.className = 'tile';
         div.dataset.index = i;
-        div.innerHTML = `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${parseInt(randomMemberId)}.png">`;
+
+        // --- 優化點：呼叫 getTileImageUrl 確保網址與進化狀態同步 ---
+        div.innerHTML = `<img src="${getTileImageUrl(randomMemberId)}">`;
         
         // 綁定點擊交換邏輯
         div.onclick = () => handleTileClick(i);
@@ -1017,15 +1063,43 @@ function handleTileClick(index) {
 
 
 function swapTiles(idx1, idx2) {
-    // 陣列數據交換
+    // 1. 陣列數據交換 (這部分你原本的寫法是對的)
     const temp = battleData.board[idx1].pokemonId;
     battleData.board[idx1].pokemonId = battleData.board[idx2].pokemonId;
     battleData.board[idx2].pokemonId = temp;
     
-    // 畫面更新 (重新渲染兩個格子)
+    // 2. 取得新的 ID 數據
+    const id1 = battleData.board[idx1].pokemonId;
+    const id2 = battleData.board[idx2].pokemonId;
+
+    // 3. 畫面更新 (重新渲染兩個格子)
     const tiles = document.querySelectorAll('.tile');
-    tiles[idx1].innerHTML = `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${parseInt(battleData.board[idx1].pokemonId)}.png">`;
-    tiles[idx2].innerHTML = `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${parseInt(battleData.board[idx2].pokemonId)}.png">`;
+
+    // --- 修正重點：將 p.id 改成 id1 與 id2 ---
+    // 同時加入 Mega 判斷，確保交換後如果是 Mega 隊長，圖片不會變回普通版
+    tiles[idx1].innerHTML = `<img src="${getTileImageUrl(id1)}">`;
+    tiles[idx2].innerHTML = `<img src="${getTileImageUrl(id2)}">`;
+}
+
+// 建議額外加上這個輔助函式，統一管理棋盤圖片路徑，避免以後又要改整串網址
+function getTileImageUrl(pokemonId) {
+    if (!pokemonId) return "";
+    
+    const leaderId = gameState.team[0];
+    
+    // 檢查這顆方塊是否就是隊長，且目前處於 Mega 狀態
+    if (battleData.isMegaEvolved && String(pokemonId) === String(leaderId)) {
+        
+        // 【關鍵】確保這裡抓到的 branch 是玩家在戰前準備畫面選的那一個
+        // 優先順序：戰鬥中選擇的分支 > 全域暫存分支 > 預設 X
+        const branch = battleData.selectedMegaBranch || gameState.currentMegaBranch || 'X';
+        
+        console.log(`渲染 Mega 圖片: ID=${pokemonId}, Branch=${branch}`); // 調試用
+        return getMegaSpriteUrl(pokemonId, branch);
+    }
+    
+    // 一般情況
+    return `https://paulie0102-bear.github.io/Bear/shuffle/${pokemonId}.png`;
 }
 
 function updateBattleUI() {
@@ -1089,39 +1163,28 @@ function checkMatches() {
 
 // 取得自定義 Mega 圖片網址的公式
 function getMegaSpriteUrl(pokemonId, branch = 'X') {
-    // 改為指向官方 Home 高畫質圖庫
-    const baseUrl = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/";
-    const idNum = parseInt(pokemonId);
+    // 指向你自己的 GitHub 圖片庫
+    const baseUrl = "https://paulie0102-bear.github.io/Bear/shuffle/";
     
-    // 官方形態 ID 對應表 (根據你提供的 megaIds 列表)
-    const homeMegaMap = {
-        3: 10033, 6: {X: 10034, Y: 10035}, 9: 10036, 15: 10090, 18: 10073,
-        65: 10037, 80: 10071, 94: 10038, 115: 10039, 127: 10040,
-        130: 10041, 142: 10042, 150: {X: 10043, Y: 10044}, 181: 10045, 208: 10072,
-        212: 10046, 214: 10047, 229: 10048, 248: 10049, 254: 10065,
-        257: 10050, 260: 10064, 282: 10051, 302: 10066, 303: 10052,
-        306: 10053, 308: 10054, 310: 10055, 319: 10070, 323: 10087,
-        334: 10067, 354: 10056, 359: 10057, 362: 10074, 373: 10089,
-        376: 10076, 380: 10063, 381: 10062, 382: 10077, 383: 10078, // 原始回歸
-        384: 10079, 428: 10088, 445: 10058, 448: 10059, 460: 10060,
-        475: 10068, 531: 10069, 646: {X: 10022, Y: 10023}, // 黑/白酋雷姆
-        658: 10117, 719: 10075 // 小智忍蛙 / 蒂安希
-    };
+    // 確保 ID 是補零後的字串 (例如 "006")
+    const formattedId = pokemonId.toString().padStart(3, '0');
+    
+    // 定義哪些 ID 擁有雙形態 (X/Y)
+    // 包含：噴火龍(6)、超夢(150)、酋雷姆(646)
+    const dualForms = ["006", "150", "646"];
+    
+    let fileName = "";
 
-    let finalId = idNum;
-
-    // 判斷是否在 Mega 表中，如果是則轉換 ID
-    if (homeMegaMap[idNum]) {
-        const mapping = homeMegaMap[idNum];
-        if (typeof mapping === 'object') {
-            const b = branch.toUpperCase();
-            finalId = mapping[b] || mapping['X'];
-        } else {
-            finalId = mapping;
-        }
+    if (dualForms.includes(formattedId)) {
+        // 雙狀態處理 (例如：006-mega-x.png, 646-mega-y.png)
+        const suffix = branch.toLowerCase(); // 轉成小寫 x 或 y
+        fileName = `${formattedId}-mega-${suffix}.png`;
+    } else {
+        // 一般 Mega / 原始回歸 / 小智忍蛙 (例如：003-mega.png)
+        fileName = `${formattedId}-mega.png`;
     }
 
-    return `${baseUrl}${finalId}.png`;
+    return `${baseUrl}${fileName}`;
 }
 
 function handleElimination(matchSet) {
@@ -1141,8 +1204,9 @@ function handleElimination(matchSet) {
     // --- 2. 針對「隊長」進行 Mega 進度結算 ---
     Object.keys(countsPerPkmn).forEach(pkmnId => {
         const count = countsPerPkmn[pkmnId];
-        const pkmnInfo = POKEMON_DATA.find(p => p.id === pkmnId);
+        // 修正：使用 parseInt 確保比對 ID 時不會因為字串/數字型態出錯
         const isIdMatch = parseInt(pkmnId) === parseInt(leaderId);
+        const pkmnInfo = POKEMON_DATA.find(p => parseInt(p.id) === parseInt(pkmnId));
         const hasItem = gameState.items.includes(`${pkmnId}_mega`);
         const megaCheck = document.getElementById('mega-check');
         const isMegaEnabled = megaCheck ? megaCheck.checked : true;
@@ -1158,22 +1222,29 @@ function handleElimination(matchSet) {
             if (battleData.megaProgress >= 15) {
                 battleData.isMegaEvolved = true;
                 if (barFill) barFill.classList.add('mega-full');
-                executeMegaImageChange(leaderId);
+                
+                // 【新增】觸發 Mega 時，立即把棋盤上剩下的隊長棋子換成 Mega 圖
+                updateLeaderTilesToMega(leaderId);
+                
+                // 呼叫原本處理上方大圖變化的函式
+                if (typeof executeMegaImageChange === 'function') {
+                    executeMegaImageChange(leaderId);
+                }
             }
         }
     });
 
-    // --- 3. 計算總傷害 (已修正：X 與 Y 倍率統一) ---
+    // --- 3. 計算總傷害 ---
     let totalDamage = 0;
     Object.keys(countsPerPkmn).forEach(pkmnId => {
         const count = countsPerPkmn[pkmnId];
-        const pkmnInfo = POKEMON_DATA.find(p => p.id === pkmnId);
+        const pkmnInfo = POKEMON_DATA.find(p => parseInt(p.id) === parseInt(pkmnId));
         const isLeader = parseInt(pkmnId) === parseInt(leaderId);
         
         let baseDamage = (pkmnInfo && pkmnInfo.type === "Legendary") ? 70 : 50;
         let formMultiplier = 1.0;
 
-        // 只要是 Mega 狀態下的隊長消除，統一 1.5 倍，不再判斷 X 或 Y
+        // 只要是 Mega 狀態下的隊長消除，統一 1.5 倍
         if (battleData.isMegaEvolved && isLeader) {
             formMultiplier = 1.5; 
         }
@@ -1191,7 +1262,6 @@ function handleElimination(matchSet) {
     if (battleData.isMegaEvolved && countsPerPkmn[leaderId]) {
         const comboDiv = document.getElementById('combo-display');
         if (comboDiv) {
-            // 避免重複堆疊 MEGA! 字樣
             if (!comboDiv.innerHTML.includes("MEGA!")) {
                 comboDiv.innerHTML += ` <span class="mega-tag">MEGA!</span>`;
             }
@@ -1210,6 +1280,30 @@ function handleElimination(matchSet) {
     } else {
         setTimeout(refillBoard, 500);
     }
+}
+
+function updateLeaderTilesToMega(leaderId) {
+    // 1. 取得大圖元素
+    const leaderImg = document.getElementById('team-img-0');
+    if (!leaderImg) return;
+
+    // 2. 從「大圖」獲取正確的網址 (它已經包含 -y 且包含 ?v= 隨機數)
+    const correctlyEvolvedUrl = leaderImg.src; 
+
+    // 3. 獲取棋盤格元素
+    const tiles = document.querySelectorAll('.tile');
+
+    // 4. 強制同步
+    battleData.board.forEach((tile, idx) => {
+        // 使用 == 避免字串 "006" 與 數字 6 的型別衝突
+        if (tile.pokemonId == leaderId) {
+            const img = tiles[idx].querySelector('img');
+            if (img) {
+                console.log(`[同步中] 索引 ${idx} 強制換成大圖網址`);
+                img.src = correctlyEvolvedUrl; 
+            }
+        }
+    });
 }
 
 // 獨立出來的換圖函式，確保圖片能被強制刷新
@@ -1255,7 +1349,6 @@ function executeMegaImageChange(leaderId) {
     }
 }
 
-// 輔助函式：計算傷害
 // 輔助函式：計算傷害 (X/Y 倍率統一版)
 function calculateAndApplyDamage(pkmnId, count, pkmnInfo, isLeader) {
     let baseDamage = (pkmnInfo && pkmnInfo.type === "Legendary") ? 70 : 50;
@@ -1342,26 +1435,19 @@ function renderBoard() {
 
     battleData.board.forEach((data, i) => {
         const tile = tiles[i];
-        if (!tile) return; // 安全檢查
+        if (!tile) return; 
 
         tile.style.opacity = '1';
         
-        let spriteUrl;
-        let filterEffect = "none";
+        // --- 優化點：直接呼叫 getTileImageUrl 處理所有網址判斷 ---
+        // 這樣就不需要在這裡寫一堆 if/else 判斷 Mega
+        const spriteUrl = getTileImageUrl(data.pokemonId);
         
-        // --- 判斷邏輯：是否為 Mega 狀態下的隊長格子 ---
+        // --- 處理濾鏡特效 ---
+        // 只有「進化狀態」且「是隊長」的格子才加金光
+        let filterEffect = "none";
         if (battleData.isMegaEvolved && data.pokemonId === leaderId) {
-            // 1. 取得 Mega 圖片路徑
-            const branchSelect = document.getElementById('mega-branch');
-            const currentBranch = branchSelect ? branchSelect.value : 'X';
-            spriteUrl = getMegaSpriteUrl(data.pokemonId, currentBranch);
-            
-            // 2. 設定進化後的金光濾鏡
             filterEffect = "drop-shadow(0 0 5px #ffcc00) brightness(1.1)";
-        } else {
-            // 一般狀態：使用 PokeAPI 圖片
-            spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${parseInt(data.pokemonId)}.png`;
-            filterEffect = "none";
         }
 
         // --- 執行更新 ---
@@ -1521,7 +1607,7 @@ function handleBattleWin() {
 function openCatchUI(p, bonus) {
     document.getElementById('battle-screen').style.display = 'none';
     document.getElementById('catch-overlay').style.display = 'flex';
-    document.getElementById('catch-sprite').src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${parseInt(p.id)}.png`;
+    document.getElementById('catch-sprite').src = `https://paulie0102-bear.github.io/Bear/shuffle/${p.id}.png`;
     
     // 取得 UI 元素並恢復初始狀態
     const rateText = document.getElementById('catch-rate-text');
@@ -1627,20 +1713,23 @@ function openPrep(p) {
 
     // 2. 顯示隊伍 (點擊觸發隊員更換)
     if (teamDiv) {
-        teamDiv.innerHTML = '';
-        gameState.team.forEach((id, index) => {
-            const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${parseInt(id)}.png`;
-            const isLeader = (index === 0);
-            teamDiv.innerHTML += `
-                <div style="text-align:center; cursor:pointer;" onclick="openMemberSelector(${index})">
-                    <img src="${spriteUrl}" style="width:55px; height:55px; background:#222; border-radius:50%; 
-                         border:${isLeader ? '3px solid #ffcc00' : '1px solid #666'}; padding:2px;">
-                    <div style="font-size:10px; margin-top:5px; color:${isLeader ? '#ffcc00' : '#ccc'}; font-weight:${isLeader ? 'bold' : 'normal'}">
-                        ${isLeader ? '隊長 (Mega)' : '隊員 ' + (index + 1)}
-                    </div>
-                </div>`;
-        });
-    }
+    teamDiv.innerHTML = '';
+    gameState.team.forEach((id, index) => {
+        // --- 修正重點：將 p.id 改為 id ---
+        // 因為 id 已經是 "001" 字串格式，所以直接帶入即可
+        const spriteUrl = `https://paulie0102-bear.github.io/Bear/shuffle/${id}.png`;
+        const isLeader = (index === 0);
+        
+        teamDiv.innerHTML += `
+            <div style="text-align:center; cursor:pointer;" onclick="openMemberSelector(${index})">
+                <img src="${spriteUrl}" style="width:55px; height:55px; background:#222; border-radius:50%; 
+                     border:${isLeader ? '3px solid #ffcc00' : '1px solid #666'}; padding:2px;">
+                <div style="font-size:10px; margin-top:5px; color:${isLeader ? '#ffcc00' : '#ccc'}; font-weight:${isLeader ? 'bold' : 'normal'}">
+                    ${isLeader ? '隊長 (Mega)' : '隊員 ' + (index + 1)}
+                </div>
+            </div>`;
+    });
+}
 
     // 3. 判定「隊長」是否具備 Mega 進化資格
     if (formOptions) {
@@ -1788,7 +1877,8 @@ const availablePkmn = gameState.captured
 
         availablePkmn.forEach(p => {
             const isAlreadyInTeam = gameState.team.includes(p.id);
-            const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${parseInt(p.id)}.png`;
+            // 直接使用 p.id (字串格式)，確保 001 不會變成 1
+const spriteUrl = `https://paulie0102-bear.github.io/Bear/shuffle/${p.id}.png`;
             
             // 檢查這隻寶可夢是否具備 Mega 潛力
             const megaIcon = p.hasMega ? 
@@ -1818,27 +1908,25 @@ const availablePkmn = gameState.captured
 }
 
 function renderBattleTeam() {
-    const previewDiv = document.getElementById('battle-team-preview');
-    if (!previewDiv) return;
+    // 1. 取得隊長 ID
+    const leaderId = gameState.team[0];
+    if (!leaderId) return;
 
-    previewDiv.innerHTML = ''; // 清空上一場的殘留
+    // 2. 直接鎖定隊長的圖片元件 (我們在新佈局中給它的 ID 是 team-img-0)
+    const leaderImg = document.getElementById('team-img-0');
     
-    gameState.team.forEach((id, index) => {
-        const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${parseInt(id)}.png`;
+    if (leaderImg) {
+        // 使用你的圖片工廠函式，確保抓到正確的 GitHub 路徑
+        // 且因為戰鬥剛開始時 isMegaEvolved 為 false，它會回傳普通形態圖
+        leaderImg.src = getTileImageUrl(leaderId);
         
-        // 幫隊長 (index 0) 加上 id="team-img-0"，這是 executeMegaImageChange 的目標
-        const imgId = (index === 0) ? 'id="team-img-0"' : '';
-        const isLeader = (index === 0);
+        // 重置可能的 Mega 特效（防止上一場殘留）
+        leaderImg.style.filter = "none";
+        leaderImg.style.transform = "scale(1)";
+    }
 
-        // 這裡的 style 配合你原本的 UI 風格
-        previewDiv.innerHTML += `
-            <div style="text-align:center;">
-                <img ${imgId} src="${spriteUrl}" 
-                     style="width:42px; height:42px; background:#222; border-radius:50%; 
-                            border:1px solid ${isLeader ? '#ffcc00' : '#444'}; padding:2px;">
-            </div>
-        `;
-    });
+    // 3. (選修) 如果你還是想在後台處理其他隊員的數據，可以在這裡做
+    // 但因為 HTML 已經不顯示隊員了，所以不需要再操作 previewDiv.innerHTML
 }
     
 function selectTeamMember(id) {
@@ -2105,19 +2193,27 @@ function manualLoad() {
             </div>
     </div>
 
-    <div id="battle-footer" style="height:15%; display:flex; justify-content:space-around; align-items:center; padding-bottom:var(--safe-bottom);">
-        <div style="text-align:center;">
-            <div style="font-size:12px; color:#aaa;">剩餘步數</div>
-            <div id="moves-left" style="font-size:24px; font-weight:bold; color:var(--accent-color);">15</div>
+    <div id="battle-footer" style="height:15%; display:flex; justify-content:space-between; align-items:center; padding: 0 25px; padding-bottom:var(--safe-bottom);">
+    
+    <div style="text-align:left;">
+        <div style="font-size:11px; color:#888; letter-spacing:1px;">MOVES</div>
+        <div id="moves-left" style="font-size:32px; font-weight:bold; color:#ffcc00; line-height:1;">15</div>
+    </div>
+
+    <div id="leader-mega-zone" style="display:flex; align-items:center; gap:12px; background: rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 40px 15px 15px 40px; border-left: 3px solid #ffcc00;">
+        
+        <div style="position:relative; width:55px; height:55px;">
+            <img id="team-img-0" src="" style="width:100%; height:100%; background:#222; border-radius:50%; border:2px solid #ffcc00; object-fit:contain;">
+            <div style="position:absolute; bottom:-5px; right:-5px; background:#ffcc00; color:#000; font-size:10px; font-weight:bold; padding:2px 5px; border-radius:4px;"></div>
         </div>
-        <div id="battle-team-preview" style="display:flex; gap:5px;">
+
+        <div style="width: 120px;">
+            <div style="font-size:9px; color:#ffcc00; margin-bottom:4px; font-weight:bold; letter-spacing:1px;">MEGA PROGRESS</div>
+            <div class="mega-bar-bg" style="width:100%; height:8px; background:#333; border-radius:4px; overflow:hidden; border:1px solid #444;">
+                <div id="mega-bar-fill" style="width:0%; height:100%; background:linear-gradient(90deg, #ffcc00, #ffee00); transition:width 0.3s;"></div>
             </div>
+        </div>
     </div>
-    <div class="mega-container">
-    <div class="mega-bar-bg">
-        <div id="mega-bar-fill" class="mega-bar-fill"></div>
-    </div>
-    <div class="mega-text">MEGA EVOLUTION PROGRESS</div>
 </div>
 
 </div>
