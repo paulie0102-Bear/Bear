@@ -259,16 +259,75 @@ body {
 }
 
 #pokemon-list-container {
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 12px; width: 100%; margin: 15px 0;
+    /* 移除 display: grid */
+    width: 100%;
+    margin: 15px 0;
+    color: #fff;
+    /* 確保容器可以根據內容自動撐開高度 */
+    min-height: 300px; 
+}
+/* 這是包裹 20 個寶可夢格子的網格 */
+.selector-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    width: 100%;
 }
 
 .selector-item {
-    background: #3d3d3d; border-radius: 12px; padding: 5px; text-align: center;
-    cursor: pointer; border: 2px solid transparent; transition: all 0.2s;
+    position: relative; /* 為了讓 Mega 的 M 標籤定位 */
+    background: #3d3d3d;
+    border-radius: 12px;
+    padding: 8px; /* 稍微增加一點內邊距 */
+    text-align: center;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
 }
-.selector-item:active { transform: scale(0.9); background: #555; border-color: var(--accent-color); }
-.selector-item img { width: 100%; height: auto; object-fit: contain; }
+
+/* 保留你原本的按壓特效，並增加選中感 */
+.selector-item:active { 
+    transform: scale(0.95); 
+    background: #555; 
+}
+
+.selector-item img { 
+    width: 60px; /* 固定寬度，防止圖片大小不一導致排版歪掉 */
+    height: 60px; 
+    object-fit: contain; 
+}
+
+/* 移除點擊後的預設外框 */
+.selector-item, .tile-class, button {
+    outline: none !important;
+}
+
+/* 如果是行動端，也建議移除點擊時的高亮灰色區塊 */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 地區按鈕與分頁按鈕的通用樣式 */
+#pokemon-list-container button {
+    background: #444;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s;
+}
+
+#pokemon-list-container button:hover {
+    background: #666;
+}
+
+#pokemon-list-container button:disabled {
+    background: #222;
+    color: #666;
+    cursor: not-allowed;
+}
 
 .mega-container {
     width: 80%;
@@ -353,6 +412,18 @@ body {
     100% { transform: translate(-50%, -70%); opacity: 0; }
 }
 
+.mega-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #ffcc00;
+    color: #000;
+    font-size: 9px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: bold;
+    z-index: 1;
+}
     </style>
 </head>
 <body>
@@ -364,7 +435,7 @@ body {
             <span>🔑: <b id="ui-keys">0</b></span>
         </div>
         <div class="status-row">
-            <span>⚡ <b id="ui-stamina">10/10</b></span>
+            <span>❤️ <b id="ui-stamina">10/10</b></span>
             <span id="ui-timer">00:00</span>
         </div>
     </div>
@@ -2278,59 +2349,84 @@ function getSkillDescription(key) {
     return descMap[key] || "神秘招式";
 }
 
-/**
- * 打開隊員選擇清單
- * @param {number} slotIndex - 正在更換哪一個位置 (0~3)
- */
+
+let currentRegionFilter = "kanto"; 
+let currentPage = 1;
+const ITEMS_PER_PAGE = 15;
+
 function openMemberSelector(slotIndex) {
     currentSelectingSlot = slotIndex;
+    renderSelectorUI(); // 這裡處理所有渲染邏輯
+    document.getElementById('selector-overlay').style.display = 'flex';
+}
+
+function renderSelectorUI() {
     const container = document.getElementById('pokemon-list-container');
     if (!container) return;
 
-    container.innerHTML = '';
+    // 1. 取得當前選定地區的範圍
+    const region = REGION_CONFIG.find(r => r.id === currentRegionFilter);
+    
+    // 2. 篩選與排序 (確保 001 格式正確)
+    const filteredPkmn = (gameState.captured || [])
+        .map(id => POKEMON_DATA.find(p => p.id === id))
+        .filter(p => p && parseInt(p.id) >= region.range[0] && parseInt(p.id) <= region.range[1])
+        .sort((a, b) => parseInt(a.id) - parseInt(b.id));
 
-    // 取得所有已捕獲的寶可夢
-    if (!gameState.captured || gameState.captured.length === 0) {
-        container.innerHTML = '<p style="grid-column: span 4; color: #888;">尚未捕獲任何寶可夢</p>';
-    } else {
-        // 將已獲得的 ID 轉為詳細資料並排序 (可以按編號排)
-        // 取得資料後，加上 .sort()
-const availablePkmn = gameState.captured
-    .map(id => POKEMON_DATA.find(p => p.id === id))
-    .filter(p => p)
-    .sort((a, b) => parseInt(a.id) - parseInt(b.id)); // 按 ID 數字大小升序排列
+    // 3. 分頁計算
+    const totalPages = Math.ceil(filteredPkmn.length / ITEMS_PER_PAGE) || 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+    const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+    const pageItems = filteredPkmn.slice(startIdx, startIdx + ITEMS_PER_PAGE);
 
-        availablePkmn.forEach(p => {
-            const isAlreadyInTeam = gameState.team.includes(p.id);
-            // 直接使用 p.id (字串格式)，確保 001 不會變成 1
-const spriteUrl = `https://paulie0102-bear.github.io/Bear/shuffle/${p.id}.png`;
-            
-            // 檢查這隻寶可夢是否具備 Mega 潛力
-            const megaIcon = p.hasMega ? 
-                `<span style="position:absolute; top:2px; right:2px; background:#ffcc00; color:black; font-size:8px; padding:1px 3px; border-radius:3px; font-weight:bold;">M</span>` : "";
+    // 4. 地區標籤 HTML (原本沒有的功能，新增)
+    let regionHtml = `<div class="region-tabs-container" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:15px; justify-content:center;">`;
+    REGION_CONFIG.forEach(r => {
+        const isActive = currentRegionFilter === r.id;
+        regionHtml += `
+            <button onclick="changeRegion('${r.id}')" 
+                style="background:${isActive ? '#ffcc00' : '#444'}; color:${isActive ? '#000' : '#fff'}; 
+                border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:12px; flex: 0 1 auto;">
+                ${r.name}
+            </button>`;
+    });
+    regionHtml += `</div>`;
 
-            container.innerHTML += `
-                <div class="selector-item" 
-                     style="position:relative; background:#333; border:1px solid ${isAlreadyInTeam ? '#444' : '#666'}; 
-                            border-radius:8px; padding:10px; text-align:center; 
-                            opacity:${isAlreadyInTeam ? '0.5' : '1'}; 
-                            cursor:${isAlreadyInTeam ? 'not-allowed' : 'pointer'};
-                            transition: transform 0.1s;"
-                     onclick="${isAlreadyInTeam ? '' : `selectTeamMember('${p.id}')`}"
-                     onmouseover="${isAlreadyInTeam ? '' : "this.style.borderColor='#ffcc00'; this.style.transform='scale(1.05)'"}"
-                     onmouseout="this.style.borderColor='${isAlreadyInTeam ? '#444' : '#666'}'; this.style.transform='scale(1)'">
-                    
-                    ${megaIcon}
-                    <img src="${spriteUrl}" style="width:50px; height:50px; margin-bottom:5px;">
-                    <div style="font-size:11px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                        ${p.name}
-                    </div>
-                </div>`;
-        });
-    }
+    // 5. 寶可夢網格 HTML (保留你原本的 Inline Style 和 hover 特效)
+    let listHtml = pageItems.map(p => {
+    const isAlreadyInTeam = gameState.team.includes(p.id);
+    const spriteUrl = `https://paulie0102-bear.github.io/Bear/shuffle/${p.id}.png`;
+    const megaIcon = p.hasMega ? `<span style="position:absolute; top:2px; right:2px; background:rgba(255, 204, 0, 0.9); font-size:10px; padding:1px 2px; border-radius:4px; z-index:1;">🧬</span>` : "";
+    
+    return `
+        <div class="selector-item" 
+             style="position:relative; background:#333; border:1px solid ${isAlreadyInTeam ? '#444' : '#666'}; border-radius:8px; padding:8px; text-align:center; opacity:${isAlreadyInTeam ? '0.5' : '1'}; cursor:${isAlreadyInTeam ? 'not-allowed' : 'pointer'}; overflow:hidden;"
+             onclick="${isAlreadyInTeam ? '' : `selectTeamMember('${p.id}')`}">
+            ${megaIcon}
+            <img src="${spriteUrl}" loading="lazy" style="width:55px; height:55px; object-fit:contain;">
+            <div style="font-size:12px; color:#fff; width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:4px;" title="${p.name}">
+                ${p.name}
+            </div>
+        </div>`;
+}).join('');
 
-    document.getElementById('selector-overlay').style.display = 'flex';
+const navHtml = `
+    <div style="display:flex; justify-content:center; align-items:center; gap:20px; margin-top:15px;">
+        <button onclick="changePage(-1)" ${currentPage === 1 ? 'disabled' : ''} style="padding:5px 15px;"> < </button>
+        <span style="color:#fff;">${currentPage} / ${totalPages}</span>
+        <button onclick="changePage(1)" ${currentPage === totalPages ? 'disabled' : ''} style="padding:5px 15px;"> > </button>
+    </div>`;
+
+// 2. 修改：將 repeat(4, 1fr) 改為 repeat(3, 1fr)
+// 3. 修改：將 span 4 改為 span 3
+container.innerHTML = regionHtml + 
+    `<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">${listHtml || '<p style="grid-column:span 3; color:#888; text-align:center;">此區尚未捕獲</p>'}</div>` + 
+    navHtml;
 }
+
+// 輔助函式 (必須一起加入)
+function changePage(step) { currentPage += step; renderSelectorUI(); }
+function changeRegion(regionId) { currentRegionFilter = regionId; currentPage = 1; renderSelectorUI(); }
 
 function renderBattleTeam() {
     // 1. 取得隊長 ID
@@ -2595,7 +2691,7 @@ function manualLoad() {
 </div>
 
         <div style="display:flex; flex-direction:column; gap:12px;">
-            <button onclick="startBattleLogic()" style="padding:18px; background:var(--accent-color); border:none; border-radius:35px; font-size:18px; font-weight:bold; color:black;">開始戰鬥 (⚡ 1)</button>
+            <button onclick="startBattleLogic()" style="padding:18px; background:var(--accent-color); border:none; border-radius:35px; font-size:18px; font-weight:bold; color:black;">開始戰鬥 (❤️ 1)</button>
             <button onclick="closePrep()" style="padding:12px; background:transparent; border:1px solid #555; color:#888; border-radius:35px;">返回地圖</button>
         </div>
     </div>
