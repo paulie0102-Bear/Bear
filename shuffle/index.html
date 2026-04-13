@@ -61,7 +61,7 @@ body {
     position: fixed;
     left: 0;
     /* 確保從狀態欄下方開始 */
-    top: 65px; /* 直接給個估計值或確定的狀態欄高度 */
+    top: 80px; /* 直接給個估計值或確定的狀態欄高度 */
     bottom: 0;
     width: 70px; /* 手機版建議窄一點 */
     background: rgba(34, 34, 34, 0.9); /* 微透明更有質感 */
@@ -359,8 +359,8 @@ body {
 
     <div id="status-bar">
         <div class="status-row">
-            <span id="region-title">關都地區</span>
-            <span>關卡進度: <b id="ui-dex">0/721</b></span>
+            <span id="region-title">關都</span>
+            <span>圖鑑進度: <b id="ui-dex">0/831</b></span>
             <span>🔑: <b id="ui-keys">0</b></span>
         </div>
         <div class="status-row">
@@ -395,7 +395,10 @@ body {
         { name: "豐緣", range: [252, 386], id: "hoenn" },
         { name: "神奧", range: [387, 493], id: "sinnoh" },
         { name: "合眾", range: [494, 649], id: "unova" },
-        { name: "卡洛斯", range: [650, 721], id: "kalos" }
+        { name: "卡洛斯", range: [650, 721], id: "kalos" },
+        { name: "阿羅拉", range: [722, 802], id: "alola" },
+        { name: "皮卡丘", range: [803, 817], id: "pika" },
+        { name: "閃光", range: [818, 831], id: "shiny" }
     ];
 
 
@@ -405,7 +408,7 @@ body {
         name: "搖手指",
         logic: (p, context) => {
             // 1. 定義可能抽中的技能池 (這裡的名稱必須跟下方的 Key 完全一致)
-            const pool = ["根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞"];
+            const pool = ["根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞", "千萬伏特"];
             const randomKey = pool[Math.floor(Math.random() * pool.length)];
             const targetSkill = MEGA_SKILL_DATABASE[randomKey];
 
@@ -482,7 +485,40 @@ body {
             // 再來一次 (洗牌)
             battleData.triggerBoardReset = true;
         }
+    },
+    "千萬伏特": {
+    name: "千萬伏特",
+    region: "阿羅拉",
+    logic: (p, ctx) => {
+        const rows = ctx.ROWS;
+        const cols = ctx.COLS;
+        let allValidPos = [];
+
+        // 1. 收集盤面上所有「非空」且「尚未被加入消除名單」的座標
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const idx = r * cols + c;
+                // 檢查是否已經在本次 matchSet 中，若不在則列入可炸毀目標
+                if (ctx.board[idx] && !ctx.matches.has(idx.toString())) {
+                    allValidPos.push(idx);
+                }
+            }
+        }
+
+        // 2. 隨機洗牌可消除位置
+        allValidPos.sort(() => Math.random() - 0.5);
+
+        // 3. 取出前 10 個並加入消除名單 (ctx.matches)
+        const count = Math.min(allValidPos.length, 10);
+        for (let i = 0; i < count; i++) {
+            const targetIdx = allValidPos[i];
+            // 這裡直接將索引加入 matchSet，後續系統會處理消除
+            ctx.matches.add(targetIdx.toString());
+        }
+
+        console.log(`⚡️ 千萬伏特：額外擊碎了 ${count} 個方塊！`);
     }
+}
 };
 
 // 建立索引對照表 (地區 ID -> 技能 Key)
@@ -493,7 +529,8 @@ const REGION_SKILL_MAP = [
     "地震", 
     "大字爆炎", 
     "畫龍點睛", 
-    "異次元洞"
+    "異次元洞", 
+    "千萬伏特"
 ];
 
     /** 1. 在這裡貼上你的名字清單 **/
@@ -570,11 +607,34 @@ const POKEMON_NAMES = [
 ,"堅盾劍怪","粉香香","芳香精","綿綿泡芙","胖甜妮","好啦鱿","烏賊王","龜腳腳","龜足巨鎧","垃垃藻"
 ,"毒藻龍","鐵臂槍蝦","鋼炮臂蝦","傘電蜥","光電傘蜥","寶寶暴龍","怪顎龍","冰雪龍","冰雪巨龍","仙子伊布"
 ,"摔角鷹人","咚咚鼠","小碎鑽","黏黏寶","黏美兒","黏美龍","鑰圈兒","小木靈","朽木妖","南瓜精"
-,"南瓜怪人","冰寶","冰岩怪","嗡蝠","音波龍","哲爾尼亞斯","伊裴爾塔爾","基格爾德","蒂安希","胡帕","波爾凱尼恩"
+,"南瓜怪人","冰寶","冰岩怪","嗡蝠","音波龍","哲爾尼亞斯","伊裴爾塔爾","基格爾德","蒂安希","胡帕","波爾凱尼恩",
+"木木梟","投羽梟","狙射樹梟",
+"火斑喵","炎熱喵","熾焰咆哮虎","球球海獅","花漾海獅","西獅海壬",
+"小篤兒","喇叭啄鳥","銃嘴大鳥","貓鼬少","貓鼬探長",
+"強顎雞母蟲","蟲電寶","鍬農炮蟲","好勝蟹","好勝毛蟹",
+"花舞鳥","萌虻","蝶結萌虻","岩狗狗","鬃岩狼人",
+"弱丁魚","好壞星","超壞星","泥驢仔","重泥挽馬",
+"滴蛛","滴蛛霸","偽螳草","蘭螳花","睡睡菇","燈罩夜菇",
+"夜盜火蜥","焰后蜥","童偶熊","穿著熊",
+"甜竹竹","甜舞妮","甜冷美后","花療環環",
+"智揮猩","投擲猴","膽小蟲","具甲武者",
+"沙丘魔堡娃","噬沙堡爺","拳海參",
+"屬性：空","銀伴戰獸","小隕星","樹枕尾熊",
+"爆焰龜獸","托戈德瑪爾","謎擬Q","磨牙彩皮魚",
+"老翁龍","破破舵輪",
+"心鱗寶","鱗甲龍","杖尾鱗甲龍",
+"卡璞・鳴鳴","卡璞・蝶蝶","卡璞・哞哞","卡璞・鰭鰭",
+"科斯莫古","科斯莫姆","索爾迦雷歐","露奈雅拉",
+"虛吾伊德","爆肌蚊","費洛美螂","電束木","鐵火輝夜","紙御劍","惡食大王",
+"奈克洛茲瑪","瑪機雅娜","瑪夏多", 
+"魔術皮卡丘", "耶誕皮卡丘", "噴火龍皮", "鯉魚王皮", "紅色暴鯉龍皮", "鳳王皮", "洛奇亞皮", 
+"列空坐皮", "黑列空坐皮", "智皮", "智皮", "智皮", "智皮", "智皮", "智皮", 
+"閃光噴火龍", "閃光梗鬼", "閃光鯉魚王", "閃光暴鯉龍", "閃光超夢", "閃光班基拉斯", "閃光鳳王", 
+"閃光沙奈朵", "閃光巨金怪", "閃光列空坐", "閃光蓋諾賽克特","閃光哲爾尼亞斯","閃光伊裴爾塔爾","小軟" 
 ];
 
 /** 2. 修改數據生成邏輯，讓它讀取上面的清單 **/
-const POKEMON_DATA = Array.from({length: 721}, (_, i) => {
+const POKEMON_DATA = Array.from({length: 831}, (_, i) => {
     const idNum = i + 1;
 
     // --- 1. 補齊所有 Mega 進化名單 (包含原始回歸) ---
@@ -584,7 +644,8 @@ const POKEMON_DATA = Array.from({length: 721}, (_, i) => {
   130, 142, 150, 181, 208, 212, 214, 229, 248, 254, 
   257, 260, 282, 302, 303, 306, 308, 310, 319, 323, 
   334, 354, 359, 362, 373, 376, 380, 381, 382, 383, 
-  384, 428, 445, 448, 460, 475, 531, 646, 658, 719
+  384, 428, 445, 448, 460, 475, 531, 646, 648, 658, 718, 719, 720,
+  818, 819, 821, 822, 823, 825, 826, 827, 831
     ];
 
     // --- 2. 補齊所有傳說與幻之寶可夢 (Legendary & Mythical) ---
@@ -598,9 +659,11 @@ const POKEMON_DATA = Array.from({length: 721}, (_, i) => {
         144, 145, 146, 150, 151, 
         243, 244, 245, 249, 250, 251,
         377, 378, 379, 380, 381, 382, 383, 384, 385, 386,
-        480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493, 494,
+        480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 493,
         638, 639, 640, 641, 642, 643, 644, 645, 646, 647, 648, 649,
-        716, 717, 718, 719, 720, 721
+        716, 717, 718, 719, 720, 721, 
+        785, 786, 787, 788, 791, 792, 800, 
+        822, 824, 827, 828, 829, 830, 831
     ];
 
     return {
@@ -659,7 +722,14 @@ function getEliteFourData(regionName) {
             { id: "689", name: "龜足巨鎧", stageName: "四天王 志米" },
             { id: "652", name: "布里卡隆", stageName: "四天王 雁鎧" },
             { id: "282", name: "沙奈朵", stageName: "地區冠軍 卡露乃", isChampion: true }
-        ]
+        ],
+        "阿羅拉": [
+    { id: "740", name: "好勝毛蟹", stageName: "四天王 哈勞" },
+    { id: "745", name: "鬃岩狼人", stageName: "四天王 麗姿" },
+    { id: "770", name: "噬沙堡爺", stageName: "四天王 阿塞羅拉" },
+    { id: "733", name: "銃嘴大鳥", stageName: "四天王 卡希麗" },
+    { id: "727", name: "熾焰咆哮虎", stageName: "地區冠軍 庫庫伊博士", isChampion: true }
+]
     };
 
     // 這裡會精準對應 "關都"、"城都" 等中文名稱
@@ -800,7 +870,7 @@ function goBackToMain() {
 
     // 更新標題
     const titleEl = document.getElementById('region-title');
-    if (titleEl) titleEl.innerText = currentReg.name + "地區";
+    if (titleEl) titleEl.innerText = currentReg.name ;
     
     // 更新按鈕文字與樣式（確保 UI 反映目前的 gameState.isHardMode）
     const btn = document.querySelector('.mode-toggle');
@@ -822,8 +892,17 @@ function goBackToMain() {
 }
 
     function toggleDifficulty() {
-    const currentReg = REGION_CONFIG[gameState.currentRegionIdx];
+    // 取得當前地區編號
+    const currentRegIdx = gameState.currentRegionIdx;
     
+    // 如果地區索引超過 (假設是 )，則不允許開啟
+    // 或者判斷起始 ID 是否 > 802
+    if (REGION_CONFIG[currentRegIdx].range[0] > 802) {
+        alert("該地區尚未開放困難模式（四天王挑戰）！");
+        return;
+    }
+
+    const currentReg = REGION_CONFIG[currentRegIdx];
     // --- 判定邏輯：檢查該地區「所有關卡」是否都通關過 ---
     let isAllCleared = true;
     for (let i = currentReg.range[0]; i <= currentReg.range[1]; i++) {
@@ -884,7 +963,6 @@ function renderMap() {
 
     // --- 關鍵修正：清空樣式殘留 ---
     list.innerHTML = '';
-    // 將之前在 JS 裡面設定的 Style 全部重設為空字串，讓它回歸 CSS 檔案的預設值
     list.style.display = "";
     list.style.flexDirection = "";
     list.style.alignItems = "";
@@ -895,18 +973,39 @@ function renderMap() {
 
     const config = REGION_CONFIG[gameState.currentRegionIdx];
 
-    // --- 分流判定 ---
+    // --- 【新增：安全性分流檢查】 ---
+    if (gameState.isHardMode) {
+        // 取得該地區的四天王資料
+        const eliteData = getEliteFourData(config.name);
+        
+        // 如果該地區超過 721 (無困難模式) 或者抓不到資料
+        if (config.range[0] > 802 || !eliteData || eliteData.length === 0) {
+            console.warn(`偵測到 ${config.name} 不支援困難模式，已強制切回普通模式。`);
+            gameState.isHardMode = false;
+            
+            // 同步更新模式切換按鈕的 UI (如果有按鈕的話)
+            const btn = document.querySelector('.mode-toggle');
+            if (btn) {
+                btn.innerText = "普通";
+                btn.style.background = "";
+                btn.style.color = "";
+                btn.classList.remove('active');
+            }
+        }
+    }
+
+    // --- 正式渲染邏輯 ---
     if (gameState.isHardMode) {
         renderHardModeLayout(list, config);
     } else {
         renderNormalModeLayout(list, config);
-        
-        // 【選擇性加入】確保普通模式下自動捲動到頂部，避免被剛才困難模式的捲動位置影響
         list.scrollTop = 0; 
     }
 
     // 更新狀態列
     updateStatusBar();
+    // 存檔一次，確保 isHardMode 的變更被記錄
+    save();
 }
 
 // --- 普通模式：保留你原本的所有邏輯與樣式 ---
@@ -1307,7 +1406,7 @@ function getMegaSpriteUrl(pokemonId, branch = 'X') {
     
     // 定義哪些 ID 擁有雙形態 (X/Y)
     // 包含：噴火龍(6)、超夢(150)、酋雷姆(646)
-    const dualForms = ["006", "150", "646"];
+    const dualForms = ["006", "150", "646", "818", "822"];
     
     let fileName = "";
 
@@ -1351,16 +1450,20 @@ function applyMegaSkill(matchSet, leaderId) {
     // --------------------------------------------------
 
     // 播放震動與文字特效
-    playSkillEffect(skill.name);
+    playSkillEffect();
 
     const context = { matches: matchSet, COLS: 6, ROWS: 6, board: battleData.board, leaderId: leaderId };
 
-    // 執行邏輯
-    if (["搖手指", "大X型消除", "隊長全清", "再來一次"].includes(skillKey)) {
+    // 這些是「全域型技能」，不需要根據每個方塊位置重複執行的
+    const globalSkills = ["搖手指", "大X型消除", "隊長全清", "再來一次", "千萬伏特"];
+
+    if (globalSkills.includes(skillKey)) {
+        // 全域技能：只執行一次邏輯
         skill.logic(null, context);
     } else {
+        // 位置型技能：針對每個消除的隊長方塊位置執行（如地震、十字消除）
         leaderPositions.forEach(p => skill.logic(p, context));
-    }
+        }
 }
 
 function handleElimination(matchSet) {
@@ -1381,16 +1484,6 @@ function handleElimination(matchSet) {
         }
     });
 
-    if (battleData.isMegaEvolved && countsPerPkmn[leaderId]) {
-    const regionNames = ["關都", "城都", "豐緣", "神奧", "合眾", "卡洛斯"];
-    // 修改後的招式名稱陣列 (按照地區解鎖順序排列)
-const skillNames = ["搖手指", "根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞"];
-    const currentIdx = gameState.currentRegionIdx || 0;
-    
-    // 找一個 UI 位置顯示
-    console.log(`【${regionNames[currentIdx]}技能】${skillNames[currentIdx]} 發動！`);
-    // 如果你有一個訊息欄位，可以用 innerText 顯示出來
-}
 
     const barFill = document.getElementById('mega-bar-fill');
     
@@ -1677,64 +1770,58 @@ function checkBattleEnd() {
     if (battleData.currentHP <= 0) {
         battleData.isEnding = true; 
 
-        const pId = gameState.lastPlayed;
-        const pInfo = POKEMON_DATA.find(p => p.id === pId);
+        const pId = gameState.lastPlayed; // 當前關卡的 ID (字串，如 "721")
+        const pIntId = parseInt(pId);
 
         // --- 1. 解鎖下一關邏輯 (僅限普通模式) ---
-        const nextId = (parseInt(pId) + 1).toString().padStart(3, '0');
+        const MAX_TOTAL_ID = 831; // 遊戲總關卡上限
+        const nextId = (pIntId + 1).toString().padStart(3, '0');
         let unlockMsg = "";
         
-        if (!gameState.isHardMode && parseInt(nextId) <= 721) {
+        if (!gameState.isHardMode && pIntId + 1 <= MAX_TOTAL_ID) {
             if (!gameState.unlocked.includes(nextId)) {
                 gameState.unlocked.push(nextId);
                 unlockMsg = `下一關 ${nextId} 已解鎖！`; 
             }
         }
-        if (!gameState.isHardMode && parseInt(nextId) <= 721) {
-    if (!gameState.unlocked.includes(nextId)) {
-        gameState.unlocked.push(nextId);
-        unlockMsg = `下一關 ${nextId} 已解鎖！`; 
-    }
-}
 
-// --- 【關鍵插入：地區通關與技能覺醒邏輯】 ---
-const currentReg = REGION_CONFIG[gameState.currentRegionIdx];
-// 檢查是否剛好擊敗了該地區的最後一隻寶可夢
-if (parseInt(pId) === currentReg.range[1]) {
-    // 只有當「目前地區索引」等於「已解鎖技能索引」時，才代表是第一次通關並升級技能
-    if (gameState.currentRegionIdx === gameState.unlockedSkillIdx) {
-        gameState.unlockedSkillIdx++; 
-        const newSkillName = ["搖手指", "根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞"][gameState.unlockedSkillIdx];
-        
-        // 將技能解鎖訊息併入 unlockMsg，讓玩家在結算時看到
-        const skillAlert = `★ 力量覺醒：解鎖新技能「${newSkillName}」！`;
-        unlockMsg = unlockMsg ? `${unlockMsg} ${skillAlert}` : skillAlert;
-        
-        // 如果你希望有更強烈的視覺回饋，也可以用 setTimeout 彈窗
-        console.log(`地區通關！新技能解鎖: ${newSkillName}`);
-    }
-}
+        // --- 【關鍵插入：地區通關與技能覺醒邏輯】 ---
+        const currentReg = REGION_CONFIG[gameState.currentRegionIdx];
+        const skillList = ["搖手指", "根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞", "千萬伏特"];
 
-        // --- 2. 移除計數邏輯與隱藏進度文字 ---
-        // (此處不再執行 clearCounts++，也不再組合 progress 字串)
-        let finalDesc = unlockMsg;
-        if (finalDesc === "") finalDesc = "成功的擊敗了對手！";
+        // 檢查條件：
+        // A. 擊敗的是當前地區最後一隻 (pIntId === currentReg.range[1])
+        // B. 還有新技能可以解鎖 (unlockedSkillIdx < 6)
+        // C. 雖然總關卡到 831，但技能解鎖只支援到 721 (卡洛斯結束)
+        if (pIntId === currentReg.range[1] && pIntId <= 802) {
+            // 只有第一次通關該地區時才升級技能索引
+            if (gameState.currentRegionIdx === gameState.unlockedSkillIdx && gameState.unlockedSkillIdx < skillList.length - 1) {
+                
+                gameState.unlockedSkillIdx++; 
+                const newSkillName = skillList[gameState.unlockedSkillIdx];
+                
+                const skillAlert = `★ 力量覺醒：解鎖新技能「${newSkillName}」！`;
+                unlockMsg = unlockMsg ? `${unlockMsg} ${skillAlert}` : skillAlert;
+                
+                console.log(`地區通關！新技能解鎖: ${newSkillName}`);
+            }
+        }
+
+        // --- 2. 描述文字處理 ---
+        let finalDesc = unlockMsg || "成功的擊敗了對手！";
 
         const isCaptured = gameState.captured.includes(pId);
         save(); 
 
         // --- 3. 根據狀態決定後續路徑 ---
         if (isCaptured || gameState.isHardMode) {
-            // 已捕捉或困難模式：跳出字卡後直接結束
             showResultCard("挑戰成功", finalDesc, () => {
-                // 統一在此呼叫 handleBattleWin 處理後續(計數/鑰匙)
                 handleBattleWin(); 
                 closeBattle(); 
                 battleData.isEnding = false; 
                 renderMap(); 
             });
         } else {
-            // 未捕捉且普通模式：跳出字卡後進入捕捉階段
             showResultCard("挑戰成功", finalDesc, () => {
                 battleData.isEnding = false; 
                 handleBattleWin(); 
@@ -1843,33 +1930,25 @@ function handleBattleWin() {
 }
 
 // 視覺特效處理器
-function playSkillEffect(skillName) {
-    // 1. 取得元素並檢查是否存在
+function playSkillEffect() {
+    // 1. 取得棋盤元素
     const board = document.getElementById('board');
     
-    // 如果找不到 board (null)，就只顯示文字特效，不執行震動，避免程式報錯
+    // 2. 執行震動特效
     if (board) {
         board.classList.add('skill-shake');
+        
+        // 500ms 後移除震動類名，以便下次再次觸發
         setTimeout(() => {
-            // 再次檢查 board 是否還在畫面上（防止玩家在 500ms 內關閉戰鬥）
-            if (board) board.classList.remove('skill-shake');
+            // 這裡使用 optional chaining (?.) 或檢查確保元素依然存在
+            document.getElementById('board')?.classList.remove('skill-shake');
         }, 500);
     } else {
-        console.warn("提醒：找不到 id='game-board' 的元素，已跳過震動特效。");
+        // 如果是在測試環境或找不到棋盤，僅在控制台記錄而不報錯
+        console.warn("提醒：找不到 id='board' 的元素，已跳過震動特效。");
     }
 
-    // 2. 顯示技能文字特效 (這是加在 document.body，通常不會失敗)
-    const msg = document.createElement('div');
-    msg.className = 'skill-toast';
-    msg.innerText = `MEGA SKILL: ${skillName}`;
-    document.body.appendChild(msg);
-
-    // 3. 移除文字
-    setTimeout(() => {
-        if (msg && msg.parentNode) {
-            msg.remove();
-        }
-    }, 800);
+    // 原本的 skill-toast (文字特效) 已完全移除
 }
 
 function openCatchUI(p, bonus) {
@@ -1958,7 +2037,7 @@ function exitCatch() {
 }
 
 function cycleSkill() {
-    const skillKeys = ["搖手指", "根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞"];
+    const skillKeys = ["搖手指", "根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞", "千萬伏特"];
     
     // 找到當前技能的索引
     let currentIdx = skillKeys.indexOf(gameState.currentSkillKey);
@@ -2034,7 +2113,7 @@ function openPrep(p) {
     if (existingSkill) existingSkill.remove();
 
     // 取得所有技能 Key
-    const skillKeys = ["搖手指", "根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞"];
+    const skillKeys = ["搖手指", "根源波動", "斷崖之劍", "地震", "大字爆炎", "畫龍點睛", "異次元洞", "千萬伏特"];
     
     // 確保當前選中的技能是合法的（防止舊存檔錯誤）
     if (!gameState.currentSkillKey) gameState.currentSkillKey = "搖手指";
@@ -2051,7 +2130,7 @@ function openPrep(p) {
             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                 <span class="mega-label" style="color: #ffcc00; font-size: 11px;">◈ 已裝備技能 (點擊切換)</span>
                 <span style="background: #333; color: #eee; font-size: 10px; padding: 1px 6px; border-radius: 4px;">
-                    解鎖進度: ${gameState.unlockedSkillIdx + 1} / 7
+                    解鎖進度: ${gameState.unlockedSkillIdx + 1} / 8
                 </span>
             </div>
             
@@ -2106,7 +2185,7 @@ function openPrep(p) {
     if (leaderInfo && leaderInfo.hasMega) {
         const hasStone = gameState.items.includes(`${leaderId}_mega`);
         if (hasStone) {
-            const isBranch = (leaderId === "006" || leaderId === "150");
+            const isBranch = (leaderId === "006" || leaderId === "150"|| leaderId === "646"|| leaderId === "818"|| leaderId === "822");
             content += `
                 <div class="mega-toggle-container">
                     <span class="mega-label">型態變化</span>
@@ -2187,13 +2266,14 @@ if (keyOption) {
 // 輔助函式：根據技能 Key 回傳中文描述
 function getSkillDescription(key) {
     const descMap = {
-        "搖手指": "隨機發動其他的招式，充滿驚喜感。",
+        "搖手指": "【天選之人】隨機發動其他的招式，未來無人能掌握。",
         "根源波動": "【橫向消除】遠古大海的波動橫掃，消除整橫列方塊。",
         "斷崖之劍": "【縱向消除】地底突起的巨石刃，垂直貫穿整縱欄。",
         "地震": "【周圍爆破】引發強烈地震，炸開中心點周圍 3x3 方塊。",
         "大字爆炎": "【大X型消除】大字型烈焰燃燒，消除交叉範圍內的方塊。",
         "畫龍點睛": "【隊長全清】究極招式從天而降，消除畫面上所有隊長。",
-        "異次元洞": "【重新洗牌】透過異次元空間，清空並重新填充所有方塊。"
+        "異次元洞": "【重新洗牌】透過異次元空間，清空並重新填充所有方塊。",
+        "千萬伏特":"【羈絆力量】閃電從天而降，隨機落在10個寶可夢上。"
     };
     return descMap[key] || "神秘招式";
 }
@@ -2394,7 +2474,7 @@ function updateStatusBar() {
         `${Math.floor(remaining/60).toString().padStart(2,'0')}:${(remaining%60).toString().padStart(2,'0')}` : "MAX";
     
     // 更新關卡進度與金鑰
-    document.getElementById('ui-dex').innerText = `${gameState.captured.length}/721`;
+    document.getElementById('ui-dex').innerText = `${gameState.captured.length}/831`;
     document.getElementById('ui-keys').innerText = gameState.keys;
 }
     function scrollToLastPlayed() {
