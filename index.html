@@ -2567,13 +2567,13 @@ function showAnnouncement() {
     
     <div style="max-height: 250px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; text-align: left; font-size: 14px; line-height: 1.6;">
         <b style="color: #e67e22;">【系統更新內容】</b><br>
-        • 🎮 新增寶可夢消消樂，點擊任意兩隻寶可夢來交換位置，腦力激盪的時間到了!<br>
-        • 📖 重大更新!寶可夢圖鑑開放到No.721<br>
-        • 🍱 因應圖鑑擴增，調整冒險小隊可遭遇的地區以及寶可夢。<br>
-        • ⚙️ 移除的小隊寶可夢愛心會直接消失，對於受影響的玩家深感抱歉。<br>
+        • ⚙️ 修正所有寶可夢皆可使用Mega石的bug。<br>
+        • 🎮 寶可夢消消樂關卡增設阿羅拉地區以及特殊副本。<br>
+        • 🎮 新增寶可夢消消樂，腦力激盪的時間到了!<br>
+        • 📖 記帳寶可夢圖鑑開放到No.721。<br>
+        • 🍱 冒險小隊最新地區為卡洛斯地區。<br>        
         • 🎓 博士啟程禮，新增合眾地區、卡洛斯地區。<br>
         • 🏆 冠軍的認可，新增合眾地區、卡洛斯地區。<br>
-        • 🍱 美食冠軍聯盟範圍包含關都、城都、豐緣以及神奧地區，不再調整。<br>
     </div>
 
     <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
@@ -3308,10 +3308,15 @@ function executeEvolve(targetId) {
 
 // --- [ Mega 邏輯優化: X/Y 分支 ] ---
 function tryMega() {
+    const curId = s.buddyId;
+    const curName = POKEMON_NAMES[curId] || `No.${curId}`;
+    
+    if (!MEGA_LIST.includes(curId)) {
+    alert(`${curName} 目前無法進行超進化！`);
+    return;
+}
     if (s.items.mstone <= 0) { alert("需要 1 顆 Mega 石！"); return; }
     if (Date.now() < s.megaUntil) { alert("已經在 Mega 狀態了！"); return; }
-
-    const curId = s.buddyId;
     
     // 💡 定義具備特殊型態或分歧進化的配置
     const dualConfigs = {
@@ -3320,8 +3325,6 @@ function tryMega() {
         646: ['black', 'white'], // 酋雷姆
         658: ['ash']            // 甲賀忍蛙 (小智版)
     };
-
-    const curName = POKEMON_NAMES[curId] || `No.${curId}`;
 
     // 檢查目前夥伴是否在特殊配置名單中
     if (dualConfigs[curId]) {
