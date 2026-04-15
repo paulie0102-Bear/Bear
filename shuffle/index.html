@@ -2087,14 +2087,14 @@ function executeCatchLogic() {
         // 成功邏輯
         rateText.innerText = "成功收服！";
         rateText.style.color = "var(--accent-color)";
-        detailText.innerText = "已加入你的寶可夢圖鑑";
+        detailText.innerText = "已加入寶可夢圖鑑";
         
         if (!gameState.captured.includes(pId)) {
             gameState.captured.push(pId);
         }
     } else {
         // 失敗邏輯
-        rateText.innerText = "寶可夢從球裡出來了";
+        rateText.innerText = "捕捉失敗...";
         rateText.style.color = "#ff5555";
         detailText.innerText = "成功通關！可惜未能捕捉到寶可夢";
         
@@ -2150,21 +2150,22 @@ function openPrep(p) {
     const formOptions = document.getElementById('prep-form-options');
     const keyOption = document.getElementById('prep-key-option');
 
-// --- 修正：水平排列敵人頭像與名字，節省空間 ---
+// --- 修正：使用 flex-nowrap 確保手機與電腦都水平排列 ---
 if (stageName) {
     const bossSpriteUrl = `https://paulie0102-bear.github.io/Bear/shuffle/${p.id}.png`;
     
-    let megaTag = p.hasMega ? `<span style="background:linear-gradient(135deg,#ffcc00,#ff6600); color:black; padding:1px 4px; border-radius:4px; font-size:10px; margin-left:5px; font-weight:bold;">MEGA</span>` : "";
+    let megaTag = p.hasMega ? `<span style="background:linear-gradient(135deg,#ffcc00,#ff6600); color:black; padding:1px 4px; border-radius:4px; font-size:10px; margin-left:5px; font-weight:bold; white-space:nowrap;">MEGA</span>` : "";
     
-    // 改用水平排列 (flex-row)，並縮小圖片至 50px
+    // 增加 white-space: nowrap 和 flex-nowrap
     stageName.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 5px 0;">
-            <img src="${bossSpriteUrl}" style="width: 50px; height: 50px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-            <div style="text-align: left;">
-                <div style="font-size: 18px; font-weight: bold; color: #fff; line-height: 1;">
-                    ${p.name}${megaTag}
+        <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; padding: 5px 0; width: 100%; flex-wrap: nowrap;">
+            <img src="${bossSpriteUrl}" style="width: 45px; height: 45px; flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+            <div style="text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <div style="font-size: 16px; font-weight: bold; color: #fff; line-height: 1.2; display: flex; align-items: center;">
+                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.name}</span>
+                    ${megaTag}
                 </div>
-                <div style="font-size: 10px; color: #888; margin-top: 2px;">BOSS TARGET</div>
+                <div style="font-size: 9px; color: #888; margin-top: 1px;">BOSS TARGET</div>
             </div>
         </div>
     `;
