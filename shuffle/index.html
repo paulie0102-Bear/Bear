@@ -1428,6 +1428,7 @@ function checkMatches() {
 
     let board = battleData.board;
     let toMatch = new Set();
+    let currentTurnMatches = 0; // 新增：用來記錄這一輪同時消除了幾組
 
     // --- 橫向與縱向掃描 (維持你原本的邏輯) ---
     for (let r = 0; r < 6; r++) {
@@ -1438,6 +1439,7 @@ function checkMatches() {
             let id3 = board[idx + 2].pokemonId;
             if (id1 && id1 === id2 && id1 === id3) {
                 toMatch.add(idx); toMatch.add(idx + 1); toMatch.add(idx + 2);
+                currentTurnMatches++; // 發現一組橫向連線
             }
         }
     }
@@ -1449,12 +1451,13 @@ function checkMatches() {
             let id3 = board[idx + 12].pokemonId;
             if (id1 && id1 === id2 && id1 === id3) {
                 toMatch.add(idx); toMatch.add(idx + 6); toMatch.add(idx + 12);
+                currentTurnMatches++; // 發現一組縱向連線
             }
         }
     }
 
     if (toMatch.size > 0) {
-        handleElimination(toMatch);
+        handleElimination(toMatch, currentTurnMatches);
     } else {
         // --- 【關鍵修正】 Combo 結束時的處理 ---
         battleData.combo = 0;
@@ -1537,8 +1540,10 @@ function applyMegaSkill(matchSet, leaderId) {
         }
 }
 
-function handleElimination(matchSet) {
-    battleData.combo++;
+function handleElimination(matchSet, matchCount = 1) {
+    // 以前是 battleData.combo++; 
+    // 現在改為根據連線組數累加
+    battleData.combo += matchCount;
     const leaderId = gameState.team[0];
 
     // --- 關鍵插入點：先發動 Mega 技能擴張消除範圍 ---
@@ -2080,16 +2085,16 @@ function executeCatchLogic() {
     // 2. 處理捕捉結果與 UI 更新
     if (success) {
         // 成功邏輯
-        rateText.innerText = "成功捕獲！";
+        rateText.innerText = "成功收服！";
         rateText.style.color = "var(--accent-color)";
-        detailText.innerText = "已加入你的收藏名單";
+        detailText.innerText = "已加入你的寶可夢圖鑑";
         
         if (!gameState.captured.includes(pId)) {
             gameState.captured.push(pId);
         }
     } else {
         // 失敗邏輯
-        rateText.innerText = "捕捉失敗...";
+        rateText.innerText = "寶可夢從球裡出來了";
         rateText.style.color = "#ff5555";
         detailText.innerText = "成功通關！可惜未能捕捉到寶可夢";
         
@@ -2146,10 +2151,25 @@ function openPrep(p) {
     const keyOption = document.getElementById('prep-key-option');
 
     // --- 修正：找回關卡專屬的 Mega 標記 ---
-    if (stageName) {
-        let megaTag = p.hasMega ? `<span style="background:linear-gradient(135deg,#ffcc00,#ff6600); color:black; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:8px; font-weight:bold; box-shadow:0 0 5px rgba(255,204,0,0.5);">MEGA</span>` : "";
-        stageName.innerHTML = p.name + megaTag;
-    }
+    // --- 修正：找回關卡專屬的 Mega 標記並增加頭像 ---
+if (stageName) {
+    // 1. 取得敵人的圖片 URL (假設 p.id 是敵人的編號)
+    const bossSpriteUrl = `https://paulie0102-bear.github.io/Bear/shuffle/${p.id}.png`;
+    
+    // 2. 建立 Mega 標籤
+    let megaTag = p.hasMega ? `<span style="background:linear-gradient(135deg,#ffcc00,#ff6600); color:black; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:8px; font-weight:bold; box-shadow:0 0 5px rgba(255,204,0,0.5);">MEGA</span>` : "";
+    
+    // 3. 組合頭像與名字 (使用 Flexbox 讓它們水平置中對齊)
+    stageName.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 10px;">
+            <img src="${bossSpriteUrl}" style="width: 80px; height: 80px; filter: drop-shadow(0 0 8px rgba(0,0,0,0.5));">
+            <div style="display: flex; align-items: center;">
+                <span style="font-size: 20px; font-weight: bold; color: #fff;">${p.name}</span>
+                ${megaTag}
+            </div>
+        </div>
+    `;
+}
     
     // 1. 判定目標 HP (模式分流)
     let hp = 3000;
