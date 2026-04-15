@@ -2150,22 +2150,21 @@ function openPrep(p) {
     const formOptions = document.getElementById('prep-form-options');
     const keyOption = document.getElementById('prep-key-option');
 
-    // --- 修正：找回關卡專屬的 Mega 標記 ---
-    // --- 修正：找回關卡專屬的 Mega 標記並增加頭像 ---
+// --- 修正：水平排列敵人頭像與名字，節省空間 ---
 if (stageName) {
-    // 1. 取得敵人的圖片 URL (假設 p.id 是敵人的編號)
     const bossSpriteUrl = `https://paulie0102-bear.github.io/Bear/shuffle/${p.id}.png`;
     
-    // 2. 建立 Mega 標籤
-    let megaTag = p.hasMega ? `<span style="background:linear-gradient(135deg,#ffcc00,#ff6600); color:black; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:8px; font-weight:bold; box-shadow:0 0 5px rgba(255,204,0,0.5);">MEGA</span>` : "";
+    let megaTag = p.hasMega ? `<span style="background:linear-gradient(135deg,#ffcc00,#ff6600); color:black; padding:1px 4px; border-radius:4px; font-size:10px; margin-left:5px; font-weight:bold;">MEGA</span>` : "";
     
-    // 3. 組合頭像與名字 (使用 Flexbox 讓它們水平置中對齊)
+    // 改用水平排列 (flex-row)，並縮小圖片至 50px
     stageName.innerHTML = `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 10px;">
-            <img src="${bossSpriteUrl}" style="width: 80px; height: 80px; filter: drop-shadow(0 0 8px rgba(0,0,0,0.5));">
-            <div style="display: flex; align-items: center;">
-                <span style="font-size: 20px; font-weight: bold; color: #fff;">${p.name}</span>
-                ${megaTag}
+        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; padding: 5px 0;">
+            <img src="${bossSpriteUrl}" style="width: 50px; height: 50px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+            <div style="text-align: left;">
+                <div style="font-size: 18px; font-weight: bold; color: #fff; line-height: 1;">
+                    ${p.name}${megaTag}
+                </div>
+                <div style="font-size: 10px; color: #888; margin-top: 2px;">BOSS TARGET</div>
             </div>
         </div>
     `;
