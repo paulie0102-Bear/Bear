@@ -1177,8 +1177,14 @@ function renderHardModeLayout(list, config) {
     list.innerHTML = ''; 
 
     eliteData.forEach((p, index) => {
-        const isPrevClear = index === 0 || (gameState.clearCounts && gameState.clearCounts[eliteData[index-1].id] > 0);
-        
+        const prevId = index > 0 ? eliteData[index - 1].id : null;
+const hardClearKey = prevId ? `${prevId}_hard` : null;
+
+// 修改判斷式：檢查的是帶有 _hard 的通關紀錄
+const isPrevClear = index === 0 || (
+    gameState.clearCounts && 
+    gameState.clearCounts[hardClearKey] > 0
+);
         // 取得該關卡頭目的 Mega 圖標 (用於預覽)
         const megaHtml = getMegaIconHtml(p);
 
@@ -1972,17 +1978,22 @@ function handleBattleWin() {
     }
 
     // --- 1. 立即處理獎勵與進度 (存檔前完成) ---
-    let megaMsg = "";
-    if (!gameState.isHardMode) {
-        // 普通模式：計次 + Mega 判定
-        gameState.clearCounts[p.id] = (gameState.clearCounts[p.id] || 0) + 1;
-        megaMsg = handleBranchMegaLogic(p.id, gameState.clearCounts[p.id]);
-    } else {
-        // 困難模式：如果是冠軍，額外給鑰匙
-        if (isChampionStage) {
-            gameState.keys++;
-        }
+let megaMsg = "";
+// 定義一個儲存用的 Key
+const clearKey = gameState.isHardMode ? `${p.id}_hard` : p.id;
+
+if (!gameState.isHardMode) {
+    // 普通模式
+    gameState.clearCounts[p.id] = (gameState.clearCounts[p.id] || 0) + 1;
+    megaMsg = handleBranchMegaLogic(p.id, gameState.clearCounts[p.id]);
+} else {
+    // 困難模式：使用獨立的 Key 記錄次數
+    gameState.clearCounts[clearKey] = (gameState.clearCounts[clearKey] || 0) + 1;
+    
+    if (isChampionStage) {
+        gameState.keys++;
     }
+}
 
     // 統一執行一次存檔與狀態更新
     save();
@@ -2206,7 +2217,7 @@ if (stageName) {
     // 增加 white-space: nowrap 和 flex-nowrap
     stageName.innerHTML = `
         <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; padding: 5px 0; width: 100%; flex-wrap: nowrap;">
-            <img src="${bossSpriteUrl}" style="width: 45px; height: 45px; flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+            <img src="${bossSpriteUrl}" style="width: 60px; height: 60px; flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
             <div style="text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                 <div style="font-size: 16px; font-weight: bold; color: #fff; line-height: 1.2; display: flex; align-items: center;">
                     <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.name}</span>
