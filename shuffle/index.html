@@ -424,6 +424,23 @@ body {
     font-weight: bold;
     z-index: 1;
 }
+
+/* 美化捲動內容區 */
+#prep-scroll-content::-webkit-scrollbar {
+    width: 4px;
+}
+#prep-scroll-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+#prep-scroll-content::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 10px;
+}
+#prep-scroll-content::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color);
+}
+        
     </style>
 </head>
 <body>
@@ -1943,6 +1960,17 @@ function handleBattleWin() {
     const useKeyElement = document.getElementById('use-key');
     const useKey = useKeyElement ? useKeyElement.checked : false;
 
+    // --- 【核心修正：解鎖下一關邏輯】 ---
+    const currentIndex = POKEMON_DATA.findIndex(x => x.id === p.id);
+    if (currentIndex !== -1 && currentIndex < POKEMON_DATA.length - 1) {
+        const nextPokemon = POKEMON_DATA[currentIndex + 1];
+        // 如果下一隻還沒解鎖，就把它加進去
+        if (!gameState.unlocked.includes(nextPokemon.id)) {
+            gameState.unlocked.push(nextPokemon.id);
+            console.log(`解鎖下一關：No.${nextPokemon.id} ${nextPokemon.name}`);
+        }
+    }
+
     // --- 1. 立即處理獎勵與進度 (存檔前完成) ---
     let megaMsg = "";
     if (!gameState.isHardMode) {
@@ -1981,6 +2009,7 @@ function handleBattleWin() {
         if (isLegendary && !useKey) {
             alert("通關成功！但未開啟傳說之鑰，寶可夢直接離開了。");
             closeBattle();
+            renderMap();
             return;
         }
 
@@ -2142,7 +2171,25 @@ function cycleSkill() {
 function openPrep(p) {
     window.currentStageData = p;
     const overlay = document.getElementById('prep-overlay');
-    
+
+    // 清空並初始化整體結構，確保按鈕永遠在最下面，中間可以捲動
+    overlay.innerHTML = `
+        <div id="prep-header" style="margin-bottom: 10px;">
+            <div id="prep-stage-name"></div>
+            <div id="prep-stage-hp" style="text-align:center; font-size:12px; color:#aaa; margin-top:5px;"></div>
+        </div>
+        
+        <div id="prep-scroll-content" style="max-height: 50vh; overflow-y: auto; padding-right: 5px; margin-bottom: 15px;">
+            <div id="prep-team-slots" style="display:flex; justify-content:space-around; background:#1a1a1a; padding:10px; border-radius:12px; border:1px solid #333; margin-bottom:10px;"></div>
+            <div id="prep-form-options"></div>
+            <div id="prep-key-option"></div>
+        </div>
+        
+        <div id="prep-footer" style="display:flex; flex-direction:column; gap:10px;">
+            <button onclick="startBattleLogic()" style="width:100%; padding:12px; background:var(--accent-color); border:none; border-radius:35px; font-size:17px; font-weight:bold; color:black; cursor:pointer;">開始戰鬥 (❤️ 1)</button>
+            <button onclick="closePrep()" style="width:100%; padding:12px; background:transparent; border:1px solid #555; color:#888; border-radius:35px; font-size:15px; cursor:pointer;">返回地圖</button>
+        </div>
+    `;
     // 安全檢查：確保元素存在
     const stageName = document.getElementById('prep-stage-name');
     const stageHp = document.getElementById('prep-stage-hp');
