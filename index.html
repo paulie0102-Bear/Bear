@@ -6047,13 +6047,21 @@ function openPokemonDex() {
         POKEDEX_DATA.forEach(p => {
             if (currentFilter !== 'all' && p.color !== currentFilter) return;
 
-            const hearts = s.farm.friendshipData[p.id] || 0;
+            const isOwned = s.pkm.some(pk => pk.id === p.id);
             const maxHearts = p.type === 'legend' ? 5 : 3;
-            const heartDisplay = "🧡".repeat(Math.min(hearts, maxHearts)) + "🤍".repeat(maxHearts - Math.min(hearts, maxHearts));
+            let heartDisplay;
+             if (isOwned) { // 已經是隊員 → 顯示滿愛心
+               heartDisplay = "💖".repeat(maxHearts);
+             } else {
+              // 尚未成為隊員 → 讀取原本的好感度
+         const hearts = s.farm.friendshipData[p.id] || 0; heartDisplay =
+        "🧡".repeat(Math.min(hearts, maxHearts)) +
+        "🤍".repeat(maxHearts - Math.min(hearts, maxHearts));
+}
 
             // 顯示神獸料理 icon
-let foodIcon = '';
-if (p.type === 'legend' && RECIPES[p.food]) foodIcon = `<div style="font-size:16px; margin-top:2px;">${RECIPES[p.food].icon}</div>`;
+            let foodIcon = '';
+            if (p.type === 'legend' && RECIPES[p.food]) foodIcon = `<div style="font-size:16px; margin-top:2px;">${RECIPES[p.food].icon}</div>`;
 
             const imgUrl = (typeof GARDEN !== 'undefined' && GARDEN.getGif) ? GARDEN.getGif(p.id) : '';
 
