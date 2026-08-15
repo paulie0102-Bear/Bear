@@ -789,6 +789,11 @@
     <span>🧩</span> 寶可夢消消樂
 </button>
 
+<button onclick="goToCatch();" 
+    style="background:#e74c3c; color:white; width:calc(100% - 20px); padding:15px; border:none; border-radius:10px; font-weight:bold; margin:0 10px 10px 10px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px #c0392b;">
+    <span>⚔️</span> 寶可夢大亂鬥
+</button>
+
 
     <button class="btn-back" onclick="back()">✖ 關閉</button>
 </div>
@@ -1674,6 +1679,114 @@ window.onload = () => {
     }
 };
 
+
+
+
+// =========================================================
+// 寶可夢大亂鬥：從 IndexedDB 讀取存檔
+// =========================================================
+
+const CATCH_DB_NAME = "PokeMasterDB";
+const CATCH_DB_VERSION = 1;
+const CATCH_STORE_NAME = "gameData";
+
+function loadCatchSaveForExport() {
+
+    return new Promise((resolve, reject) => {
+
+        const request = indexedDB.open(
+            CATCH_DB_NAME,
+            CATCH_DB_VERSION
+        );
+
+        request.onerror = (event) => {
+
+            console.error(
+                "❌ 讀取大亂鬥 IndexedDB 失敗",
+                event.target.error
+            );
+
+            reject(event.target.error);
+
+        };
+
+
+        request.onsuccess = (event) => {
+
+            const db = event.target.result;
+
+            try {
+
+                const tx = db.transaction(
+                    CATCH_STORE_NAME,
+                    "readonly"
+                );
+
+                const store = tx.objectStore(
+                    CATCH_STORE_NAME
+                );
+
+                const requestData =
+                    store.get("current_save");
+
+
+                requestData.onsuccess = () => {
+
+                    console.log(
+                        "✅ 已取得寶可夢大亂鬥存檔"
+                    );
+
+                    resolve(
+                        requestData.result || null
+                    );
+
+                };
+
+
+                requestData.onerror = (event) => {
+
+                    console.error(
+                        "❌ 讀取大亂鬥存檔失敗",
+                        event.target.error
+                    );
+
+                    reject(event.target.error);
+
+                };
+
+            } catch (err) {
+
+                reject(err);
+
+            }
+
+        };
+
+
+        // 如果資料庫不存在，建立基本結構
+        request.onupgradeneeded = (event) => {
+
+            const db = event.target.result;
+
+            if (
+                !db.objectStoreNames.contains(
+                    CATCH_STORE_NAME
+                )
+            ) {
+
+                db.createObjectStore(
+                    CATCH_STORE_NAME
+                );
+
+            }
+
+        };
+
+    });
+
+}
+
+
 /* --- 核心公式：計算全局採集加速倍率 (嚴格對標版) --- */
 function getGlobalSpeedBuff() {
     let totalBuff = 0;
@@ -2545,11 +2658,13 @@ function showAnnouncement() {
     if (isMaintenance) return;
 
     // 2. 取得今日日期與玩家儲存的狀態
-    const today = new Date().toDateString();
-    const hideDate = localStorage.getItem('hide_announcement_date');
+    const now = Date.now();
+    const hideDate = Number(localStorage.getItem('hide_announcement_date') || 0);
 
-    // 3. 如果玩家今天已經勾選過「不再顯示」，則不執行彈窗
-    if (hideDate === today) return;
+    // 7 天內已經看過，不再顯示
+    const oneWeek = 7 * 24 * 60 * 60 * 1000;
+    if (hideDate && now - hideDate < oneWeek) return;
+
 
     const news = document.createElement('div');
     news.id = 'news-overlay';
@@ -2567,9 +2682,9 @@ function showAnnouncement() {
     
     <div style="max-height: 250px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px; text-align: left; font-size: 14px; line-height: 1.6;">
         <b style="color: #e67e22;">【系統更新內容】</b><br>
+        • ⚔️ 新增寶可夢大亂鬥，沉浸在抽卡的深淵吧!<br>
         • ⚙️ 修正所有寶可夢皆可使用Mega石的bug。<br>
-        • 🎮 寶可夢消消樂關卡增設阿羅拉地區以及特殊副本。<br>
-        • 🎮 新增寶可夢消消樂，腦力激盪的時間到了!<br>
+        • 🎮 寶可夢消消樂關卡增設阿羅拉地區以及特殊副本。<br>        
         • 📖 記帳寶可夢圖鑑開放到No.721。<br>
         • 🍱 冒險小隊最新地區為卡洛斯地區。<br>        
         • 🎓 博士啟程禮，新增合眾地區、卡洛斯地區。<br>
@@ -2582,7 +2697,7 @@ function showAnnouncement() {
     <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:15px; padding: 5px;">
     <input type="checkbox" id="no-more-today" style="width:18px; height:18px; cursor:pointer; margin:0;">
     <label for="no-more-today" style="font-size:14px; color:#666; cursor:pointer; user-select:none; padding: 5px 0;">
-        今日不再顯示此公告
+        一週不再顯示此公告
     </label>
 </div>
 
@@ -2602,12 +2717,14 @@ function showAnnouncement() {
 // 關閉公告並存檔狀態
 function closeNews() {
     const isChecked = document.getElementById('no-more-today').checked;
+
     if (isChecked) {
-        const today = new Date().toDateString();
-        localStorage.setItem('hide_announcement_date', today);
+        localStorage.setItem('hide_announcement_date', Date.now().toString());
     }
+
     document.getElementById('news-overlay').remove();
 }
+
 
 
 function openBadgeModal() {
@@ -2932,6 +3049,18 @@ function goToShuffle() {
     // 跳轉到子資料夾下的 HTML
     window.location.href = "shuffle/index.html";
 }
+
+function goToCatch() {
+    // 儲存主程式進度
+    if (typeof save === 'function') {
+        save();
+        console.log("主程式進度已儲存...");
+    }
+
+    // 跳轉到 catch 子資料夾
+    window.location.href = "catch/index.html";
+}
+
 
 // 2. 在 updateUI 附近加入這三個載具專用函式
 function initCarrier() {
@@ -4382,106 +4511,179 @@ function delHist(id) {
     if(idx > -1) { const h = s.hist[idx]; s.yearSums[h.date.substring(0,7)] -= h.amt; s.catSums[h.cat] -= h.amt; s.hist.splice(idx, 1); updateUI(); searchHistory(); }
 }
 
-function exportData() {
-    // 1. 取得現在時間 (例如: 20260311_1530)
+async function exportData() {
     const now = new Date();
-    const timeStr = now.getFullYear() + 
-                    (now.getMonth()+1).toString().padStart(2, '0') + 
-                    now.getDate().toString().padStart(2, '0') + "_" +
-                    now.getHours().toString().padStart(2, '0') + 
-                    now.getMinutes().toString().padStart(2, '0');
+    const timeStr =
+        now.getFullYear() +
+        (now.getMonth()+1).toString().padStart(2,'0') +
+        now.getDate().toString().padStart(2,'0') + "_" +
+        now.getHours().toString().padStart(2,'0') +
+        now.getMinutes().toString().padStart(2,'0');
 
-    // 🚩 抓取小遊戲的 LocalStorage 紀錄
-    const shuffleDataRaw = localStorage.getItem('SHUFFLE_WEB_SAVE');
+    // 消消樂
     let shuffleData = null;
     try {
-        if (shuffleDataRaw) shuffleData = JSON.parse(shuffleDataRaw);
-    } catch (err) {
-        console.error("小遊戲資料讀取失敗:", err);
+        const raw = localStorage.getItem('SHUFFLE_WEB_SAVE');
+        if (raw) shuffleData = JSON.parse(raw);
+    } catch(err) {
+        console.error("消消樂資料讀取失敗:", err);
     }
 
-    // 🚩 打包主程式資料與小遊戲資料
+    // 寶可夢大亂鬥
+    let catchData = null;
+    try {
+        catchData = await loadCatchSaveForExport();
+    } catch(err) {
+        console.error("大亂鬥資料讀取失敗:", err);
+    }
+
+    // 三個遊戲一起打包
     const bundleSave = {
-        main: s,                   // 主頁面進度
-        shuffle: shuffleData       // 小遊戲進度 (SHUFFLE_WEB_SAVE)
+        main: s,
+        shuffle: shuffleData,
+        catch: catchData
     };
 
-    // 2. 轉換為 JSON 字串
-    const blob = new Blob([JSON.stringify(bundleSave)], {type: "application/json"});
+    const blob = new Blob(
+        [JSON.stringify(bundleSave)],
+        { type:"application/json" }
+    );
+
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    
-    // 3. 設定自訂副檔名 .pkms (方便手機查找)
-    a.download = `PM_Save_${timeStr}.pkms`; 
-    
-    // 4. 執行下載
-    document.body.appendChild(a); // 部分手機瀏覽器需要將元素加入 DOM 才能點擊
+    a.download = `PM_Save_${timeStr}.pkms`;
+
+    document.body.appendChild(a);
     a.click();
-    
-    // 5. 清理與釋放記憶體
+
     setTimeout(() => {
         document.body.removeChild(a);
-        URL.revokeObjectURL(a.href); 
-    }, 100);
+        URL.revokeObjectURL(a.href);
+    },100);
 }
 
-function importData(e) {
-    const file = e.target.files[0];
-    if (!file) return;
 
-    // 🚩 檢查副檔名 (非強制，但可提醒玩家)
-    if (!file.name.endsWith('.pkms') && !file.name.endsWith('.json')) {
-        if (!confirm("這看起來不是標準的存檔格式，是否仍要嘗試讀取？")) return;
+async function importData(e) {
+    const file=e.target.files[0];
+    if(!file)return;
+
+    if(!file.name.endsWith('.pkms')&&!file.name.endsWith('.json')){
+        if(!confirm("這看起來不是標準的存檔格式，是否仍要嘗試讀取？"))return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-        try {
-            const loaded = JSON.parse(ev.target.result);
-            
-            // 🚩 相容性判斷：區分是「新版包含小遊戲的打包存檔」還是「舊版單一主程式存檔」
-            let mainData = loaded;
-            let shuffleData = null;
+    const reader=new FileReader();
 
-            if (loaded && loaded.main) {
-                // 新版格式
-                mainData = loaded.main;
-                shuffleData = loaded.shuffle;
+    reader.onload=async(ev)=>{
+        try{
+            const loaded=JSON.parse(ev.target.result);
+
+            let mainData=loaded;
+            let shuffleData=null;
+            let catchData=null;
+
+            if(loaded&&loaded.main){
+                mainData=loaded.main;
+                shuffleData=loaded.shuffle;
+                catchData=loaded.catch;
             }
 
-            // 🚩 [關鍵修改] 使用與 window.onload 一致的合併邏輯
-            s = { 
-                ...s,              // 先放目前新版本的預設結構
-                ...mainData,        // 用讀取的資料覆蓋
-                claimedGifts: (mainData.claimedGifts || s.claimedGifts || []) // 確保陣列欄位存在
+            s={
+                ...s,
+                ...mainData,
+                claimedGifts:(mainData.claimedGifts||s.claimedGifts||[])
             };
 
-            // 🚩 匯入後立即存檔到 LocalStorage，確保手機關閉 APP 後資料還在
-            localStorage.setItem('pokemaster_v60', JSON.stringify(s));
+            localStorage.setItem('pokemaster_v60',JSON.stringify(s));
 
-            // 🚩 若存檔內包含小遊戲資料，一併還原到小遊戲的 LocalStorage Key
-            if (shuffleData !== null && shuffleData !== undefined) {
-                localStorage.setItem('SHUFFLE_WEB_SAVE', JSON.stringify(shuffleData));
+            if(shuffleData!==null&&shuffleData!==undefined){
+                localStorage.setItem('SHUFFLE_WEB_SAVE',JSON.stringify(shuffleData));
             }
 
-            // 更新 UI 顯示新資料
-            updateUI(); 
-            
-            alert("✅ 存檔匯入成功！");
-            
-            // 重設上傳按鈕，方便下次重複選取相同檔案
-            e.target.value = ""; 
+            if(catchData!==null&&catchData!==undefined){
+                await saveCatchSaveFromImport(catchData);
+            }
 
-        } catch (err) {
-            console.error("Import Error:", err);
+            updateUI();
+
+            alert("✅ 存檔匯入成功！");
+
+            e.target.value="";
+
+        }catch(err){
+            console.error("Import Error:",err);
             alert("❌ 讀取失敗：存檔內容損壞或格式不符");
         }
     };
+
     reader.readAsText(file);
 }
 
-function lighten() { /* 簡化清理邏輯保留 */ const start = document.getElementById('lightStart').value; const end = document.getElementById('lightEnd').value; if(!start || !end) return; exportData(); s.hist = s.hist.filter(h => h.date < start || h.date > end); updateUI(); alert("清理完成並已匯出備份。"); }
-function resetAll() { if(confirm("🔥 確定重置？這會永久刪除所有紀錄與圖鑑！")) { localStorage.removeItem('pokemaster_v60'); location.reload(); } }
+function saveCatchSaveFromImport(catchData){
+    return new Promise((resolve,reject)=>{
+        const request=indexedDB.open("PokeMasterDB",1);
+
+        request.onerror=()=>reject(request.error);
+
+        request.onupgradeneeded=e=>{
+            const db=e.target.result;
+            if(!db.objectStoreNames.contains("gameData")){
+                db.createObjectStore("gameData");
+            }
+        };
+
+        request.onsuccess=e=>{
+            const db=e.target.result;
+
+            try{
+                const tx=db.transaction("gameData","readwrite");
+                tx.objectStore("gameData").put(catchData,"current_save");
+
+                tx.oncomplete=()=>{
+                    db.close();
+                    console.log("✅ 大亂鬥存檔已還原");
+                    resolve(true);
+                };
+
+                tx.onerror=()=>{
+                    db.close();
+                    reject(tx.error);
+                };
+
+            }catch(err){
+                db.close();
+                reject(err);
+            }
+        };
+    });
+}
+
+
+
+
+function lighten() {
+    const start = document.getElementById('lightStart').value;
+    const end = document.getElementById('lightEnd').value;
+    if(!start || !end) return;
+
+    exportData();
+
+    s.hist = s.hist.filter(
+        h => h.date < start || h.date > end
+    );
+
+    updateUI();
+
+    alert("清理完成並已匯出備份。");
+}
+
+
+function resetAll() {
+    if(confirm("🔥 確定重置？這會永久刪除所有紀錄與圖鑑！")) {
+        localStorage.removeItem('pokemaster_v60');
+        location.reload();
+    }
+}
+
 </script>
 <script>
     // ==========================================
