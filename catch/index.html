@@ -7487,26 +7487,44 @@ async function applyRewardsToStateAndSave(rewards) {
 }
 
 // 計算副本獎勵
+// 計算副本獎勵
 function applyDungeonRewards(dungeon, floorNum) {
   const exp = 5000 * floorNum;
-  const coin = 1000 * floorNum;
-  
+  const coin = 4500 * floorNum;
+
   let rewards = { exp, coin };
 
   if (dungeon && dungeon.isEvent) {
-    rewards.masterBall = 1;
-    rewards.megaShard = (floorNum >= 6 && floorNum <= 10) ? 1 : 0;
+    // 活動副本
+    rewards.masterBall = (floorNum === 10) ? 3 : 1;
+    rewards.megaShard = (floorNum === 10) ? 3 : ((floorNum >= 6) ? 1 : 0);
   } else {
-    rewards.pokeBall = 5; // 普通副本給 5 個高級球
+    // 普通副本
+    rewards.pokeBall = (floorNum === 10) ? 10 : 5;
   }
 
   if (typeof playerState !== 'undefined') {
     playerState.exp = (playerState.exp || 0) + rewards.exp;
     playerState.coin = (playerState.coin || 0) + rewards.coin;
-    if (rewards.pokeBall) playerState.pokeBall = (playerState.pokeBall || 0) + rewards.pokeBall;
-    if (rewards.masterBall) playerState.masterBall = (playerState.masterBall || 0) + rewards.masterBall;
-    if (rewards.megaShard) playerState.megaShard = (playerState.megaShard || 0) + rewards.megaShard;
-    if (rewards.universalShard) playerState.universalShard = (playerState.universalShard || 0) + rewards.universalShard;
+
+    if (rewards.pokeBall) {
+      playerState.pokeBall = (playerState.pokeBall || 0) + rewards.pokeBall;
+    }
+
+    if (rewards.masterBall) {
+      playerState.masterBall =
+        (playerState.masterBall || 0) + rewards.masterBall;
+    }
+
+    if (rewards.megaShard) {
+      playerState.megaShard =
+        (playerState.megaShard || 0) + rewards.megaShard;
+    }
+
+    if (rewards.universalShard) {
+      playerState.universalShard =
+        (playerState.universalShard || 0) + rewards.universalShard;
+    }
   }
 
   return rewards;
