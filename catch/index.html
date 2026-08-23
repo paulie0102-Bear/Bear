@@ -7497,7 +7497,7 @@ function applyDungeonRewards(dungeon, floorNum) {
   if (dungeon && dungeon.isEvent) {
     // 活動副本
     rewards.masterBall = (floorNum === 10) ? 3 : 1;
-    rewards.megaShard = (floorNum === 10) ? 3 : ((floorNum >= 6) ? 1 : 0);
+    rewards.megaShard = (floorNum === 10) ? 5 : ((floorNum >= 6) ? 3 : 1);
   } else {
     // 普通副本
     rewards.pokeBall = (floorNum === 10) ? 10 : 5;
