@@ -3013,10 +3013,11 @@ body {
   width: 60px;
   height: 60px;
   transform: translate(-50%, -50%) translateZ(0);
-  transition: left 0.1s linear, top 0.1s linear, width 0.3s ease, height 0.3s ease;
   z-index: 8;
   will-change: left, top;
+  overflow: visible;
 }
+
 
 .player-sprite-wrapper.mega-active {
   width: 80px;
@@ -3108,60 +3109,7 @@ body {
   height: 100%;
 }
 
-/* ==========================================================================
-   10. 技能與特效 (Skill & Hit Effects)
-   ========================================================================== */
-.skill-aoe-wave {
-  position: absolute;
-  width: 120px;
-  height: 120px;
-  border: 2px solid;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  opacity: 0.75;
-  box-shadow: 0 0 6px currentColor;
-  animation: waveExpand 0.3s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
-  pointer-events: none;
-  z-index: 9;
-}
 
-@keyframes waveExpand {
-  0% {
-    transform: translate(-50%, -50%) scale(0.2);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1.3);
-    opacity: 0;
-  }
-}
-
-.hit-spark {
-  position: absolute;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 0 6px currentColor;
-  animation: sparkFade 0.2s ease-out forwards;
-  pointer-events: none;
-  z-index: 10;
-}
-
-@keyframes sparkFade {
-  0% {
-    opacity: 0.9;
-    transform: translate(-50%, -50%) scale(0.5);
-  }
-  50% {
-    opacity: 0.8;
-    transform: translate(-50%, -50%) scale(1.2);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(1.5);
-  }
-}
 
 /* ==========================================================================
    11. Mega 進化與結算彈窗 (Evo Modal & Settlement)
@@ -4430,6 +4378,43 @@ body {
 
   box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);
 }
+
+/* =========================================================
+   低耗電攻擊範圍圈
+   ========================================================= */
+
+.player-attack-range {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 110px;
+  height: 110px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+  pointer-events: none;
+  opacity: 0.65;
+  background: color-mix(
+    in srgb,
+    currentColor 5%,
+    transparent
+  );
+  box-shadow:
+    0 0 4px currentColor,
+    0 0 8px currentColor,
+    inset 0 0 4px currentColor;
+
+  z-index: 1;
+}
+
+.player-sprite-wrapper .battle-sprite-img {
+  position: relative;
+  z-index: 2;
+}
+
+
+
 
 
 </style>
@@ -6860,175 +6845,325 @@ function generateIndividualEnemies(dungeon, floorNum) {
 
 function updateBattleLoop() {
   const enemies = battleState.enemies;
+  const players = battleState.players;
 
-  // 💡 設定戰場邊界限制（防止超出 UI 欄與容器）
-  const MIN_X = 5;   // 左邊界 5%
-  const MAX_X = 90;  // 右邊界 90%
-  const MIN_Y = 12;  // 頂部邊界 12% (避開 60px 頂部欄)
-  const MAX_Y = 88;  // 底部邊界 88%
+  // 戰場邊界
+  const MIN_X = 5;
+  const MAX_X = 90;
+  const MIN_Y = 12;
+  const MAX_Y = 88;
 
-  // 1. 敵人移動與加速 logic
-  enemies.forEach(e => {
-    // 💡 加上 speed 速度倍率加速，沒有預設值就用 1.3 倍速
+  // 攻擊圈大小
+  // 必須與 renderDynamicStage() 裡的 attackRange 計算一致
+  const getAttackRange = (p) => {
+    return Math.min(
+      18,
+      Math.max(
+        8,
+        8 + Math.sqrt(Math.max(0, p.dps || 0)) * 0.8
+      )
+    );
+  };
+
+  // 距離平方
+  const distSq = (x1, y1, x2, y2) => {
+    const dx = x1 - x2;
+    const dy = y1 - y2;
+    return dx * dx + dy * dy;
+  };
+
+  // =========================================================
+  // 1. 敵人移動
+  // =========================================================
+
+  for (let i = 0; i < enemies.length; i++) {
+    const e = enemies[i];
     const currentSpeed = e.speed || 1.3;
+
     e.x += e.vx * currentSpeed;
     e.y += e.vy * currentSpeed;
 
-    // 💡 擴大移動範圍至全戰場 (MIN_X~MAX_X, MIN_Y~MAX_Y) 並做反彈與邊界修正
     if (e.x < MIN_X || e.x > MAX_X) {
       e.vx *= -1;
       e.x = Math.max(MIN_X, Math.min(MAX_X, e.x));
     }
+
     if (e.y < MIN_Y || e.y > MAX_Y) {
       e.vy *= -1;
       e.y = Math.max(MIN_Y, Math.min(MAX_Y, e.y));
     }
-  });
+  }
 
-  // 2. 我方角色 AI & 攻擊 logic
-  battleState.players.forEach((p, idx) => {
-    if (enemies.length === 0) return;
+  // =========================================================
+  // 2. 我方角色 AI + 攻擊圈傷害
+  // =========================================================
 
+  for (let idx = 0; idx < players.length; idx++) {
+    const p = players[idx];
+
+    if (enemies.length === 0) continue;
+
+    // ---------------------------------------------------------
     // 尋找最近敵人
+    // ---------------------------------------------------------
+
     let closest = enemies[0];
-    let minDist = 9999;
-    enemies.forEach(e => {
-      const d = Math.hypot(e.x - p.x, e.y - p.y);
-      if (d < minDist) { minDist = d; closest = e; }
-    });
+    let minDistSq = distSq(
+      p.x,
+      p.y,
+      closest.x,
+      closest.y
+    );
+
+    for (let i = 1; i < enemies.length; i++) {
+      const e = enemies[i];
+
+      const dSq = distSq(
+        p.x,
+        p.y,
+        e.x,
+        e.y
+      );
+
+      if (dSq < minDistSq) {
+        minDistSq = dSq;
+        closest = e;
+      }
+    }
+
+    // ---------------------------------------------------------
+    // AI 移動
+    // ---------------------------------------------------------
 
     p.angleOffset += 0.02;
-    const targetX = closest.x + Math.cos(p.angleOffset) * 15;
-    const targetY = closest.y + Math.sin(p.angleOffset) * 15;
+
+    const targetX =
+      closest.x +
+      Math.cos(p.angleOffset) * 15;
+
+    const targetY =
+      closest.y +
+      Math.sin(p.angleOffset) * 15;
 
     const dx = targetX - p.x;
     const dy = targetY - p.y;
-    const dist = Math.hypot(dx, dy);
-    if (dist > 1) {
-      p.x += (dx / dist) * 1.2;
-      p.y += (dy / dist) * 1.2;
+
+    const moveDistSq =
+      dx * dx +
+      dy * dy;
+
+    if (moveDistSq > 1) {
+      const moveDist = Math.sqrt(moveDistSq);
+
+      p.x += (dx / moveDist) * 1.2;
+      p.y += (dy / moveDist) * 1.2;
     }
 
-    // 💡 我方成員互相推開，避免重疊
-    battleState.players.forEach((otherP, oIdx) => {
-      if (idx !== oIdx) {
-        const pdx = p.x - otherP.x;
-        const pdy = p.y - otherP.y;
-        const pDist = Math.hypot(pdx, pdy);
-        if (pDist < 7 && pDist > 0) {
-          p.x += (pdx / pDist) * 0.6;
-          p.y += (pdy / pDist) * 0.6;
-        }
-      }
-    });
+    // ---------------------------------------------------------
+    // 我方成員互相推開
+    // ---------------------------------------------------------
 
-    // 💡【新增】我方成員與敵人互相推開，避免重疊遮擋
-    enemies.forEach(e => {
-      const edx = p.x - e.x;
-      const edy = p.y - e.y;
-      const eDist = Math.hypot(edx, edy);
-      const MIN_PE_DIST = 6; // 我方與敵人的防重疊安全距離 (視圖示大小調整，約 6%)
+    for (
+      let oIdx = idx + 1;
+      oIdx < players.length;
+      oIdx++
+    ) {
+      const otherP = players[oIdx];
 
-      if (eDist < MIN_PE_DIST && eDist > 0) {
-        const pushForce = (MIN_PE_DIST - eDist) * 0.25; // 越近推力越強
-        const nx = edx / eDist;
-        const ny = edy / eDist;
+      const pdx = p.x - otherP.x;
+      const pdy = p.y - otherP.y;
 
-        // 我方反向推開
+      const pDistSq =
+        pdx * pdx +
+        pdy * pdy;
+
+      if (pDistSq < 49 && pDistSq > 0) {
+        const pDist = Math.sqrt(pDistSq);
+        const pushForce = (7 - pDist) * 0.3;
+
+        const nx = pdx / pDist;
+        const ny = pdy / pDist;
+
         p.x += nx * pushForce;
         p.y += ny * pushForce;
 
-        // 敵人同步被輕微反推（增加碰撞真實感）
+        otherP.x -= nx * pushForce;
+        otherP.y -= ny * pushForce;
+      }
+    }
+
+    // ---------------------------------------------------------
+    // 我方與敵人防止重疊
+    // ---------------------------------------------------------
+
+    const MIN_PE_DIST = 6;
+    const MIN_PE_DIST_SQ =
+      MIN_PE_DIST * MIN_PE_DIST;
+
+    for (let i = 0; i < enemies.length; i++) {
+      const e = enemies[i];
+
+      const edx = p.x - e.x;
+      const edy = p.y - e.y;
+
+      const eDistSq =
+        edx * edx +
+        edy * edy;
+
+      if (
+        eDistSq < MIN_PE_DIST_SQ &&
+        eDistSq > 0
+      ) {
+        const eDist = Math.sqrt(eDistSq);
+
+        const pushForce =
+          (MIN_PE_DIST - eDist) * 0.25;
+
+        const nx = edx / eDist;
+        const ny = edy / eDist;
+
+        p.x += nx * pushForce;
+        p.y += ny * pushForce;
+
         e.x -= nx * (pushForce * 0.5);
         e.y -= ny * (pushForce * 0.5);
 
-        // 敵人邊界限制
-        e.x = Math.max(MIN_X, Math.min(MAX_X, e.x));
-        e.y = Math.max(MIN_Y, Math.min(MAX_Y, e.y));
+        e.x = Math.max(
+          MIN_X,
+          Math.min(MAX_X, e.x)
+        );
+
+        e.y = Math.max(
+          MIN_Y,
+          Math.min(MAX_Y, e.y)
+        );
       }
-    });
-
-    // 💡 我方座標邊界鎖定：確保不會被推離或跑到戰場容器之外
-    p.x = Math.max(MIN_X, Math.min(MAX_X, p.x));
-    p.y = Math.max(MIN_Y, Math.min(MAX_Y, p.y));
-
-    // 技能與攻擊邏輯
-    p.skillCooldown++;
-    if (p.skillCooldown >= 12) {
-      p.skillCooldown = 0;
-
-      const sortedEnemies = [...enemies]
-        .map(e => ({ enemy: e, dist: Math.hypot(e.x - p.x, e.y - p.y) }))
-        .sort((a, b) => a.dist - b.dist);
-
-      const targetEnemies = sortedEnemies.slice(0, 5);
-      const color = (typeof TAG_COLORS !== 'undefined' && TAG_COLORS[p.tag]) || '#ffcb05';
-
-      battleState.effects.push({
-        type: 'aoe_wave',
-        x: p.x,
-        y: p.y,
-        color: color,
-        life: 5
-      });
-
-      targetEnemies.forEach(item => {
-        item.enemy.hp -= p.dps * 1.5;
-        battleState.effects.push({
-          type: 'hit',
-          x: item.enemy.x,
-          y: item.enemy.y,
-          color: color,
-          life: 3
-        });
-      });
     }
-  });
 
-  // 3. 動態效果衰減
-  for (let i = battleState.effects.length - 1; i >= 0; i--) {
-    battleState.effects[i].life--;
-    if (battleState.effects[i].life <= 0) battleState.effects.splice(i, 1);
+    // ---------------------------------------------------------
+    // 座標限制
+    // ---------------------------------------------------------
+
+    p.x = Math.max(
+      MIN_X,
+      Math.min(MAX_X, p.x)
+    );
+
+    p.y = Math.max(
+      MIN_Y,
+      Math.min(MAX_Y, p.y)
+    );
+
+    // ---------------------------------------------------------
+    // 攻擊圈傷害
+    //
+    // 敵人進入攻擊圈即受到傷害
+    // 不再建立任何閃爍特效 DOM
+    // ---------------------------------------------------------
+
+    const attackRange = getAttackRange(p);
+    const attackRangeSq =
+      attackRange * attackRange;
+
+    // 每次主迴圈造成的傷害
+    const damage = (p.dps || 0) * 0.15;
+
+    if (damage > 0) {
+      for (let i = 0; i < enemies.length; i++) {
+        const e = enemies[i];
+
+        const dx = e.x - p.x;
+        const dy = e.y - p.y;
+
+        const distanceSq =
+          dx * dx +
+          dy * dy;
+
+        if (distanceSq <= attackRangeSq) {
+          e.hp -= damage;
+        }
+      }
+    }
   }
 
-  // 4. 擊殺判斷與 Mega 進化觸發
-  for (let i = enemies.length - 1; i >= 0; i--) {
+  // =========================================================
+  // 3. 擊殺判斷與 Mega 進化
+  // =========================================================
+
+  for (
+    let i = enemies.length - 1;
+    i >= 0;
+    i--
+  ) {
     if (enemies[i].hp <= 0) {
       battleState.killCount++;
+
       enemies.splice(i, 1);
 
-      if (battleState.killCount >= 10 && typeof triggerMegaEvolution === 'function') {
+      if (
+        battleState.killCount >= 10 &&
+        typeof triggerMegaEvolution === 'function'
+      ) {
         triggerMegaEvolution();
       }
     }
   }
 
-  // 5. 波數推進與下一波敵人在全場分佈初始化
+  // =========================================================
+  // 4. 下一波
+  // =========================================================
+
   if (enemies.length === 0) {
     battleState.currentWaveIndex++;
-    if (battleState.currentWaveIndex < (battleState.waves?.length || 3)) {
-      const nextWaveRaw = battleState.waves[battleState.currentWaveIndex] || [];
-      
-      // 💡 推進到下一波時，同樣給予全場座標、加速屬性與隨機方向
-      battleState.enemies = nextWaveRaw.map(e => ({
-        ...e,
-        x: 10 + Math.random() * 80,
-        y: 15 + Math.random() * 35,
-        speed: 0.8 + Math.random() * 0.6,
-        vx: (Math.random() - 0.5) * 2,
-        vy: (Math.random() - 0.5) * 2
-      }));
+
+    if (
+      battleState.currentWaveIndex <
+      (battleState.waves?.length || 3)
+    ) {
+      const nextWaveRaw =
+        battleState.waves[
+          battleState.currentWaveIndex
+        ] || [];
+
+      battleState.enemies =
+        nextWaveRaw.map(e => ({
+          ...e,
+
+          x: 10 + Math.random() * 80,
+          y: 15 + Math.random() * 35,
+
+          speed:
+            0.8 +
+            Math.random() * 0.6,
+
+          vx:
+            (Math.random() - 0.5) * 2,
+
+          vy:
+            (Math.random() - 0.5) * 2
+        }));
     } else {
-      endBattle(true, "成功摧毀所有敵方大軍！");
+      endBattle(
+        true,
+        "成功摧毀所有敵方大軍！"
+      );
+
       return;
     }
   }
 
-  // 重新繪製畫面
-  if (typeof renderDynamicStage === 'function') {
+  // =========================================================
+  // 5. 重新繪製
+  // =========================================================
+
+  if (
+    typeof renderDynamicStage === 'function'
+  ) {
     renderDynamicStage();
   }
 }
+
+
 
 // ==================== 5. Mega 進化對話框與系統 (更新圖源) ====================
 
@@ -7206,74 +7341,135 @@ function renderDynamicStage() {
   if (!stageEl) return;
 
   let html = '';
-
-  // 1. 渲染 AOE 衝擊波與打擊特效（放在最底層）
-  battleState.effects.forEach(eff => {
-    if (eff.type === 'aoe_wave') {
-      html += `
-        <div class="skill-aoe-wave" style="
-          left: ${eff.x}%; top: ${eff.y}%;
-          border-color: ${eff.color};
-        "></div>
-      `;
-    } else if (eff.type === 'hit') {
-      html += `
-        <div class="hit-spark" style="
-          left: ${eff.x}%; top: ${eff.y}%;
-          background: ${eff.color};
-        "></div>
-      `;
-    }
-  });
-
-  // 2. 合併我方與敵人，並依據 Y 座標從小到大排序（Y-Sorting 深度排序）
-  // 靠上面的角色 (Y 較小) 先渲染，靠下面的角色 (Y 較大) 後渲染，後渲染者會擋住前者
+  // =========================================================
+  // 1. 敵人與我方角色
+  // =========================================================
   const sortedUnits = [
-    ...battleState.enemies.map(e => ({ ...e, isEnemy: true })),
-    ...battleState.players.map(p => ({ ...p, isEnemy: false }))
+    ...battleState.enemies.map(e => ({
+      ...e,
+      isEnemy: true
+    })),
+
+    ...battleState.players.map(p => ({
+      ...p,
+      isEnemy: false
+    }))
   ].sort((a, b) => a.y - b.y);
-
-  // 3. 依據排序後的順序進行繪製，並加上動態 z-index 雙重保險
+  // =========================================================
+  // 2. 繪製角色
+  // ========================================================
   sortedUnits.forEach(unit => {
-    const zIndex = Math.floor(unit.y * 10); // Y 軸越大，z-index 越高
-
+    const zIndex = Math.floor(unit.y * 10);
+    // =======================================================
+    // 敵人
+    // =======================================================
     if (unit.isEnemy) {
-      // 渲染敵人
       const gifUrl = getPokeGifUrl(unit.pokeId);
       const fallbackUrl = getImgUrl(unit.pokeId);
-      const hpPercent = Math.max(0, (unit.hp / unit.maxHp) * 100);
+
+      const hpPercent =
+        unit.maxHp > 0
+          ? Math.max(
+              0,
+              Math.min(
+                100,
+                (unit.hp / unit.maxHp) * 100
+              )
+            )
+          : 0;
 
       html += `
-        <div class="enemy-single-wrapper ${unit.type}" style="
-          left: ${unit.x}%; top: ${unit.y}%; 
-          width: ${unit.size}px; height: ${unit.size}px;
-          z-index: ${zIndex};
-        ">
+        <div
+          class="enemy-single-wrapper ${unit.type}"
+          style="
+            left: ${unit.x}%;
+            top: ${unit.y}%;
+            width: ${unit.size}px;
+            height: ${unit.size}px;
+            z-index: ${zIndex};
+          "
+        >
+
           <div class="hp-bar-mini">
-            <div class="hp-bar-fill" style="width: ${hpPercent}%;"></div>
+            <div
+              class="hp-bar-fill"
+              style="width: ${hpPercent}%"
+            ></div>
           </div>
-          <img class="battle-sprite-img" src="${gifUrl}" 
-               onerror="this.onerror=null; this.src='${fallbackUrl}';">
-        </div>
-      `;
-    } else {
-      // 渲染我方隊員
-      const spriteUrl = getPlayerSpriteUrl(unit);
 
-      html += `
-        <div class="player-sprite-wrapper ${unit.isMega ? 'mega-active' : ''}" style="
-          left: ${unit.x}%; top: ${unit.y}%;
-          z-index: ${zIndex};
-        ">
-          ${unit.isMega ? '<div class="mega-tag-aura">MEGA</div>' : ''}
-          <img class="battle-sprite-img" src="${spriteUrl}" alt="${unit.name}">
+          <img
+            class="battle-sprite-img"
+            src="${gifUrl}"
+            onerror="
+              this.onerror=null;
+              this.src='${fallbackUrl}';
+            "
+          >
+
         </div>
       `;
+
+      return;
     }
+    // =======================================================
+    // 我方隊員
+    // =======================================================
+    const spriteUrl = getPlayerSpriteUrl(unit);
+    const color =
+      (
+        typeof TAG_COLORS !== 'undefined' &&
+        TAG_COLORS[unit.tag]
+      )
+        ? TAG_COLORS[unit.tag]
+        : '#ffcb05';
+
+    // 攻擊圈大小
+    // 目前固定，不會因 DPS 改變大小
+    const attackRange = 110;
+
+    html += `
+      <div
+        class="player-sprite-wrapper ${unit.isMega ? 'mega-active' : ''}"
+        style="
+          left: ${unit.x}%;
+          top: ${unit.y}%;
+          z-index: ${zIndex};
+        "
+      >
+        <!-- 攻擊範圍圈 -->
+        <div
+  class="player-attack-range"
+  style="
+    width: ${attackRange}px;
+    height: ${attackRange}px;
+    left: 50%;
+    top: 50%;
+    border-color: ${color};
+    color: ${color};
+  "
+></div>
+
+        ${
+          unit.isMega
+            ? '<div class="mega-tag-aura">MEGA</div>'
+            : ''
+        }
+        <img
+          class="battle-sprite-img"
+          src="${spriteUrl}"
+          alt="${unit.name}"
+        >
+
+      </div>
+    `;
   });
+  // =========================================================
+  // 3. 更新戰場
+  // =========================================================
 
   stageEl.innerHTML = html;
 }
+
 
 // ==================== 結算與獎勵系統 (修正版) ====================
 
