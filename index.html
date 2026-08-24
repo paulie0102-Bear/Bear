@@ -1860,8 +1860,7 @@ function renderRegionTabs() {
 
 function renderGarden() {
     // 1. 初始化與數據校驗
-    initFarmProgress(); 
-    if (typeof initExtendedFarm === 'function') initExtendedFarm(); // 確保多線程存檔結構存在
+    initFarmProgress();if(typeof initExtendedFarm==='function')initExtendedFarm();ensureJirachiDaily();processJirachiJobs();
     
     const f = s.farm;
     const prog = f.regionProg;
@@ -1952,23 +1951,189 @@ if (typeof GARDEN !== 'undefined') {
 
            <div style="display:flex; gap:10px; justify-content:center; margin:15px 0;">
         
-        <div style="flex:1; background:#fff3e0; border-radius:20px; padding:15px; border:2px solid #ffe0b2; text-align:center;">
-            <div style="font-size:11px; color:#e65100; font-weight:bold; margin-bottom:5px;">🏠 夥伴餵食</div>
-            <img src="${GARDEN.getGif(partnerId)}" style="width:60px; height:60px; image-rendering:pixelated;">
-            <p style="font-size:13px; margin:8px 0;">想吃：<b>${GARDEN.recipes[f.quest]?.icon || '❓'}</b></p>
-            <button onclick="submitQuest()" style="background:#e65100; color:white; border:none; padding:8px 15px; border-radius:12px; font-weight:bold; cursor:pointer; font-size:12px; width:100%;">餵食夥伴</button>
-            <div style="font-size:10px; color:#a0522d; margin-top:5px;">進度：${f.feedCount}/${f.maxFeed || 5}</div>
-        </div>
+        <div style="
+    flex:1;
+    min-width:0;
+    background:linear-gradient(145deg,#fff8ef,#fff1dc);
+    border-radius:18px;
+    padding:12px;
+    border:1.5px solid #ffd6a3;
+    text-align:center;
+    box-shadow:0 3px 10px rgba(230,126,34,.08);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    box-sizing:border-box;
+">
+
+    <div style="
+        font-size:11px;
+        color:#e65100;
+        font-weight:bold;
+        margin-bottom:5px;
+    ">
+        🏠 夥伴餵食
+    </div>
+
+    <!-- 夥伴 -->
+    <div style="
+        width:68px;
+        height:68px;
+        border-radius:50%;
+        background:radial-gradient(circle,#fff 45%,#fff3df 100%);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        margin:2px 0 6px;
+        box-shadow:0 2px 8px rgba(230,126,34,.12);
+    ">
+        <img
+            src="${GARDEN.getGif(partnerId)}"
+            style="
+                width:56px;
+                height:56px;
+                object-fit:contain;
+                image-rendering:pixelated;
+            "
+        >
+    </div>
+
+    <!-- 想吃 -->
+    <div style="
+        font-size:11px;
+        color:#8d5a35;
+        margin-bottom:8px;
+    ">
+        想吃
+        <span style="
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            margin-left:5px;
+            width:32px;
+            height:32px;
+            background:#fff;
+            border-radius:10px;
+            border:1px solid #ffe0c2;
+            font-size:19px;
+        ">
+            ${GARDEN.recipes[f.quest]?.icon || '❓'}
+        </span>
+    </div>
+
+    <!-- 愛心進度 -->
+    <div style="
+        display:flex;
+        justify-content:center;
+        gap:4px;
+        margin:3px 0 10px;
+    ">
+        ${Array.from({length:f.maxFeed||5},(_,i)=>`
+            <span style="
+                font-size:19px;
+                color:${i<f.feedCount?'#ff5c7a':'#e8d6d6'};
+                text-shadow:${i<f.feedCount?'0 1px 3px rgba(255,92,122,.25)':'none'};
+                transition:.2s;
+            ">
+                ${i<f.feedCount?'♥':'♡'}
+            </span>
+        `).join('')}
+    </div>
+
+    <!-- 開始餵食 -->
+    <button
+        onclick="submitQuest()"
+        style="
+            width:100%;
+            padding:8px 5px;
+            background:linear-gradient(135deg,#ff8fa3,#ff5275);
+            color:white;
+            border:1px solid #ff6f91;
+            border-radius:14px;
+            font-weight:bold;
+            cursor:pointer;
+            font-size:11px;
+            box-shadow:0 3px 0 #d94363,0 4px 8px rgba(255,82,117,.18);
+        "
+    >
+        💕 開始餵食
+    </button>
+
+    <div style="
+        margin-top:auto;
+        padding-top:9px;
+        font-size:9px;
+        color:#bc8a62;
+    ">
+        今日愛心 ${f.feedCount}/${f.maxFeed||5}
+    </div>
+
+</div>
+
+
 
         <div style="flex:1; background:#fffde7; border-radius:20px; padding:15px; border:2px solid #fff59d; text-align:center;">
-            <div style="font-size:11px; color:#f57f17; font-weight:bold; margin-bottom:5px;">🌟 管家基拉祈</div>
-            <img src="${GARDEN.getGif(385)}" style="width:60px; height:60px; image-rendering:pixelated;">
-            <p style="font-size:13px; margin:8px 0;">想吃：<b>${GARDEN.recipes[f.quest_jirachi || '🌾🐟🥩']?.icon || '❓'}</b></p>
-            <button onclick="wishStar()" style="background:#fbc02d; color:#5d4037; border:none; padding:8px 15px; border-radius:12px; font-weight:bold; cursor:pointer; font-size:12px; width:100%;">願望星碎</button>
-            <div style="font-size:10px; color:#f57f17; margin-top:5px;">
-                ${f.lastWishDate === new Date().toLocaleDateString() ? '💤 沉睡中' : '✨ 今日可用'}
-            </div>
-        </div>
+    <div style="font-size:11px; color:#f57f17; font-weight:bold; margin-bottom:5px;">
+        🌟 管家基拉祈
+    </div>
+
+    <img src="${GARDEN.getGif(385)}"
+         style="width:60px; height:60px; image-rendering:pixelated;">
+
+    <div style="font-size:11px; color:#f57f17; margin:5px 0;">
+        今日剩餘料理委託：
+        <b>${f.jirachiRequests?.length || 0} / 4</b>
+    </div>
+
+    <div style="font-size:10px; color:#795548; margin-bottom:6px;">
+        今日想吃的料理
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;">
+        ${(f.jirachiRequests || []).map(formula => {
+            const r = GARDEN.recipes[formula];
+            if (!r) return '';
+
+            const count = f.dishes[r.icon] || 0;
+            const hasDish = count > 0;
+
+            return `
+                <div style="
+                    padding:6px;
+                    background:${hasDish ? '#fff9c4' : '#fafafa'};
+                    border:1px solid ${hasDish ? '#fbc02d' : '#eee'};
+                    border-radius:8px;
+                    font-size:10px;
+                    color:#5d4037;
+                ">
+                    <div style="
+    font-size:22px;
+    line-height:26px;
+">
+    ${r.icon}
+</div>
+<span style="
+    color:${hasDish ? '#2e7d32' : '#999'};
+    font-size:10px;
+    font-weight:bold;
+">
+    ${hasDish ? '✓ 已擁有' : '✕ 未擁有'}
+</span>
+                </div>
+            `;
+        }).join('')}
+    </div>
+
+    <div style="
+        font-size:10px;
+        color:#795548;
+        margin-top:8px;
+        line-height:1.5;
+    ">
+        🍳 料理時啟用基拉祈即可委託<br>
+        🎁 自動消耗背包中的指定料理
+    </div>
+</div>
 
     </div>
 
@@ -2215,25 +2380,59 @@ function unlockNextRegion(currentId) {
 
 /* --- 擴充初始化：確保多地區與多料理線結構 --- */
 function initExtendedFarm() {
-    if (!s.farm.prod) s.farm.prod = {};
-    
-    // 每個地區固定 3 個工人位 (例如: Kanto_w1, Kanto_w2, Kanto_w3)
+    if (!s.farm.prod) {
+        s.farm.prod = {};
+    }
+
+    // 每個地區固定 3 個工人位
     Object.keys(WORLD_DATA).forEach(rid => {
         for (let i = 1; i <= 3; i++) {
             const key = `${rid}_w${i}`;
-            if (!s.farm.prod[key]) s.farm.prod[key] = { type: null, end: 0 };
+
+            if (!s.farm.prod[key]) {
+                s.farm.prod[key] = {
+                    type: null,
+                    end: 0
+                };
+            }
         }
     });
 
-    // 4 條獨立料理線 (cook_0 到 cook_3)
+    // 4 條獨立料理線：cook_0 ~ cook_3
     for (let i = 0; i < 4; i++) {
         const key = `cook_${i}`;
-        if (!s.farm.prod[key]) s.farm.prod[key] = { type: null, end: 0, slots: [null, null, null] };
+
+        if (!s.farm.prod[key]) {
+            // 新料理線
+            s.farm.prod[key] = {
+                type: null,
+                end: 0,
+                slots: [null, null, null],
+                jirachiEnabled: false
+            };
+
+        } else {
+            // 舊存檔補齊欄位
+            if (!Array.isArray(s.farm.prod[key].slots)) {
+                s.farm.prod[key].slots = [null, null, null];
+            }
+
+            if (s.farm.prod[key].jirachiEnabled === undefined) {
+                s.farm.prod[key].jirachiEnabled = false;
+            }
+
+            if (s.farm.prod[key].end === undefined) {
+                s.farm.prod[key].end = 0;
+            }
+        }
     }
 }
+
+
 // 每秒更新一次後花園內的計時器文字
 setInterval(() => {
     const timerEl = document.getElementById('patrol-timer');
+
     if (timerEl) {
         timerEl.innerText = getPatrolTimeStr();
     }
@@ -2255,48 +2454,316 @@ function getPatrolTimeStr() {
     return `${h}h ${String(m).padStart(2, '0')}m ${String(sec).padStart(2, '0')}s`;
 }
 
-function renderCookingLines() {
-    const completedCount = Object.values(s.farm.regionProg.stats).filter(stat => stat.gymsBeaten >= 13).length;
-    let html = '';
+function ensureJirachiDaily() {
+    const f = s.farm;
 
-    for (let i = 0; i < 4; i++) {
-        const isUnlocked = (i === 0 || i <= completedCount);
-        const p = s.farm.prod[`cook_${i}`];
-        const isBusy = p.end > Date.now();
-        const isDone = p.end !== 0 && !isBusy;
+    GARDEN.recipes = GARDEN.recipes || {};
 
-        // 定義每一格的循環選項
-        const slotOptions = [
-            ['🌾', '🥗'], // 第一格：草屬
-            ['🐟', '🦐'], // 第二格：水屬
-            ['🥩', '🥚']  // 第三格：火屬
-        ];
+    const today = new Date().toLocaleDateString();
 
-        html += `
-            <div style="margin:10px 0; padding:10px; background:${isUnlocked ? '#fff9f0' : '#f5f5f5'}; border-radius:12px; border:1px solid ${isUnlocked ? '#ffe0b2' : '#ddd'};">
-                <div style="font-size:11px; color:#e67e22; margin-bottom:5px; text-align:left;">料理 #${i+1}</div>
-                ${isUnlocked ? `
-                    <div style="display:flex; justify-content:center; gap:8px;">
-                        ${p.slots.map((slt, sIdx) => `
-                            <div onclick="${isBusy ? '' : `cycleSlot(${i}, ${sIdx})`}" 
-                                 style="width:45px; height:45px; background:white; border:2px dashed ${sIdx==0?'#4caf50':sIdx==1?'#2196f3':'#f44336'}; border-radius:10px; line-height:45px; font-size:24px; cursor:pointer;">
-                                 ${slt || '？'}
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div style="margin-top:10px;">
-                        ${isDone ? `<button onclick="collectDish(${i})" style="background:#ff9800; color:white; border:none; padding:8px 20px; border-radius:10px; cursor:pointer; font-weight:bold;">完成領取</button>` :
-                          isBusy ? `<span style="font-size:13px; color:#666; font-weight:bold;">⏳ ${GARDEN.getTimeStr(p.end)}</span>` :
-                          `<button onclick="startCook(${i})" style="background:#4caf50; color:white; border:none; padding:8px 20px; border-radius:10px; cursor:pointer; font-weight:bold;">開始烹飪</button>`}
-                    </div>
-                ` : `<div style="font-size:12px; color:#999; padding:15px;">🔒 尚未解鎖 (需通關前一地區)</div>`}
-            </div>
-        `;
+    // 每日重新產生 4 個基拉祈指定料理
+    if (!f.jirachiRequests || f.jirachiDate !== today) {
+        const keys = Object.keys(GARDEN.recipes);
+
+        f.jirachiRequests = keys
+            .sort(() => Math.random() - 0.5)
+            .slice(0, Math.min(4, keys.length));
+
+        f.jirachiDate = today;
     }
-    return html;
+
+    f.jirachiJobs = f.jirachiJobs || {};
+
+    // 舊存檔相容
+    f.jirachiSelectedLines = f.jirachiSelectedLines || [];
+    f.jirachiSelectedDishes = f.jirachiSelectedDishes || [];
 }
 
-/* --- 生產、料理與餵食控制 --- */
+function toggleJirachiLine(i) {
+    const f = s.farm;
+
+    ensureJirachiDaily();
+
+    const key = `cook_${i}`;
+    const p = f.prod[key];
+
+    if (!p) {
+        console.warn("❌ 找不到料理線：", key);
+        return;
+    }
+
+    // 正在料理中不能切換
+    if (p.end !== 0) {
+        console.log("⚠️ 料理線目前正在使用中：", key);
+        return;
+    }
+
+    // 基拉祈已經接手不能切換
+    if (f.jirachiJobs && f.jirachiJobs[key]) {
+        console.log("⚠️ 基拉祈已經協助這條料理線：", key);
+        return;
+    }
+
+    // 直接使用料理線自己的狀態
+    p.jirachiEnabled = !p.jirachiEnabled;
+
+    console.log(
+        `✨ 料理 #${i + 1} 基拉祈模式：`,
+        p.jirachiEnabled ? "開啟" : "關閉"
+    );
+
+    if (typeof saveGameData === 'function') {
+        saveGameData();
+    }
+
+    renderGarden();
+}
+
+
+function jirachiCanStart(lineIdx){const p=s.farm.prod[`cook_${lineIdx}`];if(!p||!p.slots||p.slots.some(x=>!x))return false;const [a,b,c]=p.slots;return (s.farm.inv[a]||0)>0&&(s.farm.inv[b]||0)>0&&(s.farm.inv[c]||0)>0;}
+function jirachiStartCook(lineIdx,startTime){const f=s.farm;const p=f.prod[`cook_${lineIdx}`];if(!p||p.end!==0||!jirachiCanStart(lineIdx))return false;const [a,b,c]=p.slots;f.inv[a]--;f.inv[b]--;f.inv[c]--;p.end=startTime+3600000;return true;}
+function jirachiCollectDish(lineIdx){const f=s.farm;const p=f.prod[`cook_${lineIdx}`];if(!p||!p.slots)return false;const formula=p.slots.join('');const dish=GARDEN.recipes[formula];if(!dish){p.end=0;return false;}const amount=Math.random()<0.1?2:1;f.dishes[dish.icon]=(f.dishes[dish.icon]||0)+amount;if(!f.knownRecipes.includes(formula))f.knownRecipes.push(formula);p.end=0;return true;}
+function processJirachiJobs(){const f=s.farm;if(!f||!f.prod)return false;ensureJirachiDaily();let changed=false;const now=Date.now();Object.keys(f.jirachiJobs).forEach(key=>{const job=f.jirachiJobs[key],p=f.prod[key],i=Number(key.split('_')[1]);if(!job||!p){delete f.jirachiJobs[key];changed=true;return;}if(p.end&&p.end<=now){jirachiCollectDish(i);changed=true;}if(now>=job.until){delete f.jirachiJobs[key];changed=true;return;}if(p.end===0&&now+3600000<=job.until&&jirachiCanStart(i)){jirachiStartCook(i,now);changed=true;}});if(changed&&typeof saveGameData==='function')saveGameData();return changed;}
+
+
+function renderCookingLines(){
+const completedCount=Object.values(s.farm.regionProg.stats).filter(stat=>stat.gymsBeaten>=13).length;
+const f=s.farm;
+ensureJirachiDaily();
+processJirachiJobs();
+let html='';
+
+for(let i=0;i<4;i++){
+const isUnlocked=(i===0||i<=completedCount);
+const p=f.prod[`cook_${i}`];
+const job=f.jirachiJobs?.[`cook_${i}`];
+const isJirachi=!!job;
+const isBusy=p.end>Date.now();
+const isDone=p.end!==0&&!isBusy;
+const selected=!!p.jirachiEnabled;
+
+const remain=job?Math.max(0,job.until-Date.now()):0;
+const remainStr=remain>0
+?`${Math.floor(remain/3600000)}小時${Math.floor((remain%3600000)/60000)}分`
+:'即將結束';
+
+html+=`
+<div style="
+margin:10px 0;
+padding:10px;
+background:${isUnlocked?'#fff9f0':'#f5f5f5'};
+border-radius:12px;
+border:1px solid ${isUnlocked?'#ffe0b2':'#ddd'};
+">
+
+<div style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+font-size:11px;
+color:#e67e22;
+margin-bottom:5px;
+text-align:left;
+">
+<span>料理 #${i+1}</span>
+
+${isUnlocked?`
+<label style="
+display:inline-flex;
+align-items:center;
+gap:4px;
+cursor:${isJirachi?'default':'pointer'};
+user-select:none;
+">
+<input
+type="checkbox"
+${selected?'checked':''}
+${isJirachi?'disabled':''}
+onchange="toggleJirachiLine(${i})"
+style="display:none;"
+>
+
+<span style="
+position:relative;
+display:inline-flex;
+align-items:center;
+justify-content:center;
+width:58px;
+height:24px;
+border-radius:14px;
+background:${selected
+?'linear-gradient(135deg,#fff176,#ffd54f)'
+:'linear-gradient(135deg,#eee,#ddd)'};
+border:1px solid ${selected?'#fbc02d':'#ccc'};
+box-shadow:${selected
+?'0 2px 6px rgba(251,192,45,.45),inset 0 1px 2px rgba(255,255,255,.8)'
+:'inset 0 1px 2px rgba(0,0,0,.08)'};
+transition:.2s;
+overflow:hidden;
+font-size:11px;
+color:${selected?'#795548':'#888'};
+font-weight:bold;
+">
+
+<span style="
+position:absolute;
+left:${selected?'35px':'4px'};
+width:18px;
+height:18px;
+border-radius:50%;
+background:${selected
+?'radial-gradient(circle at 35% 30%,#fff 0%,#fff9c4 35%,#ffd54f 100%)'
+:'#fff'};
+box-shadow:0 1px 4px rgba(0,0,0,.2);
+transition:.2s;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:10px;
+">${selected?'⭐':'✨'}</span>
+
+<span style="
+position:absolute;
+right:${selected?'6px':'8px'};
+left:${selected?'7px':'27px'};
+text-align:center;
+transition:.2s;
+">${selected?'祈願中':'基拉祈'}</span>
+
+</span>
+</label>
+`:''}
+</div>
+
+${isUnlocked?`
+
+<div style="
+display:flex;
+justify-content:center;
+gap:8px;
+">
+${p.slots.map((slt,sIdx)=>`
+<div
+onclick="${isBusy||isJirachi?'':`cycleSlot(${i},${sIdx})`}"
+style="
+width:45px;
+height:45px;
+background:white;
+border:2px dashed ${
+sIdx===0?'#4caf50':
+sIdx===1?'#2196f3':'#f44336'
+};
+border-radius:10px;
+line-height:45px;
+font-size:24px;
+cursor:${isBusy||isJirachi?'default':'pointer'};
+opacity:${isJirachi?'.75':'1'};
+">
+${slt||'？'}
+</div>
+`).join('')}
+</div>
+
+<div style="margin-top:10px;">
+${
+isDone?`
+<button
+onclick="collectDish(${i})"
+style="
+background:#ff9800;
+color:white;
+border:none;
+padding:8px 20px;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
+">
+完成領取
+</button>
+`
+:isBusy?`
+<span style="
+font-size:13px;
+color:#666;
+font-weight:bold;
+">
+⏳ ${GARDEN.getTimeStr(p.end)}
+</span>
+`
+:`
+<button
+onclick="startCook(${i})"
+style="
+position:relative;
+overflow:hidden;
+background:${selected
+?'linear-gradient(135deg,#fff8b5 0%,#ffd54f 45%,#f6b900 100%)'
+:'linear-gradient(135deg,#81e6a8 0%,#4dcc78 100%)'};
+color:${selected?'#6d5200':'#fff'};
+border:1px solid ${selected?'#f3c623':'#35b96a'};
+padding:7px 14px;
+border-radius:18px;
+cursor:pointer;
+font-weight:bold;
+font-size:12px;
+letter-spacing:.3px;
+box-shadow:
+0 3px 0 ${selected?'#d4a900':'#2e9e5a'},
+0 4px 10px rgba(0,0,0,.12);
+transition:all .15s ease;
+min-width:125px;
+"
+onmousedown="this.style.transform='translateY(2px)'"
+onmouseup="this.style.transform='translateY(0)'"
+>
+${selected?'⭐ 基拉祈料理':'🍳 開始烹飪'}
+</button>
+`
+}
+</div>
+
+${
+isJirachi?`
+<div style="
+margin-top:7px;
+font-size:11px;
+color:#f57f17;
+font-weight:bold;
+">
+✨ 基拉祈協助中・剩餘 ${remainStr}
+</div>
+`
+:selected?`
+<div style="
+margin-top:7px;
+font-size:11px;
+color:#f57f17;
+">
+✨ 已啟用管家，開始料理時自動支付今日指定料理
+</div>
+`
+:''
+}
+
+`:
+`
+<div style="
+font-size:12px;
+color:#999;
+padding:15px;
+">
+🔒 尚未解鎖 (需通關前一地區)
+</div>
+`
+}
+
+</div>
+`;
+}
+
+return html;
+}
+
 
 function renderWorker(key, id, opts, name) {
     if (!s.farm.prod[key]) s.farm.prod[key] = { type: null, end: 0 };
@@ -2428,25 +2895,129 @@ function autoFillSlot(emoji) {
 }
 
 function startCook(i) {
-    const p = s.farm.prod[`cook_${i}`];
-    
-    // 檢查三格是否都有選東西 (非 null 或 ？)
-    if (p.slots.some(s => s === null)) return alert("請放滿三種材料！");
-    
+    const f = s.farm;
+    const p = f.prod[`cook_${i}`];
+
+    if (!p) {
+        return alert("找不到料理線！");
+    }
+
+    if (p.end > Date.now()) {
+        return alert("這條料理線目前正在料理中！");
+    }
+
+    // 三格必須都有材料
+    if (!Array.isArray(p.slots) || p.slots.some(x => !x)) {
+        return alert("請放滿三種材料！");
+    }
+
     const [s1, s2, s3] = p.slots;
-    
-    // 原版扣除判定
-    if (s.farm.inv[s1] > 0 && s.farm.inv[s2] > 0 && s.farm.inv[s3] > 0) {
-        s.farm.inv[s1]--;
-        s.farm.inv[s2]--;
-        s.farm.inv[s3]--;
-        
-        p.end = Date.now() + 3600000; // 1小時
-        
-        renderGarden();
-        if(typeof saveGameData === 'function') saveGameData();
+
+    // =====================================
+    // 先確認材料，避免先扣基拉祈料理
+    // =====================================
+
+    if (
+        (f.inv[s1] || 0) <= 0 ||
+        (f.inv[s2] || 0) <= 0 ||
+        (f.inv[s3] || 0) <= 0
+    ) {
+        return alert("材料不足，快去生產吧！");
+    }
+
+    // =====================================
+    // ✨ 基拉祈模式
+    // =====================================
+
+    const isJirachi = !!p.jirachiEnabled;
+
+    if (isJirachi) {
+        ensureJirachiDaily();
+        processJirachiJobs();
+
+        if (!f.jirachiRequests || f.jirachiRequests.length === 0) {
+            p.jirachiEnabled = false;
+
+            if (typeof saveGameData === 'function') {
+                saveGameData();
+            }
+
+            return alert("✨ 基拉祈今天的料理委託次數已用完！");
+        }
+
+        // 找出今日指定且玩家持有的料理
+        const available = f.jirachiRequests.filter(formula => {
+            const recipe = GARDEN.recipes[formula];
+
+            if (!recipe) return false;
+
+            return (f.dishes[recipe.icon] || 0) > 0;
+        });
+
+        if (available.length === 0) {
+            return alert(
+                "✨ 基拉祈今天指定的料理你目前都沒有。\n\n" +
+                "請先製作指定料理，再啟用基拉祈。"
+            );
+        }
+
+        // 隨機選擇一份今日指定料理作為委託費用
+        const payFormula =
+            available[Math.floor(Math.random() * available.length)];
+
+        const payRecipe = GARDEN.recipes[payFormula];
+
+        // 扣除指定料理
+        f.dishes[payRecipe.icon]--;
+
+        // 移除今日委託
+        const requestIndex =
+            f.jirachiRequests.indexOf(payFormula);
+
+        if (requestIndex >= 0) {
+            f.jirachiRequests.splice(requestIndex, 1);
+        }
+
+        // 扣除三種材料
+        f.inv[s1]--;
+        f.inv[s2]--;
+        f.inv[s3]--;
+
+        // 建立基拉祈工作
+        const now = Date.now();
+
+        f.jirachiJobs = f.jirachiJobs || {};
+
+        f.jirachiJobs[`cook_${i}`] = {
+            until: now + 4 * 3600000
+        };
+
+        // 第一輪料理 1 小時
+        p.end = now + 3600000;
+
+        alert(
+            `✨ 基拉祈開始協助料理 #${i + 1}！\n\n` +
+            `🍽️ 支付：${payRecipe.icon} ${payRecipe.name}\n` +
+            `⏰ 協助時間：4 小時`
+        );
+
     } else {
-        alert("材料不足，快去生產吧！");
+
+        // =====================================
+        // 🐭 一般料理
+        // =====================================
+
+        f.inv[s1]--;
+        f.inv[s2]--;
+        f.inv[s3]--;
+
+        p.end = Date.now() + 3600000;
+    }
+
+    renderGarden();
+
+    if (typeof saveGameData === 'function') {
+        saveGameData();
     }
 }
 
@@ -2454,47 +3025,30 @@ function collectDish(lineIdx) {
     const f = s.farm;
     const lineKey = `cook_${lineIdx}`;
     const p = f.prod[lineKey];
-    
-    // 取得格子內容
-    const s1 = p.slots[0]; // 草
-    const s2 = p.slots[1]; // 水
-    const s3 = p.slots[2]; // 火
-
-    // 強制按照你菜單的「草水火」順序組合字串，確保 100% 匹配
+    const s1 = p.slots[0];
+    const s2 = p.slots[1];
+    const s3 = p.slots[2];
     const formula = s1 + s2 + s3;
     const dish = GARDEN.recipes[formula];
 
     if (dish) {
-        // 1. 10% 機率出兩份
         const isDouble = Math.random() < 0.1;
         const amount = isDouble ? 2 : 1;
-
-        // 2. 增加料理庫存
         f.dishes[dish.icon] = (f.dishes[dish.icon] || 0) + amount;
-        
-        // 3. 紀錄到已知食譜
+
         if (!f.knownRecipes.includes(formula)) {
             f.knownRecipes.push(formula);
         }
 
-        // 4. 增加邂逅進度 (1/5)
-        if (f.feedCount === undefined) f.feedCount = 0;
-        f.feedCount = Math.min(5, f.feedCount + 1);
-
-        // 5. 提示訊息 (拿掉飯糰，只顯示你的料理)
         let msg = isDouble ? `✨ 雙倍驚喜！獲得了 2 份 ${dish.icon} ${dish.name}！` : `😋 獲得了 ${dish.icon} ${dish.name}！`;
-        if (f.feedCount >= 5) msg += `\n💖 驚喜邂逅已準備就緒！`;
         alert(msg);
     }
 
-    // --- 重置線路狀態 ---
-    p.end = 0; 
-    
+    p.end = 0;
     renderGarden();
     if (typeof saveGameData === 'function') saveGameData();
 }
 
-// 8. 餵食夥伴 (親密度增加)
 function submitQuest() {
     const f = s.farm;
     GARDEN.recipes = GARDEN.recipes || {};
@@ -2503,94 +3057,47 @@ function submitQuest() {
 
     if (!recipe) return;
 
-    if (f.dishes[recipe.icon] > 0) {
-        // 扣除料理、增加親密度、增加邂逅進度
+    if ((f.dishes[recipe.icon] || 0) > 0) {
         f.dishes[recipe.icon]--;
-        f.friendship += 20; 
+        f.friendship += 20;
+
+        if (f.feedCount === undefined) f.feedCount = 0;
         f.feedCount++;
 
-        // 判斷是否滿 5 次，觸發必閃戰鬥
-        if (f.feedCount >= (f.maxFeed || 5)) {
+        const maxFeed = f.maxFeed || 5;
+        const keys = Object.keys(GARDEN.recipes);
+        const filtered = keys.filter(k => k !== targetFormula);
+        const getNextQuest = () => {
+            if (filtered.length > 0) {
+                return filtered[Math.floor(Math.random() * filtered.length)];
+            }
+            return keys.length > 0 ? keys[Math.floor(Math.random() * keys.length)] : targetFormula;
+        };
+
+        if (f.feedCount >= maxFeed) {
             f.feedCount = 0;
+            f.quest = getNextQuest();
+
             alert("✨ 夥伴感受到了極大的誠意！一場特殊的邂逅開始了！");
             const partnerId = s.buddyId || 25;
             executeClaimGift('GARDEN_BONUS', partnerId, true);
             const overlay = document.getElementById('garden-overlay');
             if (overlay) overlay.remove();
+            if (typeof saveGameData === 'function') saveGameData();
             return;
         }
 
-        // 更換隨機任務（必不重複）
-        const keys = Object.keys(GARDEN.recipes);
-const filtered = keys.filter(k => k !== targetFormula);
-
-f.quest = filtered.length > 0
-    ? filtered[Math.floor(Math.random() * filtered.length)]
-    : targetFormula;
-
-        alert(`❤️ 餵食成功！夥伴進度：${f.feedCount}/${f.maxFeed || 5}`);
+        f.quest = getNextQuest();
+        alert(`❤️ 餵食成功！夥伴進度：${f.feedCount}/${maxFeed}`);
         renderGarden();
-        if(typeof updateUI === 'function') updateUI();
-        if(typeof saveGameData === 'function') saveGameData();
+        if (typeof updateUI === 'function') updateUI();
+        if (typeof saveGameData === 'function') saveGameData();
     } else {
         alert(`你需要 ${recipe.icon} ${recipe.name} 才能餵食夥伴喔！`);
     }
 }
 
     
-function wishStar() {
-    const f = s.farm;
-    const today = new Date().toLocaleDateString();
-
-    GARDEN.recipes = GARDEN.recipes || {};
-    // 🔒 防呆：先檢查 recipes
-    const keys = Object.keys(GARDEN.recipes || {});
-    if (keys.length === 0) {
-        return alert("目前沒有可用料理資料！");
-    }
-
-    const targetFormula = f.quest_jirachi || keys[0];
-    const recipe = GARDEN.recipes[targetFormula];
-
-    if (!recipe) {
-        return alert("料理資料錯誤！");
-    }
-
-    // 每日限一次檢查
-    if (f.lastWishDate === today) return alert("🌟 基拉祈正在沉睡... 明天再試吧！");
-
-    // 取得基拉祈想吃的料理 (設定為獨立於夥伴的 quest_jirachi)
-    
-    if (f.dishes[recipe.icon] > 0) {
-        if (!confirm(`是否消耗 ${recipe.icon} 向管家基拉祈許願發動【願望星碎】？\n(將瞬間完成全地區素材採集)`)) return;
-
-        f.dishes[recipe.icon]--;
-        f.lastWishDate = today;
-
-        // 【願望星碎】核心邏輯
-        Object.keys(f.prod).forEach(key => {
-            if (key.includes('_w')) {
-                const worker = f.prod[key];
-                if (worker.type) {
-                    const isLucky = Math.random() < 0.2;
-                    f.inv[worker.type] = (f.inv[worker.type] || 0) + (isLucky ? 2 : 1);
-                    worker.end = 0;
-                }
-            }
-        });
-
-        // 刷新基拉祈下一次想吃的料理
-        const keys = Object.keys(GARDEN.recipes);
-        f.quest_jirachi = keys[Math.floor(Math.random() * keys.length)];
-
-        alert(`🌠 願望實現了！全地區素材已瞬移至儲存箱！`);
-        renderGarden();
-        if(typeof saveGameData === 'function') saveGameData();
-    } else {
-        alert(`管家基拉祈想吃 ${recipe.icon} ${recipe.name}，目前庫存不足！`);
-    }
-}
-
 // 9. 方框控制函式
 function toggleGardenModal(type) {
     const modal = document.getElementById(type + '-modal');
@@ -5395,21 +5902,19 @@ forceUpdateAllTags();
 
 
 function generateEncounter(region, selectedDish) {
-    // 1️⃣ 普通寶可夢池（全地區紅藍綠黑）
-    const normalPool = [
-        ...PKM_TAG_MAP['紅'],
-        ...PKM_TAG_MAP['藍'],
-        ...PKM_TAG_MAP['綠'],
-        ...PKM_TAG_MAP['黑']
-    ];
-
-    // 隨機普通寶可夢
+    // 【探險遭遇池】
+    // 普通寶可夢：全地區紅、藍、綠、黑標池
+    // 神獸：只有使用符合該地區的指定料理時，才有機會遭遇
+    const normalPool = [...PKM_TAG_MAP['紅'], ...PKM_TAG_MAP['藍'], ...PKM_TAG_MAP['綠'], ...PKM_TAG_MAP['黑']];
     const randomNormal = normalPool[Math.floor(Math.random() * normalPool.length)];
 
-    // 2️⃣ 找出符合料理的神獸（同地區）
+    // 【神獸條件】
+    // 必須同時符合「探險地區」與「指定料理」
     const matchedLegend = LEGENDARY_POOL.filter(l => l.area === region && l.food === selectedDish);
 
-    // 3️⃣ 料理召喚神獸 30%
+    // 【神獸機率】
+    // 符合指定料理時：30% 遭遇神獸，70% 遭遇普通寶可夢
+    // 注意：這裡是神獸唯一的隨機入口，請勿在下面再加入神獸隨機池
     if (matchedLegend.length > 0 && Math.random() < 0.3) {
         const legend = matchedLegend[Math.floor(Math.random() * matchedLegend.length)];
         return {
@@ -5421,30 +5926,14 @@ function generateEncounter(region, selectedDish) {
         };
     }
 
-    // 4️⃣ 若沒有料理召喚，隨機決定普通或神獸
-    const legendPool = LEGENDARY_POOL.filter(l => l.area === region);
-    const rand = Math.random();
-    const randomLegend = legendPool.length ? legendPool[Math.floor(Math.random() * legendPool.length)] : null;
-
-    if (rand < 0.7 || !randomLegend) {
-        const randomNormal = normalPool[Math.floor(Math.random() * normalPool.length)];
+    // 【普通遭遇】
+    // 沒有符合料理，或30%神獸判定失敗時，一律遭遇普通寶可夢
     return {
-            id: randomNormal,
-            // ✨ 核心修正：從 POKE_NAME_MAP 抓名字，找不到才顯示 No.
-            name: POKE_NAME_MAP[randomNormal] || `No.${randomNormal}`, 
-            type: 'normal',
-            color: getPkmTagById(randomNormal),
-            hearts: 3
-        };
-    }
-
-    // 神獸
-    return {
-        id: randomLegend.id,
-        name: randomLegend.name,
-        type: 'legend',
-        color: '白',
-        hearts: 5
+        id: randomNormal,
+        name: POKE_NAME_MAP[randomNormal] || `No.${randomNormal}`,
+        type: 'normal',
+        color: getPkmTagById(randomNormal),
+        hearts: 3
     };
 }
 
