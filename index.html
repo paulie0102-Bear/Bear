@@ -1606,11 +1606,7 @@ function initFarmProgress() {
         s.farm.prod.pikachu = { slots: [null, null, null], end: 0 };
     }
 
-    // --- 4. 每週神獸活動 ---
-    if (!s.farm.event) {
-        s.farm.event = { current: null, history: [], lastUpdate: 0 };
-    }
-
+  
     // --- 5. 探險小隊結構 ---
     if (!s.farm.expedition) {
         s.farm.expedition = {
@@ -2495,18 +2491,7 @@ function jirachiCanStart(lineIdx){
     const [a,b,c]=p.slots;
     return Math.min(4,s.farm.inv[a]||0,s.farm.inv[b]||0,s.farm.inv[c]||0);
 }
-function jirachiSettleDish(lineIdx,job){
-    const f=s.farm,p=f.prod[`cook_${lineIdx}`];
-    if(!p||!p.slots)return false;
-    const formula=p.slots.join('');
-    const dish=GARDEN.recipes[formula];
-    if(!dish)return false;
-    const amount=Math.random()<0.1?2:1;
-    job.pending=job.pending||[];
-    job.pending.push({icon:dish.icon,name:dish.name,amount});
-    if(!f.knownRecipes.includes(formula))f.knownRecipes.push(formula);
-    return true;
-}
+
 // ✨ 基拉祈：只負責檢查時間是否全部完成，不提前結算料理
 function processJirachiJobs(){
     const f=s.farm;
@@ -3469,11 +3454,6 @@ function renderBarcode(code) {
     container.style.display = "block";
 }
 
-// --- [ 等級加成計算 ] ---
-function getLvlBonus() {
-    // 每升 1 級，基礎捕捉率增加 1.5%
-    return Math.floor((s.lvl - 1) * 1.5); 
-}
 // --- [ 經驗值與升級系統 ] ---
 function gainExp(amount) {
     s.exp += amount;
