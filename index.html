@@ -1661,6 +1661,10 @@ window.onload = () => {
 
         // 渲染畫面
         updateUI();
+        // ⚔️ 恢復重新整理前尚未結束的戰鬥
+if (typeof restoreBattleState === 'function') {
+    restoreBattleState();
+}
         if (typeof renderTasks === 'function') renderTasks();
         if (typeof initCarrier === 'function') initCarrier(); 
 
@@ -3981,184 +3985,257 @@ function record() {
 }
 
 
-// --- [ 戰鬥核心 ] ---
 // --- [ 戰鬥核心：修正版 ] ---
-// --- [ 戰鬥核心：修正版 ] ---
-function spawnEnemy(targetId) { // 🔴 增加參數
-    const id = targetId || Math.floor(Math.random() * 721) + 1; 
-    const isMega = (typeof s !== 'undefined') ? (Date.now() < s.megaUntil) : false;
-    
-    // --- 🟢 核心修改：判斷是否必閃 ---
-    let isShiny = false;
-    if (typeof s !== 'undefined' && s.forceShiny === true) {
-        isShiny = true;
-        s.forceShiny = false; // 觸發後立即關閉開關，確保只有這一隻是閃光
-        console.log("✨ 冠軍祝福生效：這是一場必閃戰鬥！");
+function spawnEnemy(targetId, restoreData) {
+    // 🔒 如果是恢復存檔，直接使用原本戰鬥資料
+    if (restoreData) {
+        curE = {
+            id: restoreData.id,
+            hp: restoreData.hp,
+            isShiny: restoreData.isShiny,
+            name: restoreData.name
+        };
+        turn = restoreData.turn || 0;
     } else {
-        isShiny = Math.random() < (isMega ? 0.15 : 0.05);
+        const id = targetId || Math.floor(Math.random() * 721) + 1;
+        const isMega = (typeof s !== 'undefined') ? (Date.now() < s.megaUntil) : false;
+
+        let isShiny = false;
+        if (typeof s !== 'undefined' && s.forceShiny === true) {
+            isShiny = true;
+            s.forceShiny = false;
+            console.log("✨ 冠軍祝福生效：這是一場必閃戰鬥！");
+        } else {
+            isShiny = Math.random() < (isMega ? 0.15 : 0.05);
+        }
+
+        curE = {
+            id,
+            hp: 100,
+            isShiny,
+            name: (typeof getPkmnName === 'function') ? getPkmnName(id) : "No." + id
+        };
+        turn = 0;
     }
-    
-    curE = { id, hp: 100, isShiny, name: (typeof getPkmnName === 'function') ? getPkmnName(id) : "No." + id };
-    turn = 0;
-    
+
+    // 💾 保存目前戰鬥狀態
+    saveBattleState();
+
     const stage = document.getElementById('encounterStage');
     const img = document.getElementById('enemyImg');
     const hpFill = document.getElementById('hpFill');
 
-    // 1. 先顯示區域 (關鍵：區域不顯示，寬度計算就可能失敗)
     document.getElementById('enemyArea').style.display = "block";
     document.getElementById('battleActions').style.display = "block";
     document.getElementById('inputArea').style.display = "none";
 
-    // 2. 顯示後再處理血條
     if (hpFill) {
-        hpFill.style.transition = "none"; 
-        hpFill.style.width = "100%";
-        hpFill.classList.remove('hp-yellow', 'hp-red');
-        hpFill.classList.add('hp-green');
-        void hpFill.offsetWidth; // 觸發重繪
+        hpFill.style.transition = "none";
+        hpFill.style.width = curE.hp + "%";
+        hpFill.classList.remove('hp-yellow', 'hp-red', 'hp-green');
+
+        if (curE.hp > 50) hpFill.classList.add('hp-green');
+        else if (curE.hp > 25) hpFill.classList.add('hp-yellow');
+        else hpFill.classList.add('hp-red');
+
+        void hpFill.offsetWidth;
     }
 
     if (stage) stage.classList.remove('encounter-active');
-    
-    // 3. 處理圖片路徑
+
     if (img) {
-        const apiPath = (typeof API !== 'undefined') ? API : "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites";
-        // 🚩 修正點：確保使用原始 id (不補零) 拼接圖片路徑，避免 404
-        const spriteId = Number(id);
-        img.src = `${apiPath}/pokemon/${isShiny ? 'shiny/' : ''}${spriteId}.png`;
+        const apiPath = (typeof API !== 'undefined')
+            ? API
+            : "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites";
+
+        img.src = `${apiPath}/pokemon/${curE.isShiny ? 'shiny/' : ''}${Number(curE.id)}.png`;
     }
 
-    // --- 🏆 新增：圖鑑收錄標記判定 ---
-    // 判斷 s.owned 是否包含目前的 id
-    const isCaught = (typeof s !== 'undefined' && s.owned && s.owned.includes(id));
-    // 如果收錄過，顯示一顆小寶貝球 (使用網路圖片確保不報錯)
-    const caughtIcon = isCaught ? `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" style="width:16px; height:16px; vertical-align:middle; margin-right:4px;">` : "";
+    const isCaught = (
+        typeof s !== 'undefined' &&
+        s.owned &&
+        s.owned.includes(curE.id)
+    );
 
-    // 4. 更新 UI 文字 (改用 innerHTML 以支援圖片標籤)
-    const displayName = `No.${String(id).padStart(3, '0')} ${curE.name}`;
-    const shinyTag = isShiny ? ' (✨閃光)' : '';
-    
+    const caughtIcon = isCaught
+        ? `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">`
+        : "";
+
+    const displayName = `No.${String(curE.id).padStart(3, '0')} ${curE.name}`;
+    const shinyTag = curE.isShiny ? ' (✨閃光)' : '';
+
     const nameEl = document.getElementById('enemyName');
     if (nameEl) {
-        // 🚩 寶貝球出現在編號前面
         nameEl.innerHTML = `${caughtIcon}${displayName}${shinyTag}`;
     }
 
-    document.getElementById('turnInfo').innerText = "7回合內，寶可夢不會逃跑";
-    document.getElementById('msg').innerText = `✨ 野生的 ${curE.name} 出現了！`;
+    document.getElementById('turnInfo').innerText =
+        `第 ${turn} 回合／7回合內，寶可夢不會逃跑`;
 
-    // 5. 延遲撥開草叢，之後恢復動畫
+    document.getElementById('msg').innerText =
+        `✨ 野生的 ${curE.name} 出現了！`;
+
     setTimeout(() => {
         if (stage) stage.classList.add('encounter-active');
         if (hpFill) hpFill.style.transition = "width 0.5s ease";
     }, 60);
 }
 
+    // 💾 保存目前進行中的戰鬥
+function saveBattleState() {
+    if (!curE) return;
+
+    s.battleState = {
+        id: curE.id,
+        hp: curE.hp,
+        isShiny: curE.isShiny,
+        name: curE.name,
+        turn: turn || 0
+    };
+
+    s.battleQueue = typeof battleQueue !== 'undefined' ? battleQueue : 0;
+    saveGameData();
+}
+
+// 🔄 重新開啟遊戲時恢復戰鬥
+function restoreBattleState() {
+    if (!s.battleState) return;
+
+    const battle = s.battleState;
+
+    if (!battle.id || battle.hp <= 0) {
+        delete s.battleState;
+        saveGameData();
+        return;
+    }
+
+    if (typeof battleQueue !== 'undefined') {
+        battleQueue = s.battleQueue || 0;
+    }
+
+    isInBattle = true;
+    spawnEnemy(null, battle);
+
+    console.log("⚔️ 已恢復未完成的戰鬥：", battle.name);
+}
+
+    
 async function throwBall() {
+    if (!curE) return;
+
     const type = document.getElementById('ballSelect').value;
-    
-    // ● 功能 1: 消耗檢查
-    if(s.items[type] <= 0) { alert("沒球了！"); return; }
-    
-    // ● 功能 2: 資源扣除與回合增加
+
+    if (s.items[type] <= 0) {
+        alert("沒球了！");
+        return;
+    }
+
     s.items[type]--;
     turn++;
 
-    // ● 功能 3: 播放動畫 (維持原本 800ms + 1500ms 節奏)
+    // 💾 丟球後立即保存，避免刷新造成回合與精靈球回溯
+    saveBattleState();
+
     const ball = document.getElementById('ballOverlay');
     ball.src = `${API}/items/${type}-ball.png`;
     ball.className = 'ball-throw';
-    
+
     await new Promise(r => setTimeout(r, 800));
+
+    // 關閉網頁後重新開啟，不會繼續執行舊動畫
+    if (!curE) return;
+
     ball.className = 'ball-shake';
+
     await new Promise(r => setTimeout(r, 1500));
 
-    // ● 功能 4: 計算機率加成 (稱號、等級、Mega、血量)
+    if (!curE) return;
+
     const titleBonus = getTitle(s.owned.length).bonus;
-    const lvlBonus = getLvlBonus(); 
+    const lvlBonus = getLvlBonus();
     const megaBonus = (Date.now() < s.megaUntil ? 20 : 0);
     const baseRate = {poke:30, great:40, ultra:50, master:100}[type];
-    const catchChance = (baseRate + titleBonus + megaBonus + lvlBonus) * (1.5 - curE.hp/100) / 100;
 
-    // ★ 功能 5 & 6: 判定結果與狀態重置
+    const catchChance =
+        (baseRate + titleBonus + megaBonus + lvlBonus) *
+        (1.5 - curE.hp / 100) / 100;
+
     let isSuccess = false;
 
     if (s.isGiftBattle) {
-        // ★ 優先判定：贈禮戰鬥必中 (包含博士與冠軍)
-        isSuccess = true; 
-        s.isGiftBattle = false; // ⚠️ 狀態重置，防止神力洩漏
-        s.forceShiny = false; // ⚠️ 新增：同時重置閃光標記，確保下一場野外戰鬥恢復正常機率
-        console.log(s.forceShiny ? "🏆 冠軍祝福：捕捉成功！" : "🎓 博士贈禮：捕捉成功！");
+        isSuccess = true;
+        s.isGiftBattle = false;
+        s.forceShiny = false;
     } else if (Math.random() < catchChance || type === 'master') {
-        // ● 一般捕捉成功 (或使用大師球)
         isSuccess = true;
     }
 
-    // ● 功能 7-12: 執行結果與獎勵累積
     if (isSuccess) {
         document.getElementById('gotcha').style.display = "block";
-        
-        // ● 功能 7: 更新基礎圖鑑
-        if(!s.owned.includes(curE.id)) s.owned.push(curE.id);
-        // 2. 檢查勳章解鎖
+
+        if (!s.owned.includes(curE.id)) s.owned.push(curE.id);
+
         checkBadgeUnlockAnnounce();
-        // ★ 功能 8: 強化閃光紀錄 (包含冠軍必閃)
-        if(curE.isShiny && !s.shinyOwned.includes(curE.id)) {
+
+        if (curE.isShiny && !s.shinyOwned.includes(curE.id)) {
             s.shinyOwned.push(curE.id);
-            console.log("✨ 閃光圖鑑已紀錄");
         }
-        
-        // ● 功能 9 & 10: 累積進化與 Mega 能量
+
         s.prog.evo++;
+
         if (typeof MEGA_ABLE !== 'undefined' && MEGA_ABLE.includes(Number(curE.id))) {
-            s.prog.mega++; 
-            // 檢查獎勵
-            if(s.prog.mega >= 5) { s.prog.mega = 0; s.items.mstone++; }
-        }
-        if(s.prog.evo >= 5) { s.prog.evo = 0; s.items.stone++; }
+            s.prog.mega++;
 
-        // ● 功能 11: 任務進度累積
-        s.tasks.dCatch += 1;
-        s.tasks.wCatch += 1;
-        s.tasks.mCatch += 1;
+            if (s.prog.mega >= 5) {
+                s.prog.mega = 0;
+                s.items.mstone++;
+            }
+        }
+
+        if (s.prog.evo >= 5) {
+            s.prog.evo = 0;
+            s.items.stone++;
+        }
+
+        s.tasks.dCatch++;
+        s.tasks.wCatch++;
+        s.tasks.mCatch++;
+
         if (s.dailyWild) s.dailyWild.claimed = true;
-        
-        saveGameData(); // 統一存檔一次
 
-
-        // 🏆 [關鍵新增]：每日奇遇任務達成！
-        // 只要這行被執行，今天主畫面的驚喜寶可夢就不會再出現了
-        if (s.dailyWild) {
-            s.dailyWild.claimed = true;
-        }
-        
-        // ● 功能 12: 給予經驗值與動態提示
         if (typeof gainExp === 'function') gainExp(10);
+
+        saveGameData();
 
         setTimeout(() => {
             document.getElementById('gotcha').style.display = "none";
-            // ★ 新增：閃光專屬文字提示
-            const prefix = curE.isShiny ? "✨ 閃光" : "";
-            endBattle(`成功捕捉了 ${prefix}${curE.name}！獲得 10 EXP`);
+
+            const prefix = curE && curE.isShiny ? "✨ 閃光" : "";
+            endBattle(`成功捕捉了 ${prefix}${curE ? curE.name : "寶可夢"}！獲得 10 EXP`);
         }, 1500);
 
     } else {
-        // ● 捕捉失敗與逃跑判定
         ball.style.display = "none";
         ball.className = "";
-        document.getElementById('msg').innerText = "哎呀！寶可夢掙脫了！";
 
-        if(turn >= 7 && Math.random() < 0.3) {
+        document.getElementById('msg').innerText =
+            "哎呀！寶可夢掙脫了！";
+
+        // 💾 捕捉失敗後保存最新回合
+        saveBattleState();
+
+        if (turn >= 7 && Math.random() < 0.3) {
             endBattle("寶可夢逃跑了！");
         }
     }
 
-    // ★ 功能 13: UI 同步 (包含新商店按鈕狀態)
     updateUI();
-    if (typeof updateGiftButtons === 'function') updateGiftButtons();
-}
 
+    if (typeof updateGiftButtons === 'function') {
+        updateGiftButtons();
+    }
+}
+    
 // 檢查並提示解鎖
 function checkBadgeUnlockAnnounce() {
     Object.keys(BADGE_DATA).forEach(key => {
@@ -4183,100 +4260,95 @@ function checkBadgeUnlockAnnounce() {
 }
 
 
-// --- 戰鬥結束 ---
+
+// --- ⚔️ 戰鬥結束 ---
 function endBattle(text) {
-
-    document.getElementById('msg').innerText = text;
-
-    document.getElementById('enemyArea').style.display = "none";
-    document.getElementById('battleActions').style.display = "none";
-    document.getElementById('inputArea').style.display = "block";
-
-    const stage = document.getElementById('encounterStage');
-    if(stage) stage.classList.remove('encounter-active');
-
-    isInBattle = false;
-
-    // 若還有排隊戰鬥就繼續
-    if(battleQueue > 0){
-        setTimeout(()=>{
-            battleQueue--;
-            isInBattle = true;
-            spawnEnemy();
-        },1200);
-    }
-
-    updateUI();
-}
-
-function attack() {
-    if(!curE) return;
-    
-    // 每次攻擊減少 25 HP，最低降到 0
-    curE.hp = Math.max(0, curE.hp - 25); 
-    document.getElementById('hpFill').style.width = curE.hp + "%";
-    
-hpFill.classList.remove('hp-green', 'hp-yellow', 'hp-red');
-    if (curE.hp > 50) {
-        hpFill.classList.add('hp-green');
-    } else if (curE.hp > 25) {
-        hpFill.classList.add('hp-yellow');
-    } else {
-        hpFill.classList.add('hp-red');
-    }
-
-    // --- [ 個人式修正：判定打倒邏輯 ] ---
-    if(curE.hp <= 0) {
-        // HP 歸零，判定為打倒！
-        const killExp = 20; // 捕捉是 10，打倒是 20 (兩倍)
-        
-        // 給予經驗值
-        gainExp(killExp); 
-        
-        // 戰鬥結束訊息
-        document.getElementById('msg').innerText = `💥 發動強烈攻擊！${curE.name} 被打倒了！`;
-        
-        // 延遲一下下再結束戰鬥，讓玩家看清楚 HP 歸零
-        setTimeout(() => {
-            endBattle(`打倒了野生寶可夢！獲得 ${killExp} EXP`);
-        }, 800);
-        
-    } else {
-        // 還沒打死，繼續戰鬥
-        document.getElementById('msg').innerText = `發動攻擊！${curE.name} 體力下降了，捕獲率上升！`;
-        turn++;
-    }
-    
-    updateUI();
-}
-
-function endBattle(m) {
     curE = null;
+
+    // 🧹 清除戰鬥存檔，避免已結束的寶可夢重新出現
+    delete s.battleState;
+
     document.getElementById('enemyArea').style.display = "none";
     document.getElementById('battleActions').style.display = "none";
     document.getElementById('inputArea').style.display = "block";
     document.getElementById('ballOverlay').style.display = "none";
-    document.getElementById('msg').innerText = m;
-    
-    // --- 新增：連戰邏輯 ---
-    isInBattle = false; // 戰鬥已結束，解鎖狀態
-    
-    // 如果隊列裡還有剩餘的戰鬥場次
+    document.getElementById('msg').innerText = text;
+
+    const stage = document.getElementById('encounterStage');
+    if (stage) stage.classList.remove('encounter-active');
+
+    isInBattle = false;
+
+    // 💾 保存戰鬥結束狀態
+    s.battleQueue = typeof battleQueue !== 'undefined' ? battleQueue : 0;
+    saveGameData();
+
+    // 🔄 連戰
     if (typeof battleQueue !== 'undefined' && battleQueue > 0) {
-        // 延遲 1 秒後自動觸發下一場，讓玩家有時間看清楚上一場的訊息
         setTimeout(() => {
             if (!isInBattle) {
-                // 這裡呼叫您原本啟動戰鬥的函式 (通常是 spawnEnemy 或 startBattle)
-                battleQueue--; // 消耗一次場次
-                isInBattle = true; // 重新上鎖
-                spawnEnemy(); 
+                battleQueue--;
+                isInBattle = true;
+
+                s.battleQueue = battleQueue;
+                saveGameData();
+
+                spawnEnemy();
             }
         }, 1200);
     }
-    // ----------------------
 
     updateUI();
 }
+    
+
+function attack() {
+    if (!curE) return;
+
+    curE.hp = Math.max(0, curE.hp - 25);
+
+    const hpFill = document.getElementById('hpFill');
+
+    if (hpFill) {
+        hpFill.style.width = curE.hp + "%";
+
+        hpFill.classList.remove('hp-green', 'hp-yellow', 'hp-red');
+
+        if (curE.hp > 50) {
+            hpFill.classList.add('hp-green');
+        } else if (curE.hp > 25) {
+            hpFill.classList.add('hp-yellow');
+        } else {
+            hpFill.classList.add('hp-red');
+        }
+    }
+
+    if (curE.hp <= 0) {
+        const killExp = 20;
+
+        gainExp(killExp);
+
+        document.getElementById('msg').innerText =
+            `💥 發動強烈攻擊！${curE.name} 被打倒了！`;
+
+        // 💾 已經確定打倒，不需要保存戰鬥狀態
+        setTimeout(() => {
+            endBattle(`打倒了野生寶可夢！獲得 ${killExp} EXP`);
+        }, 800);
+
+    } else {
+        turn++;
+
+        document.getElementById('msg').innerText =
+            `發動攻擊！${curE.name} 體力下降了，捕獲率上升！`;
+
+        // 💾 保存 HP + 回合
+        saveBattleState();
+    }
+
+    updateUI();
+}
+
 
 // --- [ 其他功能保留原樣 ] ---
 function renderBag() {
