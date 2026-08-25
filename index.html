@@ -4756,40 +4756,6 @@ function handleCSV(e) {
     reader.readAsText(file);
 } // handleCSV 函式結束 (🚩 這邊之前少了這個括號)
 
-function confirmImport() {
-    if(!tempData || tempData.length===0){ cancelImport(); return; }
-
-    tempData.forEach((item,index)=>{
-        const reward = Math.floor(item.amt*0.5);
-        const monthKey = item.date.substring(0,7);
-
-        s.yearSums[monthKey] = (s.yearSums[monthKey]||0)+item.amt;
-        s.catSums[item.cat] = (s.catSums[item.cat]||0)+item.amt;
-        s.bal += reward;
-        s.pool += item.amt;
-
-        s.hist.push({
-            id: Date.now()+index+Math.random(),
-            date:item.date, cat:item.cat, amt:item.amt, note:item.note, reward:reward
-        });
-
-        if(s.tasks){ s.tasks.dRec++; s.tasks.wRec++; s.tasks.mRec++; }
-    });
-
-    // 戰鬥判定
-    const encounterCount = Math.floor(s.pool/200);
-    if(encounterCount>0){ 
-        s.pool %= 200; 
-        if(typeof battleQueue!=='undefined'){ 
-            battleQueue+=encounterCount; 
-            if(!isInBattle){ battleQueue--; isInBattle=true; if(window.spawnEnemy) spawnEnemy(); } 
-        } 
-    }
-
-    cancelImport();
-    updateUI();
-    if(window.renderCharts) renderCharts();
-}
 
 function cancelImport(){
     tempData=[];
@@ -4798,48 +4764,52 @@ function cancelImport(){
     document.getElementById('csvFile').value="";
     document.getElementById('importCount').innerText=`預覽資料數量: 0`;
 }
+
 function confirmImport() {
-    if (tempData.length === 0) return;
+    if(!tempData || tempData.length===0){ cancelImport(); return; }
 
-    tempData.forEach((item, index) => {
-        const reward = Math.floor(item.amt * 0.5);
-        const monthKey = item.date.substring(0, 7);
+    tempData.forEach((item,index)=>{
+        const reward=Math.floor(item.amt*0.5);
+        const monthKey=item.date.substring(0,7);
 
-        // 1. 同步全域數值 (s 為你的狀態物件)
-        s.bal += reward;
-        s.pool += item.amt;
-        s.yearSums[monthKey] = (s.yearSums[monthKey] || 0) + item.amt;
-        s.catSums[item.cat] = (s.catSums[item.cat] || 0) + item.amt;
+        s.bal+=reward;
+        s.pool+=item.amt;
+        s.yearSums[monthKey]=(s.yearSums[monthKey]||0)+item.amt;
+        s.catSums[item.cat]=(s.catSums[item.cat]||0)+item.amt;
 
-        // 2. 存入歷史紀錄
         s.hist.push({
-            id: Date.now() + index + Math.random(),
-            date: item.date,
-            cat: item.cat,
-            amt: item.amt,
-            note: item.note,
-            reward: reward
+            id:Date.now()+index+Math.random(),
+            date:item.date,
+            cat:item.cat,
+            amt:item.amt,
+            note:item.note,
+            reward:reward
         });
 
-        // 3. 任務計數
-        s.tasks.dRec++; s.tasks.wRec++; s.tasks.mRec++;
+        if(s.tasks){
+            s.tasks.dRec++;
+            s.tasks.wRec++;
+            s.tasks.mRec++;
+        }
     });
 
-    // 4. 戰鬥觸發邏輯 (直接沿用你的 record 核心)
-    const encounterCount = Math.floor(s.pool / 200);
-    if (encounterCount > 0) {
-        s.pool %= 200;
-        battleQueue += encounterCount;
-        if (!isInBattle) {
-            battleQueue--; isInBattle = true; spawnEnemy();
+    // ⚔️ 戰鬥觸發
+    const encounterCount=Math.floor(s.pool/200);
+    if(encounterCount>0){
+        s.pool%=200;
+        battleQueue+=encounterCount;
+        if(!isInBattle){
+            battleQueue--;
+            isInBattle=true;
+            spawnEnemy();
         }
     }
 
-    const importedCount = tempData.length; // 先存好匯入筆數
-cancelImport();
-updateUI();
-if (window.renderCharts) renderCharts();
-alert(`正式導入成功！共 ${importedCount} 筆資料。`);
+    const importedCount=tempData.length;
+    cancelImport();
+    updateUI();
+    if(window.renderCharts)renderCharts();
+    alert(`正式導入成功！共 ${importedCount} 筆資料。`);
 }
 
 function cancelImport() {
@@ -5803,6 +5773,15 @@ function generateEncounter(region, selectedDish) {
 function finishExpedition() {
     const ex = s.farm.expedition;
     if (!ex) return;
+    // 🍖 探險資源對應表
+    const keyMap = {
+        '🥩':'肉',
+        '🥚':'蛋',
+        '🐟':'魚',
+        '🦐':'蝦',
+        '🌾':'稻米',
+        '🥗':'蔬菜'
+    };
 
     // 0️⃣ 停止計時器
     if (window.expeditionInterval) {
@@ -5900,7 +5879,6 @@ function finishExpedition() {
     }
 
     // 4️⃣ 發放資源
-    const keyMap = { '🥩':'肉', '🥚':'蛋', '🐟':'魚', '🦐':'蝦', '🌾':'稻米', '🥗':'蔬菜' };
     if (!s.farm.inv) s.farm.inv = {};
     Object.keys(baseResources).forEach(icon => {
         const amount = baseResources[icon];
@@ -6041,12 +6019,6 @@ function selectTeamMember(slotIndex, filterTag = 'ALL') {
     container.id = 'member-picker-container';
     container.innerHTML = html;
     document.body.appendChild(container);
-}
-
-/* --- 輔助函數：取得標籤對應顏色 --- */
-function getTagColor(color) {
-    const colors = { '紅': '#e53935', '藍': '#1e88e5', '綠': '#43a047', '黑': '#424242', '白': '#fbc02d' };
-    return colors[color] || '#999';
 }
 
 /* --- 2. 確認選擇並放入槽位 (透過 uniqueId 尋找) --- */
@@ -6436,10 +6408,6 @@ function openPokemonDex() {
     renderDexList();
 }
 
-function getTagColor(color) {
-    const colors = { '紅': '#e53935', '藍': '#1e88e5', '綠': '#43a047', '黑': '#424242', '白': '#fbc02d' };
-    return colors[color] || '#999';
-}
     
 </script>
 </body>
