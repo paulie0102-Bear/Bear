@@ -6366,7 +6366,8 @@ function openPokemonDex() {
     container.style = `
         position: fixed; top:0; left:0; width:100%; height:100%;
         background: rgba(0,0,0,0.5); z-index:10000; display:flex; justify-content:center; align-items:flex-start;
-        overflow:auto; padding-top:40px; 
+        overflow:hidden;
+        padding-top:40px;
     `;
 
     const modal = document.createElement('div');
@@ -6391,25 +6392,31 @@ function openPokemonDex() {
     });
     modal.appendChild(tagBar);
 
-    // 列表容器（可滾動）
+    // 列表容器：只有這裡可以上下滑動
     const listContainer = document.createElement('div');
     listContainer.style = `
-        display:flex; flex-wrap:wrap; gap:12px; justify-content:center; 
-        max-height:70vh; overflow-y:auto; padding-bottom:16px;
+        display:flex; flex-wrap:wrap; gap:12px; justify-content:center;
+        max-height:70vh;
+        overflow-y:auto;
+        overscroll-behavior-y:contain;
+        -webkit-overflow-scrolling:touch;
+        padding-bottom:16px;
     `;
     modal.appendChild(listContainer);
 
     // 底部固定關閉按鈕
     const closeBar = document.createElement('div');
     closeBar.style = `
-        position: sticky; bottom:0; width:100%; display:flex; justify-content:center; 
+        position: sticky; bottom:0; width:100%; display:flex; justify-content:center;
         background:white; padding:12px 0; z-index:10; border-top:1px solid #ddd;
     `;
+
     const closeBtn = document.createElement('button');
     closeBtn.innerText = '關閉';
     closeBtn.style = `
         padding:10px 16px; background:#eee; border:none; border-radius:12px; cursor:pointer; font-weight:bold; font-size:16px;
     `;
+
     closeBtn.onclick = () => container.remove();
     closeBar.appendChild(closeBtn);
     modal.appendChild(closeBar);
