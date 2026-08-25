@@ -2021,24 +2021,22 @@ if (typeof GARDEN !== 'undefined') {
         </span>
     </div>
 
-    <!-- 愛心進度 -->
-    <div style="
-        display:flex;
-        justify-content:center;
-        gap:4px;
-        margin:3px 0 10px;
-    ">
-        ${Array.from({length:f.maxFeed||5},(_,i)=>`
-            <span style="
-                font-size:19px;
-                color:${i<f.feedCount?'#ff5c7a':'#e8d6d6'};
-                text-shadow:${i<f.feedCount?'0 1px 3px rgba(255,92,122,.25)':'none'};
-                transition:.2s;
-            ">
-                ${i<f.feedCount?'♥':'♡'}
-            </span>
-        `).join('')}
-    </div>
+    <!-- 愛心進度：與冒險隊使用相同圖示 -->
+<div style="
+    display:flex;
+    justify-content:center;
+    gap:4px;
+    margin:3px 0 10px;
+">
+    ${Array.from({length:f.maxFeed||5},(_,i)=>`
+        <span style="
+            font-size:19px;
+            transition:.2s;
+        ">
+            ${i<f.feedCount?'🧡':'🤍'}
+        </span>
+    `).join('')}
+</div>
 
     <!-- 開始餵食 -->
     <button
