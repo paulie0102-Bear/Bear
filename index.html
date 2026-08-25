@@ -573,7 +573,93 @@
 #garden-overlay img:hover {
     transform: scale(1.1) rotate(5deg);
 }
+
+    
 </style>
+
+
+<style>
+    /* 外部容器：以記帳面板的大小為絕對基準（高度固定） */
+    .action-container {
+        position: relative;
+        margin-top: 15px;      
+        height: 180px;         
+        box-sizing: border-box;
+        overflow: hidden;      
+    }
+
+    /* 面板定位設定 */
+    .panel-box {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;           
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between; 
+    }
+
+    /* 戰鬥面板邊距微調 */
+    #battleActions {
+        padding: 6px 10px !important; 
+    }
+
+    /* 上方「攻擊 / MEGA」按鈕精簡 */
+    #battleActions .card > div:first-child button {
+        padding: 6px !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 0 #c0392b; 
+    }
+    #battleActions .card > div:first-child button:last-child {
+        box-shadow: 0 2px 0 #8e44ad; 
+    }
+
+    /* 🔴 2*2 寶貝球按鈕：外框變小、變緊密 */
+    .ball-btn {
+        background: #f8f9fa;
+        border: 1.5px solid #ccc;
+        border-bottom: 2.5px solid #bbb; 
+        border-radius: 6px;
+        padding: 2px 4px;      /* 極小的按鈕留白 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all 0.1s ease;
+        box-shadow: 0 2px 3px rgba(0,0,0,0.04);
+    }
+
+    .ball-btn:active {
+        transform: translateY(2px);
+        border-bottom-width: 1px;
+    }
+
+    /* 🔴 寶貝球 Icon 維持大尺寸 (清晰明顯) */
+    .ball-btn .res-icon {
+        width: 32px !important;  
+        height: 32px !important;
+        object-fit: contain;
+    }
+
+    /* 數量文字維持適中大小 */
+    .ball-btn span {
+        font-size: 14px;
+        font-weight: 900;
+        color: var(--text);
+    }
+
+    /* 底部回合提示文字縮小 */
+    #turnInfo {
+        font-size: 10px !important;
+        margin-top: 2px !important;
+    }
+</style>
+
+
 <style>
     /* 讓公告內的捲軸變窄、變圓潤 */
     #news-overlay div::-webkit-scrollbar {
@@ -625,7 +711,11 @@
 
     <div id="msg" class="msg-box">記錄生活的每一刻，同時踏上寶可夢訓練家的旅程！</div>
 
-    <div id="inputArea" class="card">
+    <!-- 外部用同一個容器固定大小，避免切換時高度跑掉 -->
+<div class="action-container">
+
+    <!-- 1. 記帳面板 -->
+    <div id="inputArea" class="card panel-box" style="margin: 0;">
         <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:8px; margin-bottom:8px;">
             <input type="date" id="recDate" style="padding:8px; border:1px solid #ccc; border-radius:5px;">
             <select id="recCat" style="padding:8px; border:1px solid #ccc; border-radius:5px;">
@@ -639,17 +729,20 @@
         <button onclick="record()" style="background:var(--p); color:white; width:100%; padding:14px; border:none; border-radius:8px; font-weight:bold; font-size:16px;">記帳並探索冒險</button>
     </div>
 
-    <div id="battleActions" class="card" style="display:none; border:2px solid var(--p);">
+    <!-- 2. 對戰與丟球面板 -->
+    <div id="battleActions" class="card panel-box" style="display:none; border:2px solid var(--p); margin: 0;">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-            <button onclick="attack()" style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px;">⚔️ 攻擊 (降低HP)</button>
-            <button onclick="tryMega()" style="background:var(--mega); color:white; padding:12px; border:none; border-radius:8px;">🧬 MEGA 進化</button>
+            <button onclick="attack()" style="background:#e74c3c; color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; box-shadow: 0 4px 0 #c0392b;">⚔️ 攻擊 (降低HP)</button>
+            <button onclick="tryMega()" style="background:var(--mega); color:white; padding:12px; border:none; border-radius:8px; font-weight:bold; box-shadow: 0 4px 0 #8e44ad;">🧬 MEGA 進化</button>
         </div>
-        <div style="display:flex; gap:8px;">
-            <select id="ballSelect" style="flex:1; padding:10px;"></select>
-            <button onclick="throwBall()" style="background:var(--p); color:white; padding:0 25px; border:none; border-radius:8px; font-weight:bold;">投球</button>
-        </div>
-        <div id="turnInfo" style="font-size:11px; color:gray; margin-top:8px; text-align:center;">最大回合：7 (在此之前不會逃跑)</div>
+        
+        <!-- 🔴 2*2 寶貝球按鈕網格 (套用立體與放大效果) -->
+        <div id="ballGrid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; margin-bottom:8px;"></div>
+
+        <div id="turnInfo" style="font-size:11px; color:gray; margin-top:4px; text-align:center;">最大回合：7 (在此之前不會逃跑)</div>
     </div>
+
+</div>
 
     <div class="control-panel">
         <button class="btn-nav" onclick="openPage('dexPage')">📖<br>圖鑑</button>
@@ -779,18 +872,85 @@
         </div>
     </div>
 
+<!-- 秘密花園 -->
 <button onclick="renderGarden(); GARDEN.processLoot();" 
-    style="background:#2ecc71; color:white; width:calc(100% - 20px); padding:15px; border:none; border-radius:10px; font-weight:bold; margin:10px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; gap:8px;">
+    style="
+        background:#2ecc71;
+        color:white;
+        width:calc(100% - 20px);
+        padding:15px;
+        border:none;
+        border-radius:10px;
+        font-weight:bold;
+        margin:10px;
+        margin-bottom:10px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        box-shadow:0 5px 0 #239b56, 0 7px 10px rgba(0,0,0,0.25);
+        cursor:pointer;
+        transition:all 0.1s ease;
+        position:relative;
+        top:0;
+    "
+    onmousedown="this.style.top='4px'; this.style.boxShadow='0 1px 0 #239b56, 0 2px 4px rgba(0,0,0,0.2)';"
+    onmouseup="this.style.top='0'; this.style.boxShadow='0 5px 0 #239b56, 0 7px 10px rgba(0,0,0,0.25)';"
+    onmouseleave="this.style.top='0'; this.style.boxShadow='0 5px 0 #239b56, 0 7px 10px rgba(0,0,0,0.25)';">
     <span>🌿</span> 進入秘密花園
 </button>
 
+<!-- 寶可夢消消樂 -->
 <button onclick="goToShuffle();" 
-    style="background:#9b59b6; color:white; width:calc(100% - 20px); padding:15px; border:none; border-radius:10px; font-weight:bold; margin:0 10px 10px 10px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px #8e44ad;">
+    style="
+        background:#9b59b6;
+        color:white;
+        width:calc(100% - 20px);
+        padding:15px;
+        border:none;
+        border-radius:10px;
+        font-weight:bold;
+        margin:0 10px 10px 10px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        box-shadow:0 5px 0 #6f3d82, 0 7px 10px rgba(0,0,0,0.25);
+        cursor:pointer;
+        transition:all 0.1s ease;
+        position:relative;
+        top:0;
+    "
+    onmousedown="this.style.top='4px'; this.style.boxShadow='0 1px 0 #6f3d82, 0 2px 4px rgba(0,0,0,0.2)';"
+    onmouseup="this.style.top='0'; this.style.boxShadow='0 5px 0 #6f3d82, 0 7px 10px rgba(0,0,0,0.25)';"
+    onmouseleave="this.style.top='0'; this.style.boxShadow='0 5px 0 #6f3d82, 0 7px 10px rgba(0,0,0,0.25)';">
     <span>🧩</span> 寶可夢消消樂
 </button>
 
+<!-- 寶可夢大亂鬥 -->
 <button onclick="goToCatch();" 
-    style="background:#e74c3c; color:white; width:calc(100% - 20px); padding:15px; border:none; border-radius:10px; font-weight:bold; margin:0 10px 10px 10px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow: 0 4px #c0392b;">
+    style="
+        background:#e74c3c;
+        color:white;
+        width:calc(100% - 20px);
+        padding:15px;
+        border:none;
+        border-radius:10px;
+        font-weight:bold;
+        margin:0 10px 10px 10px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        box-shadow:0 5px 0 #a93226, 0 7px 10px rgba(0,0,0,0.25);
+        cursor:pointer;
+        transition:all 0.1s ease;
+        position:relative;
+        top:0;
+    "
+    onmousedown="this.style.top='4px'; this.style.boxShadow='0 1px 0 #a93226, 0 2px 4px rgba(0,0,0,0.2)';"
+    onmouseup="this.style.top='0'; this.style.boxShadow='0 5px 0 #a93226, 0 7px 10px rgba(0,0,0,0.25)';"
+    onmouseleave="this.style.top='0'; this.style.boxShadow='0 5px 0 #a93226, 0 7px 10px rgba(0,0,0,0.25)';">
     <span>⚔️</span> 寶可夢大亂鬥
 </button>
 
@@ -4120,10 +4280,10 @@ function restoreBattleState() {
 }
 
     
-async function throwBall() {
+async function throwBall(type) { // 🔴 接收從按鈕傳進來的球種參數 (poke, great, ultra, master)
     if (!curE) return;
 
-    const type = document.getElementById('ballSelect').value;
+    // 🔴 不再需要透過 document.getElementById('ballSelect').value 讀取，直接用傳入的 type
 
     if (s.items[type] <= 0) {
         alert("沒球了！");
@@ -4358,8 +4518,26 @@ function renderBag() {
     items.forEach(i => { h += `<div><img class="res-icon" src="${API}/items/${i.k==='stone'?'sun-stone':i.k==='mstone'?'key-stone':i.k+'-ball'}.png"><br><small>${i.n}</small><br><b>${s.items[i.k]||0}</b></div>`; });
     inv.innerHTML = h;
 
-    const bs = document.getElementById('ballSelect');
-    bs.innerHTML = `<option value="poke">精靈球 (${s.items.poke})</option><option value="great">超級球 (${s.items.great})</option><option value="ultra">高級球 (${s.items.ultra})</option><option value="master">大師球 (${s.items.master})</option>`;
+    // 🔴 改為渲染 2*2 的丟球按鈕網格 (隻顯示 icon 與數量)
+    const bs = document.getElementById('ballGrid');
+    const balls = [
+        {k:'poke', n:'精靈球'},
+        {k:'great', n:'超級球'},
+        {k:'ultra', n:'高級球'},
+        {k:'master', n:'大師球'}
+    ];
+    
+    let bHtml = "";
+    balls.forEach(b => {
+        const count = s.items[b.k] || 0;
+        bHtml += `
+            <button onclick="throwBall('${b.k}')" style="background:#f8f9fa; border:2px solid #ddd; border-radius:8px; padding:8px; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; transition:0.2s;">
+                <img class="res-icon" src="${API}/items/${b.k}-ball.png" style="width:24px; height:24px;">
+                <span style="font-weight:bold; color:var(--text);">${count}</span>
+            </button>
+        `;
+    });
+    bs.innerHTML = bHtml;
 }
 
 
