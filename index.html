@@ -1787,37 +1787,6 @@ function loadCatchSaveForExport() {
 }
 
 
-/* --- 核心公式：計算全局採集加速倍率 (嚴格對標版) --- */
-function getGlobalSpeedBuff() {
-    let totalBuff = 0;
-
-    Object.keys(s.farm.regionProg.stats).forEach(regionId => {
-        const b = s.farm.regionProg.stats[regionId].gymsBeaten;
-        
-        if (b >= 13) {
-            // 規則：擊敗冠軍後，該區固定提供 50%
-            totalBuff += 0.50; 
-        } else {
-            // 規則：未通關時按進度累加
-            if (b > 0) {
-                // 1-8 徽章：每個 3% (最多 24%)
-                const gymCount = Math.min(b, 8);
-                totalBuff += gymCount * 0.03;
-            }
-            if (b > 8) {
-                // 9-12 四天王：每個 5% (最多 20%)
-                const eliteCount = Math.min(b - 8, 4);
-                totalBuff += eliteCount * 0.05;
-            }
-            // 注意：進度為 12 時，總計是 24% + 20% = 44%
-            // 當擊敗第 13 位(冠軍)時，會直接跳到上面 if 的 50%
-        }
-    });
-
-    // 上限設定：例如有四個地區全通關，加成就是 200% (時間縮短非常多)
-    return totalBuff; 
-}
-
 /* --- 地區切換分頁 UI --- */
 function renderRegionTabs() {
     // 安全檢查：確保資料存在，避免報錯
@@ -2751,23 +2720,21 @@ function renderWorker(key, id, opts, name) {
     </div>`;
 }
 
-// 2. 開始生產 (基礎 4 小時，隨道館進度縮短)
+// 2. 開始生產（固定 4 小時，不受通關進度影響）
 function startFarm(pk, type) {
     // 預防重疊點擊
     if(s.farm.prod[pk].end > Date.now()) return;
 
-    const baseTime = 14400000; // 原本的 4 * 60 * 60 * 1000
-    
-    // 計算加速：打贏越多道館，時間越短
-    // 假設 buff 為 0.1 (10%)，時間會變成 4 * 0.9 = 3.6 小時
-    const buff = typeof getGlobalSpeedBuff === 'function' ? getGlobalSpeedBuff() : 0;
-    const actualWaitTime = baseTime * (1 - buff);
+    const baseTime = 14400000; // 固定 4 小時
+
+    // 固定生產時間，不再套用道館通關加成
+    const actualWaitTime = baseTime;
 
     s.farm.prod[pk].type = type;
     s.farm.prod[pk].end = Date.now() + actualWaitTime;
 
     renderGarden();
-    
+
     // 確保存檔
     if(typeof saveGameData === 'function') saveGameData();
 }
