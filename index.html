@@ -2429,14 +2429,15 @@ function initExtendedFarm() {
 }
 
 
-// 每秒更新一次後花園內的計時器文字
-setInterval(() => {
-    const timerEl = document.getElementById('patrol-timer');
-
-    if (timerEl) {
-        timerEl.innerText = getPatrolTimeStr();
+// ⏱️ 每秒更新花園計時器與基拉祈
+setInterval(()=>{
+    const timerEl=document.getElementById('patrol-timer');
+    if(timerEl)timerEl.innerText=getPatrolTimeStr();
+    if(s?.farm?.jirachiJobs&&Object.keys(s.farm.jirachiJobs).length){
+        const changed=processJirachiJobs();
+        if(changed&&document.getElementById('garden-overlay'))renderGarden();
     }
-}, 1000);
+},1000);
 
 // 計算時間的輔助函式
 function getPatrolTimeStr() {
@@ -2520,248 +2521,125 @@ function toggleJirachiLine(i) {
 }
 
 
-function jirachiCanStart(lineIdx){const p=s.farm.prod[`cook_${lineIdx}`];if(!p||!p.slots||p.slots.some(x=>!x))return false;const [a,b,c]=p.slots;return (s.farm.inv[a]||0)>0&&(s.farm.inv[b]||0)>0&&(s.farm.inv[c]||0)>0;}
-function jirachiStartCook(lineIdx,startTime){const f=s.farm;const p=f.prod[`cook_${lineIdx}`];if(!p||p.end!==0||!jirachiCanStart(lineIdx))return false;const [a,b,c]=p.slots;f.inv[a]--;f.inv[b]--;f.inv[c]--;p.end=startTime+3600000;return true;}
-function jirachiCollectDish(lineIdx){const f=s.farm;const p=f.prod[`cook_${lineIdx}`];if(!p||!p.slots)return false;const formula=p.slots.join('');const dish=GARDEN.recipes[formula];if(!dish){p.end=0;return false;}const amount=Math.random()<0.1?2:1;f.dishes[dish.icon]=(f.dishes[dish.icon]||0)+amount;if(!f.knownRecipes.includes(formula))f.knownRecipes.push(formula);p.end=0;return true;}
-function processJirachiJobs(){const f=s.farm;if(!f||!f.prod)return false;ensureJirachiDaily();let changed=false;const now=Date.now();Object.keys(f.jirachiJobs).forEach(key=>{const job=f.jirachiJobs[key],p=f.prod[key],i=Number(key.split('_')[1]);if(!job||!p){delete f.jirachiJobs[key];changed=true;return;}if(p.end&&p.end<=now){jirachiCollectDish(i);changed=true;}if(now>=job.until){delete f.jirachiJobs[key];changed=true;return;}if(p.end===0&&now+3600000<=job.until&&jirachiCanStart(i)){jirachiStartCook(i,now);changed=true;}});if(changed&&typeof saveGameData==='function')saveGameData();return changed;}
-
+// ✨ 基拉祈管家：材料套數與自動結算
+function jirachiCanStart(lineIdx){
+    const p=s.farm.prod[`cook_${lineIdx}`];
+    if(!p||!p.slots||p.slots.some(x=>!x))return 0;
+    const [a,b,c]=p.slots;
+    return Math.min(4,s.farm.inv[a]||0,s.farm.inv[b]||0,s.farm.inv[c]||0);
+}
+function jirachiSettleDish(lineIdx,job){
+    const f=s.farm,p=f.prod[`cook_${lineIdx}`];
+    if(!p||!p.slots)return false;
+    const formula=p.slots.join('');
+    const dish=GARDEN.recipes[formula];
+    if(!dish)return false;
+    const amount=Math.random()<0.1?2:1;
+    job.pending=job.pending||[];
+    job.pending.push({icon:dish.icon,name:dish.name,amount});
+    if(!f.knownRecipes.includes(formula))f.knownRecipes.push(formula);
+    return true;
+}
+function processJirachiJobs(){
+    const f=s.farm;
+    if(!f||!f.prod)return false;
+    ensureJirachiDaily();
+    f.jirachiJobs=f.jirachiJobs||{};
+    let changed=false;
+    const now=Date.now();
+    Object.keys(f.jirachiJobs).forEach(key=>{
+        const job=f.jirachiJobs[key],p=f.prod[key];
+        const i=Number(key.split('_')[1]);
+        if(!job||!p){delete f.jirachiJobs[key];changed=true;return;}
+        // 舊存檔相容：舊版只消耗一套材料，因此只補一輪
+        if(!job.cycles){
+            job.startTime=(job.until||now)-3600000;
+            job.cycles=1;
+            job.completed=0;
+            job.pending=[];
+            job.done=false;
+        }
+        job.completed=job.completed||0;
+        job.pending=job.pending||[];
+        const total=Math.min(4,job.cycles);
+        const elapsed=Math.max(0,now-job.startTime);
+        const shouldComplete=Math.min(total,Math.floor(elapsed/3600000));
+        while(job.completed<shouldComplete){
+            jirachiSettleDish(i,job);
+            job.completed++;
+            changed=true;
+        }
+        if(job.completed>=total){
+            job.done=true;
+            p.end=0;
+        }else{
+            job.done=false;
+            p.end=job.startTime+(job.completed+1)*3600000;
+        }
+    });
+    if(changed&&typeof saveGameData==='function')saveGameData();
+    return changed;
+}
+function claimJirachi(lineIdx){
+    const f=s.farm,key=`cook_${lineIdx}`,job=f.jirachiJobs?.[key];
+    if(!job||!job.done||!Array.isArray(job.pending))return;
+    // 🔒 先鎖定工作，防止重複領取
+    const rewards=job.pending.slice();
+    delete f.jirachiJobs[key];
+    f.prod[key].end=0;
+    f.prod[key].jirachiEnabled=false;
+    // 🎁 領取後才正式加入料理庫
+    rewards.forEach(r=>{
+        f.dishes[r.icon]=(f.dishes[r.icon]||0)+r.amount;
+    });
+    if(typeof saveGameData==='function')saveGameData();
+    renderGarden();
+    alert(`🎁 基拉祈協助完成！共獲得 ${rewards.reduce((n,r)=>n+r.amount,0)} 份料理！`);
+}
 
 function renderCookingLines(){
-const completedCount=Object.values(s.farm.regionProg.stats).filter(stat=>stat.gymsBeaten>=13).length;
-const f=s.farm;
-ensureJirachiDaily();
-processJirachiJobs();
-let html='';
-
-for(let i=0;i<4;i++){
-const isUnlocked=(i===0||i<=completedCount);
-const p=f.prod[`cook_${i}`];
-const job=f.jirachiJobs?.[`cook_${i}`];
-const isJirachi=!!job;
-const isBusy=p.end>Date.now();
-const isDone=p.end!==0&&!isBusy;
-const selected=!!p.jirachiEnabled;
-
-const remain=job?Math.max(0,job.until-Date.now()):0;
-const remainStr=remain>0
-?`${Math.floor(remain/3600000)}小時${Math.floor((remain%3600000)/60000)}分`
-:'即將結束';
-
-html+=`
-<div style="
-margin:10px 0;
-padding:10px;
-background:${isUnlocked?'#fff9f0':'#f5f5f5'};
-border-radius:12px;
-border:1px solid ${isUnlocked?'#ffe0b2':'#ddd'};
-">
-
-<div style="
-display:flex;
-justify-content:space-between;
-align-items:center;
-font-size:11px;
-color:#e67e22;
-margin-bottom:5px;
-text-align:left;
-">
+    const completedCount=Object.values(s.farm.regionProg.stats).filter(stat=>stat.gymsBeaten>=13).length;
+    const f=s.farm;
+    ensureJirachiDaily();
+    processJirachiJobs();
+    let html='';
+    for(let i=0;i<4;i++){
+        const isUnlocked=(i===0||i<=completedCount);
+        const p=f.prod[`cook_${i}`];
+        const job=f.jirachiJobs?.[`cook_${i}`];
+        const isJirachi=!!job;
+        const isJirachiDone=isJirachi&&job.done;
+        const isBusy=p.end>Date.now();
+        const isDone=!isJirachi&&p.end!==0&&!isBusy;
+        const selected=!!p.jirachiEnabled;
+        const remain=isJirachi?Math.max(0,job.until-Date.now()):0;
+        const remainStr=remain>0?`${Math.floor(remain/3600000)}小時${Math.floor((remain%3600000)/60000)}分`:'即將完成';
+        html+=`
+<div style="margin:10px 0;padding:10px;background:${isUnlocked?'#fff9f0':'#f5f5f5'};border-radius:12px;border:1px solid ${isUnlocked?'#ffe0b2':'#ddd'};">
+<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#e67e22;margin-bottom:5px;text-align:left;">
 <span>料理 #${i+1}</span>
-
+${isUnlocked?`<label style="display:inline-flex;align-items:center;gap:4px;cursor:${isJirachi?'default':'pointer'};user-select:none;">
+<input type="checkbox" ${selected?'checked':''} ${isJirachi?'disabled':''} onchange="toggleJirachiLine(${i})" style="display:none;">
+<span style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:58px;height:24px;border-radius:14px;background:${selected?'linear-gradient(135deg,#fff176,#ffd54f)':'linear-gradient(135deg,#eee,#ddd)'};border:1px solid ${selected?'#fbc02d':'#ccc'};font-size:11px;color:${selected?'#795548':'#888'};font-weight:bold;">
+<span style="position:absolute;left:${selected?'35px':'4px'};width:18px;height:18px;border-radius:50%;background:${selected?'#ffd54f':'#fff'};box-shadow:0 1px 4px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;">${selected?'⭐':'✨'}</span>
+<span style="position:absolute;right:${selected?'6px':'8px'};left:${selected?'7px':'27px'};text-align:center;">${selected?'祈願中':'基拉祈'}</span>
+</span></label>`:''}
+</div>
 ${isUnlocked?`
-<label style="
-display:inline-flex;
-align-items:center;
-gap:4px;
-cursor:${isJirachi?'default':'pointer'};
-user-select:none;
-">
-<input
-type="checkbox"
-${selected?'checked':''}
-${isJirachi?'disabled':''}
-onchange="toggleJirachiLine(${i})"
-style="display:none;"
->
-
-<span style="
-position:relative;
-display:inline-flex;
-align-items:center;
-justify-content:center;
-width:58px;
-height:24px;
-border-radius:14px;
-background:${selected
-?'linear-gradient(135deg,#fff176,#ffd54f)'
-:'linear-gradient(135deg,#eee,#ddd)'};
-border:1px solid ${selected?'#fbc02d':'#ccc'};
-box-shadow:${selected
-?'0 2px 6px rgba(251,192,45,.45),inset 0 1px 2px rgba(255,255,255,.8)'
-:'inset 0 1px 2px rgba(0,0,0,.08)'};
-transition:.2s;
-overflow:hidden;
-font-size:11px;
-color:${selected?'#795548':'#888'};
-font-weight:bold;
-">
-
-<span style="
-position:absolute;
-left:${selected?'35px':'4px'};
-width:18px;
-height:18px;
-border-radius:50%;
-background:${selected
-?'radial-gradient(circle at 35% 30%,#fff 0%,#fff9c4 35%,#ffd54f 100%)'
-:'#fff'};
-box-shadow:0 1px 4px rgba(0,0,0,.2);
-transition:.2s;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:10px;
-">${selected?'⭐':'✨'}</span>
-
-<span style="
-position:absolute;
-right:${selected?'6px':'8px'};
-left:${selected?'7px':'27px'};
-text-align:center;
-transition:.2s;
-">${selected?'祈願中':'基拉祈'}</span>
-
-</span>
-</label>
-`:''}
+<div style="display:flex;justify-content:center;gap:8px;">
+${p.slots.map((slt,sIdx)=>`<div onclick="${isBusy||isJirachi?'':`cycleSlot(${i},${sIdx})`}" style="width:45px;height:45px;background:white;border:2px dashed ${sIdx===0?'#4caf50':sIdx===1?'#2196f3':'#f44336'};border-radius:10px;line-height:45px;font-size:24px;cursor:${isBusy||isJirachi?'default':'pointer'};opacity:${isJirachi?'.75':'1'};">${slt||'？'}</div>`).join('')}
 </div>
-
-${isUnlocked?`
-
-<div style="
-display:flex;
-justify-content:center;
-gap:8px;
-">
-${p.slots.map((slt,sIdx)=>`
-<div
-onclick="${isBusy||isJirachi?'':`cycleSlot(${i},${sIdx})`}"
-style="
-width:45px;
-height:45px;
-background:white;
-border:2px dashed ${
-sIdx===0?'#4caf50':
-sIdx===1?'#2196f3':'#f44336'
-};
-border-radius:10px;
-line-height:45px;
-font-size:24px;
-cursor:${isBusy||isJirachi?'default':'pointer'};
-opacity:${isJirachi?'.75':'1'};
-">
-${slt||'？'}
-</div>
-`).join('')}
-</div>
-
 <div style="margin-top:10px;">
-${
-isDone?`
-<button
-onclick="collectDish(${i})"
-style="
-background:#ff9800;
-color:white;
-border:none;
-padding:8px 20px;
-border-radius:10px;
-cursor:pointer;
-font-weight:bold;
-">
-完成領取
-</button>
-`
-:isBusy?`
-<span style="
-font-size:13px;
-color:#666;
-font-weight:bold;
-">
-⏳ ${GARDEN.getTimeStr(p.end)}
-</span>
-`
-:`
-<button
-onclick="startCook(${i})"
-style="
-position:relative;
-overflow:hidden;
-background:${selected
-?'linear-gradient(135deg,#fff8b5 0%,#ffd54f 45%,#f6b900 100%)'
-:'linear-gradient(135deg,#81e6a8 0%,#4dcc78 100%)'};
-color:${selected?'#6d5200':'#fff'};
-border:1px solid ${selected?'#f3c623':'#35b96a'};
-padding:7px 14px;
-border-radius:18px;
-cursor:pointer;
-font-weight:bold;
-font-size:12px;
-letter-spacing:.3px;
-box-shadow:
-0 3px 0 ${selected?'#d4a900':'#2e9e5a'},
-0 4px 10px rgba(0,0,0,.12);
-transition:all .15s ease;
-min-width:125px;
-"
-onmousedown="this.style.transform='translateY(2px)'"
-onmouseup="this.style.transform='translateY(0)'"
->
-${selected?'⭐ 基拉祈料理':'🍳 開始烹飪'}
-</button>
-`
-}
+${isJirachiDone?`<button onclick="claimJirachi(${i})" style="background:#ff9800;color:white;border:none;padding:8px 20px;border-radius:10px;cursor:pointer;font-weight:bold;">🎁 領取基拉祈料理</button>`
+:isJirachi?`<span style="font-size:13px;color:#666;font-weight:bold;">⏳ 基拉祈協助中・剩餘 ${remainStr}</span>`
+:isDone?`<button onclick="collectDish(${i})" style="background:#ff9800;color:white;border:none;padding:8px 20px;border-radius:10px;cursor:pointer;font-weight:bold;">完成領取</button>`
+:`<button onclick="startCook(${i})" style="background:${selected?'linear-gradient(135deg,#fff8b5,#ffd54f)':'linear-gradient(135deg,#81e6a8,#4dcc78)'};color:${selected?'#6d5200':'#fff'};border:1px solid ${selected?'#f3c623':'#35b96a'};padding:7px 14px;border-radius:18px;cursor:pointer;font-weight:bold;font-size:12px;min-width:125px;">${selected?'⭐ 基拉祈料理':'🍳 開始烹飪'}</button>`}
 </div>
-
-${
-isJirachi?`
-<div style="
-margin-top:7px;
-font-size:11px;
-color:#f57f17;
-font-weight:bold;
-">
-✨ 基拉祈協助中・剩餘 ${remainStr}
-</div>
-`
-:selected?`
-<div style="
-margin-top:7px;
-font-size:11px;
-color:#f57f17;
-">
-✨ 已啟用管家，開始料理時自動支付今日指定料理
-</div>
-`
-:''
-}
-
-`:
-`
-<div style="
-font-size:12px;
-color:#999;
-padding:15px;
-">
-🔒 尚未解鎖 (需通關前一地區)
-</div>
-`
-}
-
-</div>
-`;
-}
-
-return html;
+${isJirachi?`<div style="margin-top:7px;font-size:11px;color:#f57f17;font-weight:bold;">✨ 已完成 ${job.completed}/${job.cycles} 小時</div>`:selected?`<div style="margin-top:7px;font-size:11px;color:#f57f17;">✨ 已啟用管家，開始料理時自動支付今日指定料理</div>`:''}
+`:`<div style="font-size:12px;color:#999;padding:15px;">🔒 尚未解鎖 (需通關前一地區)</div>`}
+</div>`;
+    }
+    return html;
 }
 
 
@@ -2894,131 +2772,56 @@ function autoFillSlot(emoji) {
     renderGarden();
 }
 
-function startCook(i) {
-    const f = s.farm;
-    const p = f.prod[`cook_${i}`];
-
-    if (!p) {
-        return alert("找不到料理線！");
-    }
-
-    if (p.end > Date.now()) {
-        return alert("這條料理線目前正在料理中！");
-    }
-
-    // 三格必須都有材料
-    if (!Array.isArray(p.slots) || p.slots.some(x => !x)) {
-        return alert("請放滿三種材料！");
-    }
-
-    const [s1, s2, s3] = p.slots;
-
-    // =====================================
-    // 先確認材料，避免先扣基拉祈料理
-    // =====================================
-
-    if (
-        (f.inv[s1] || 0) <= 0 ||
-        (f.inv[s2] || 0) <= 0 ||
-        (f.inv[s3] || 0) <= 0
-    ) {
-        return alert("材料不足，快去生產吧！");
-    }
-
-    // =====================================
-    // ✨ 基拉祈模式
-    // =====================================
-
-    const isJirachi = !!p.jirachiEnabled;
-
-    if (isJirachi) {
+function startCook(i){
+    const f=s.farm,p=f.prod[`cook_${i}`];
+    if(!p)return alert("找不到料理線！");
+    if(p.end>Date.now())return alert("這條料理線目前正在料理中！");
+    if(!Array.isArray(p.slots)||p.slots.some(x=>!x))return alert("請放滿三種材料！");
+    const [s1,s2,s3]=p.slots;
+    const isJirachi=!!p.jirachiEnabled;
+    if(isJirachi){
         ensureJirachiDaily();
         processJirachiJobs();
-
-        if (!f.jirachiRequests || f.jirachiRequests.length === 0) {
-            p.jirachiEnabled = false;
-
-            if (typeof saveGameData === 'function') {
-                saveGameData();
-            }
-
+        if(f.jirachiJobs?.[`cook_${i}`])return alert("基拉祈目前正在協助這條料理線！");
+        const sets=jirachiCanStart(i);
+        if(sets<=0)return alert("材料不足，快去生產吧！");
+        if(!f.jirachiRequests||f.jirachiRequests.length===0){
+            p.jirachiEnabled=false;
+            if(typeof saveGameData==='function')saveGameData();
             return alert("✨ 基拉祈今天的料理委託次數已用完！");
         }
-
-        // 找出今日指定且玩家持有的料理
-        const available = f.jirachiRequests.filter(formula => {
-            const recipe = GARDEN.recipes[formula];
-
-            if (!recipe) return false;
-
-            return (f.dishes[recipe.icon] || 0) > 0;
+        const available=f.jirachiRequests.filter(formula=>{
+            const recipe=GARDEN.recipes[formula];
+            return recipe&&(f.dishes[recipe.icon]||0)>0;
         });
-
-        if (available.length === 0) {
-            return alert(
-                "✨ 基拉祈今天指定的料理你目前都沒有。\n\n" +
-                "請先製作指定料理，再啟用基拉祈。"
-            );
-        }
-
-        // 隨機選擇一份今日指定料理作為委託費用
-        const payFormula =
-            available[Math.floor(Math.random() * available.length)];
-
-        const payRecipe = GARDEN.recipes[payFormula];
-
-        // 扣除指定料理
+        if(available.length===0)return alert("✨ 基拉祈今天指定的料理你目前都沒有。\n\n請先製作指定料理，再啟用基拉祈。");
+        const payFormula=available[Math.floor(Math.random()*available.length)];
+        const payRecipe=GARDEN.recipes[payFormula];
         f.dishes[payRecipe.icon]--;
-
-        // 移除今日委託
-        const requestIndex =
-            f.jirachiRequests.indexOf(payFormula);
-
-        if (requestIndex >= 0) {
-            f.jirachiRequests.splice(requestIndex, 1);
-        }
-
-        // 扣除三種材料
-        f.inv[s1]--;
-        f.inv[s2]--;
-        f.inv[s3]--;
-
-        // 建立基拉祈工作
-        const now = Date.now();
-
-        f.jirachiJobs = f.jirachiJobs || {};
-
-        f.jirachiJobs[`cook_${i}`] = {
-            until: now + 4 * 3600000
+        const requestIndex=f.jirachiRequests.indexOf(payFormula);
+        if(requestIndex>=0)f.jirachiRequests.splice(requestIndex,1);
+        // ✨ 一次扣除全部料理材料
+        f.inv[s1]-=sets;
+        f.inv[s2]-=sets;
+        f.inv[s3]-=sets;
+        const now=Date.now();
+        f.jirachiJobs[`cook_${i}`]={
+            startTime:now,
+            until:now+sets*3600000,
+            cycles:sets,
+            completed:0,
+            pending:[],
+            done:false
         };
-
-        // 第一輪料理 1 小時
-        p.end = now + 3600000;
-
-        alert(
-            `✨ 基拉祈開始協助料理 #${i + 1}！\n\n` +
-            `🍽️ 支付：${payRecipe.icon} ${payRecipe.name}\n` +
-            `⏰ 協助時間：4 小時`
-        );
-
-    } else {
-
-        // =====================================
-        // 🐭 一般料理
-        // =====================================
-
-        f.inv[s1]--;
-        f.inv[s2]--;
-        f.inv[s3]--;
-
-        p.end = Date.now() + 3600000;
+        p.end=now+3600000;
+        alert(`✨ 基拉祈開始協助料理 #${i+1}！\n\n🍽️ 支付：${payRecipe.icon} ${payRecipe.name}\n📦 消耗：${sets} 套材料\n⏰ 協助時間：${sets} 小時`);
+    }else{
+        if((f.inv[s1]||0)<=0||(f.inv[s2]||0)<=0||(f.inv[s3]||0)<=0)return alert("材料不足，快去生產吧！");
+        f.inv[s1]--;f.inv[s2]--;f.inv[s3]--;
+        p.end=Date.now()+3600000;
     }
-
     renderGarden();
-
-    if (typeof saveGameData === 'function') {
-        saveGameData();
-    }
+    if(typeof saveGameData==='function')saveGameData();
 }
 
 function collectDish(lineIdx) {
