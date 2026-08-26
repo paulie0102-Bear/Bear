@@ -40,7 +40,6 @@
     animation: slideUp 0.3s ease-out; 
 }
 
-        
 @keyframes slideUp { 
     from { transform: translateY(20px); opacity: 0; } 
     to { transform: translateY(0); opacity: 1; } 
@@ -1247,6 +1246,32 @@
 /* 文字保護：確保左側文字有足夠空間，不會被 135px 的大勳章擋住 */
 .card p, .card h3 {
     margin-right: 150px; 
+}
+
+
+#enemyName {
+    width: 100%;
+    text-align: center;
+    line-height: 1.25;
+}
+
+#enemyName .enemy-dex-no {
+    font-size: 11px;
+    color: #666;
+    white-space: nowrap;
+    margin-bottom: 2px;
+}
+
+#enemyName .enemy-pokemon-name {
+    font-size: 15px;
+    font-weight: bold;
+    color: #222;
+    white-space: nowrap;
+}
+
+#enemyName .shiny-tag {
+    font-size: 11px;
+    color: #f39c12;
 }
 
 </style>
@@ -4232,13 +4257,26 @@ function spawnEnemy(targetId, restoreData) {
         ? `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;">`
         : "";
 
-    const displayName = `No.${String(curE.id).padStart(3, '0')} ${curE.name}`;
-    const shinyTag = curE.isShiny ? ' (✨閃光)' : '';
+    const displayNo = `No.${String(curE.id).padStart(3, '0')}`;
+    const displayName = curE.name;
+    const shinyTag = curE.isShiny
+    ? '<span class="shiny-tag">✨ </span>'
+    : '';
 
     const nameEl = document.getElementById('enemyName');
+
     if (nameEl) {
-        nameEl.innerHTML = `${caughtIcon}${displayName}${shinyTag}`;
-    }
+        nameEl.innerHTML = `
+        <div class="enemy-dex-no">
+            ${caughtIcon}${displayNo}
+        </div>
+        <div class="enemy-pokemon-name">
+            ${shinyTag}${displayName}
+        </div>
+    `;
+}
+
+
 
     document.getElementById('turnInfo').innerText =
         `第 ${turn} 回合／7回合內，寶可夢不會逃跑`;
