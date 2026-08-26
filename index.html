@@ -2253,14 +2253,25 @@ if (typeof GARDEN !== 'undefined') {
     </div>
 
     <div style="
-        font-size:10px;
-        color:#795548;
-        margin-top:8px;
-        line-height:1.5;
-    ">
-        🍳 料理時啟用基拉祈即可委託<br>
-        🎁 自動消耗背包中的指定料理
+    margin-top:9px;
+    padding:8px 10px;
+    background:linear-gradient(135deg,#fffde7,#fff8e1);
+    border:1px solid #ffe082;
+    border-radius:10px;
+    color:#795548;
+    font-size:10px;
+    line-height:1.6;
+    text-align:center;
+    box-shadow:0 1px 3px rgba(121,85,72,.08);
+">
+    <div style="font-weight:bold;color:#f57f17;margin-bottom:3px;">
+        🍽️ 提供基拉祈想吃的料理
     </div>
+    <div style="color:#8d6e63;">
+        ✨ 星星的力量與你同在！
+    </div>
+</div>
+
 </div>
 
     </div>
@@ -2816,9 +2827,7 @@ ${isJirachiDone
 
 </div>
 
-${isJirachi
-?`<div style="margin-top:7px;font-size:11px;color:#f57f17;font-weight:bold;">✨ 已完成 ${job.done?job.cycles:0}/${job.cycles} 小時</div>`
-:selected
+${selected
 ?`<div style="margin-top:7px;font-size:11px;color:#f57f17;">✨ 已啟用管家，開始料理時自動支付今日指定料理</div>`
 :''}
 
