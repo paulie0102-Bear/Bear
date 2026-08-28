@@ -1207,10 +1207,7 @@ function spawnCustomer(){
         customer.querySelector(".customer-gif");
 
     // GIF失敗自動改用PNG
-    setPokemonImageFallback(
-        customerImg,
-        randomPokeId
-    );
+    setPokemonImage(customerImg,randomPokeId);
 
     layer.appendChild(customer);
 
@@ -1491,166 +1488,8 @@ renderSkinGrid();
 }
 
 // ==================== 店員 ====================
-function renderStaffGrid(){
+function renderStaffGrid(){ const container=document.getElementById("staff-grid"); container.innerHTML=""; const currentStaff=configDraft.staffId ?getEligibleStaff().find(p=>Number(p.id)===Number(configDraft.staffId)) :null; const currentBox=document.createElement("div"); currentBox.className="staff-row"; if(currentStaff){ currentBox.innerHTML=` <img alt="${currentStaff.name}"> <div class="staff-info"> <div class="staff-name"> No.${String(currentStaff.id).padStart(3,"0")} ${currentStaff.name} </div> <div>目前餐車店員</div> </div> `; const currentImg=currentBox.querySelector("img"); setPokemonImage(currentImg,currentStaff.id); }else{ currentBox.innerHTML=` <div style="font-size:40px;width:65px;text-align:center">❌</div> <div class="staff-info"> <div class="staff-name">尚未配置店員</div> <div>餐車目前停止營業</div> </div> `; } container.appendChild(currentBox); const chooseButton=document.createElement("button"); chooseButton.className="btn-kitchen"; chooseButton.style.width="100%"; chooseButton.style.marginTop="10px"; chooseButton.innerText="👥 選擇冒險小隊寶可夢"; chooseButton.onclick=()=>{ openStaffPicker(); }; container.appendChild(chooseButton); }
 
-    const container=
-        document.getElementById(
-            "staff-grid"
-        );
-
-    container.innerHTML="";
-
-
-    /* ====================
-       目前選擇的店員
-    ==================== */
-
-    const currentStaff=
-        configDraft.staffId
-        ?getEligibleStaff().find(
-            p=>
-                Number(p.id)===
-                Number(
-                    configDraft.staffId
-                )
-        )
-        :null;
-
-
-    /* ====================
-       顯示目前店員
-    ==================== */
-
-    const currentBox=
-        document.createElement("div");
-
-
-    currentBox.className=
-        "staff-row";
-
-
-    if(currentStaff){
-
-        currentBox.innerHTML=`
-
-            <img
-                src="${getGif(
-                    currentStaff.id
-                )}"
-                alt="${currentStaff.name}"
-            >
-
-            <div class="staff-info">
-
-                <div
-                    class="staff-name"
-                >
-
-                    No.${
-                        String(
-                            currentStaff.id
-                        ).padStart(
-                            3,
-                            "0"
-                        )
-                    }
-
-                    ${currentStaff.name}
-
-                </div>
-
-                <div>
-
-                    目前餐車店員
-
-                </div>
-
-            </div>
-
-        `;
-
-    }else{
-
-        currentBox.innerHTML=`
-
-            <div
-                style="
-                    font-size:40px;
-                    width:65px;
-                    text-align:center
-                "
-            >
-                ❌
-            </div>
-
-            <div
-                class="staff-info"
-            >
-
-                <div
-                    class="staff-name"
-                >
-
-                    尚未配置店員
-
-                </div>
-
-                <div>
-
-                    餐車目前停止營業
-
-                </div>
-
-            </div>
-
-        `;
-
-    }
-
-
-    container.appendChild(
-        currentBox
-    );
-
-
-    /* ====================
-       選擇寶可夢按鈕
-    ==================== */
-
-    const chooseButton=
-        document.createElement(
-            "button"
-        );
-
-
-    chooseButton.className=
-        "btn-kitchen";
-
-
-    chooseButton.style.width=
-        "100%";
-
-
-    chooseButton.style.marginTop=
-        "10px";
-
-
-    chooseButton.innerText=
-        "👥 選擇冒險小隊寶可夢";
-
-
-    chooseButton.onclick=()=>{
-
-        openStaffPicker();
-
-    };
-
-
-    container.appendChild(
-        chooseButton
-    );
-
-}
 
 /* ==================== 店員彈窗 ==================== */
 
@@ -1844,15 +1683,12 @@ function renderStaffPicker(){
             </div>
         `;
 
-        /* GIF失敗自動改用PNG */
+         /* GIF失敗自動改用PNG */
         const img=row.querySelector("img");
-
-        if(typeof setPokemonImageFallback==="function"){
-            setPokemonImageFallback(img,pokemon.id);
-        }else{
-            img.src=
-                `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`;
-        }
+            setPokemonImage(
+               img,
+               pokemon.id
+          );
 
         row.onclick=()=>{
             configDraft.staffId=pokemon.id;
