@@ -1851,6 +1851,7 @@ window.onload = async () => {
 
         if (typeof renderTasks === 'function') renderTasks();
         if (typeof initCarrier === 'function') initCarrier();
+        
 
         // 7. 嘗試要求瀏覽器保留本站儲存空間
         if (navigator.storage?.persist) {
@@ -1998,6 +1999,54 @@ function loadCatchSaveForExport() {
 
 }
 
+
+function initFoodTruckData() {
+
+    // 確保 farm 存在
+    if (!s.farm) {
+        s.farm = {};
+    }
+
+    // 確保 foodTruck 存在
+    if (!s.farm.foodTruck) {
+
+        s.farm.foodTruck = {
+
+            stalls: [],
+
+            currentStallIndex: 0,
+
+            heartScales: 0,
+
+            ownedSkins: ["poke"]
+
+        };
+
+    }
+
+    // 舊存檔修復
+    if (!Array.isArray(s.farm.foodTruck.stalls)) {
+        s.farm.foodTruck.stalls = [];
+    }
+
+    if (!Number.isFinite(Number(s.farm.foodTruck.currentStallIndex))) {
+        s.farm.foodTruck.currentStallIndex = 0;
+    }
+
+    if (!Number.isFinite(Number(s.farm.foodTruck.heartScales))) {
+        s.farm.foodTruck.heartScales = 0;
+    }
+
+    if (!Array.isArray(s.farm.foodTruck.ownedSkins)) {
+        s.farm.foodTruck.ownedSkins = ["poke"];
+    }
+
+    // 確保基本寶貝球一定存在
+    if (!s.farm.foodTruck.ownedSkins.includes("poke")) {
+        s.farm.foodTruck.ownedSkins.unshift("poke");
+    }
+
+}
 
 /* --- 地區切換分頁 UI --- */
 function renderRegionTabs() {
@@ -2365,6 +2414,20 @@ if (typeof GARDEN !== 'undefined') {
             box-shadow: 0 4px 15px rgba(142,68,173,0.3);">
     <div style="font-size: 20px;">🛡️</div>
     <div style="font-size: 11px; font-weight: bold;">小隊圖鑑</div>
+</div>
+<!-- 🍽️ 餐車 -->
+<div onclick="openFoodTruck()"
+     style="
+         padding:12px;
+         background:linear-gradient(135deg,#ff9a44,#ff6a00);
+         color:white;
+         border-radius:12px;
+         cursor:pointer;
+         text-align:center;
+         box-shadow:0 4px 15px rgba(255,106,0,0.3);
+     ">
+    <div style="font-size:20px;">🍽️</div>
+    <div style="font-size:11px;font-weight:bold;">寶可夢餐車</div>
 </div>
 
 </div>
@@ -3666,7 +3729,19 @@ async function goToCatch() {
     window.location.href = "catch/index.html";
 }
 
+// ==================== 寶可夢餐車入口 ====================
+function openFoodTruck(){
 
+    // 先關閉秘密花園畫面
+    const gardenOverlay = document.getElementById('garden-overlay');
+
+    if(gardenOverlay){
+        gardenOverlay.remove();
+    }
+
+    // 前往寶可夢餐車
+    window.location.href = "farm/index.html";
+}
 
 // 2. 在 updateUI 附近加入這三個載具專用函式
 async function initCarrier() {
