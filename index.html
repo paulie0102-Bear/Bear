@@ -1821,48 +1821,73 @@ function initFarmProgress() {
     if (typeof forceUpdateAllTags === 'function') forceUpdateAllTags();
 }
 
-window.onload = () => {
+window.onload = async () => {
     try {
-        // 1. 讀取存檔
-        const saved = localStorage.getItem('pokemaster_v60');
-        if (saved) {
-            const loaded = JSON.parse(saved);
-            s = { ...s, ...loaded }; 
-        }
+        // 1. 先開啟 DB，並從 DB / 備份 / 舊 localStorage 依序恢復
+        await initSaveSystem();
 
-        // 2. 【核心】執行統一初始化 (合併原本散亂的 if 判斷)
+        // 2. 基礎結構初始化
         initFarmProgress();
 
-        // 3. 補丁防線 (其他非農場系統)
+        // 3. 其他資料防呆
         s.claimedGifts = s.claimedGifts || [];
         s.dailyWild = s.dailyWild || { claimed: false, lastDate: "" };
         if (!s.tasks) s.tasks = { claimed: [], dailyDate: "", weeklyDate: "" };
         s.selectedBadge = s.selectedBadge || null;
 
-        // 4. 重置檢查與 UI 更新
+        // 4. 重置檢查
         if (typeof checkTaskReset === 'function') checkTaskReset();
-        
-        // 設定表單預設值
+
         const recDateEl = document.getElementById('recDate');
         if (recDateEl) recDateEl.valueAsDate = new Date();
 
-        // 渲染畫面
+        // 5. UI
         updateUI();
-        // ⚔️ 恢復重新整理前尚未結束的戰鬥
-if (typeof restoreBattleState === 'function') {
-    restoreBattleState();
-}
-        if (typeof renderTasks === 'function') renderTasks();
-        if (typeof initCarrier === 'function') initCarrier(); 
 
-        // 5. 啟動計時器
+        // 6. 恢復未完成戰鬥
+        if (typeof restoreBattleState === 'function') {
+            restoreBattleState();
+        }
+
+        if (typeof renderTasks === 'function') renderTasks();
+        if (typeof initCarrier === 'function') initCarrier();
+
+        // 7. 嘗試要求瀏覽器保留本站儲存空間
+        if (navigator.storage?.persist) {
+            try {
+                await navigator.storage.persist();
+            } catch (e) {
+                console.warn("Persistent Storage 申請未通過:", e);
+            }
+        }
+
+        // 8. 啟動計時器
         setInterval(tickMega, 1000);
-        
-        console.log("🚀 PokeMaster 啟動成功！數據已校準。");
+
+        console.log("🚀 PokeMaster 啟動成功！IndexedDB 安全存檔已啟用。");
         if (typeof showAnnouncement === 'function') showAnnouncement();
 
     } catch (e) {
         console.error("❌ 啟動過程中發生錯誤:", e);
+
+        // DB 失敗時仍嘗試使用舊 localStorage，不讓遊戲無法啟動
+        try {
+            const saved = localStorage.getItem('pokemaster_v60');
+            if (saved) s = { ...s, ...JSON.parse(saved) };
+        } catch (fallbackError) {
+            console.error("❌ localStorage 備援也失敗:", fallbackError);
+        }
+
+        try {
+            initFarmProgress();
+            s.claimedGifts = s.claimedGifts || [];
+            s.dailyWild = s.dailyWild || { claimed: false, lastDate: "" };
+            if (!s.tasks) s.tasks = { claimed: [], dailyDate: "", weeklyDate: "" };
+            s.selectedBadge = s.selectedBadge || null;
+            updateUI();
+        } catch (fallbackUIError) {
+            console.error("❌ 備援初始化失敗:", fallbackUIError);
+        }
     }
 };
 
@@ -3213,7 +3238,11 @@ function showAnnouncement() {
 
     // 2. 取得今日日期與玩家儲存的狀態
     const now = Date.now();
-    const hideDate = Number(localStorage.getItem('hide_announcement_date') || 0);
+    // 公告設定仍以 localStorage 為即時備援；DB 由 closeNews 同步
+const hideDate = Number(
+    localStorage.getItem('hide_announcement_date') || 0
+);
+
 
     // 7 天內已經看過，不再顯示
     const oneWeek = 7 * 24 * 60 * 60 * 1000;
@@ -3269,15 +3298,40 @@ function showAnnouncement() {
 }
 
 // 關閉公告並存檔狀態
-function closeNews() {
-    const isChecked = document.getElementById('no-more-today').checked;
+async function closeNews() {
+    const checkbox =
+        document.getElementById('no-more-today');
+
+    const isChecked =
+        checkbox ? checkbox.checked : false;
 
     if (isChecked) {
-        localStorage.setItem('hide_announcement_date', Date.now().toString());
+        const value = Date.now().toString();
+
+        // DB
+        try {
+            await dbPutMany({
+                [MAIN_SETTING_PREFIX + "hide_announcement_date"]: value
+            });
+        } catch (e) {
+            console.warn("⚠️ 公告狀態 DB 儲存失敗:", e);
+        }
+
+        // localStorage 備援
+        try {
+            localStorage.setItem(
+                'hide_announcement_date',
+                value
+            );
+        } catch (e) {
+            console.warn("⚠️ 公告狀態 localStorage 備援失敗:", e);
+        }
     }
 
-    document.getElementById('news-overlay').remove();
+    const news = document.getElementById('news-overlay');
+    if (news) news.remove();
 }
+
 
 
 
@@ -3596,49 +3650,101 @@ window.onChampionBtnClick = function(key) {
     }
 };
 
-function goToShuffle() {
-    // 儲存主程式進度 (存入 pokemaster_v60)
-    if (typeof save === 'function') save(); 
-    
-    // 跳轉到子資料夾下的 HTML
+async function goToShuffle() {
+    // 離開主頁前，確保最後一次 DB transaction 完成
+    saveGameData();
+    await flushMainSave();
+
     window.location.href = "shuffle/index.html";
 }
 
-function goToCatch() {
-    // 儲存主程式進度
-    if (typeof save === 'function') {
-        save();
-        console.log("主程式進度已儲存...");
-    }
+async function goToCatch() {
+    // 離開主頁前，確保最後一次 DB transaction 完成
+    saveGameData();
+    await flushMainSave();
 
-    // 跳轉到 catch 子資料夾
     window.location.href = "catch/index.html";
 }
 
 
+
 // 2. 在 updateUI 附近加入這三個載具專用函式
-function initCarrier() {
-    const savedCarrier = localStorage.getItem('user_carrier');
-    if (savedCarrier) {
-        document.getElementById('carrierInput').value = savedCarrier;
-        renderBarcode(savedCarrier);
+async function initCarrier() {
+    try {
+        let savedCarrier =
+            await dbGet(MAIN_SETTING_PREFIX + "user_carrier");
+
+        // 舊 localStorage 相容
+        if (!savedCarrier) {
+            savedCarrier =
+                localStorage.getItem("user_carrier");
+
+            if (savedCarrier) {
+                await dbPutMany({
+                    [MAIN_SETTING_PREFIX + "user_carrier"]: savedCarrier
+                });
+            }
+        }
+
+        if (savedCarrier) {
+            const input = document.getElementById('carrierInput');
+
+            if (input) {
+                input.value = savedCarrier;
+            }
+
+            renderBarcode(savedCarrier);
+        }
+    } catch (e) {
+        // DB 失敗時仍可讀舊 localStorage
+        const savedCarrier =
+            localStorage.getItem('user_carrier');
+
+        if (savedCarrier) {
+            const input = document.getElementById('carrierInput');
+
+            if (input) input.value = savedCarrier;
+
+            renderBarcode(savedCarrier);
+        }
+
+        console.warn("⚠️ 載具 DB 讀取失敗:", e);
     }
 }
 
-function saveCarrier() {
-    let code = document.getElementById('carrierInput').value.trim().toUpperCase();
-    
-    // 驗證格式：/ 開頭，後面 7 碼英數，總共 8 碼
+async function saveCarrier() {
+    let code =
+        document.getElementById('carrierInput').value
+        .trim()
+        .toUpperCase();
+
     const carrierReg = /^\/[A-Z0-9.+-]{7}$/;
+
     if (!carrierReg.test(code)) {
         alert("載具格式錯誤！請輸入 '/' 開頭的 8 碼字串 (例如 /ABC+123)");
         return;
     }
-    
-    localStorage.setItem('user_carrier', code);
+
+    // DB 主儲存
+    try {
+        await dbPutMany({
+            [MAIN_SETTING_PREFIX + "user_carrier"]: code
+        });
+    } catch (e) {
+        console.error("❌ 載具 DB 儲存失敗:", e);
+    }
+
+    // localStorage 備援
+    try {
+        localStorage.setItem('user_carrier', code);
+    } catch (e) {
+        console.warn("⚠️ 載具 localStorage 備援失敗:", e);
+    }
+
     renderBarcode(code);
     showMsg("載具條碼已成功儲存！");
 }
+
 
 function renderBarcode(code) {
     const img = document.getElementById('barcodeImg');
@@ -3672,8 +3778,8 @@ function showMsg(text) {
 }
 
 function updateUI() {
-    // 1. 本地存檔
-    localStorage.setItem('pokemaster_v60', JSON.stringify(s));
+    // 1. UI 更新同時觸發安全存檔；DB 使用 debounce 避免頻繁寫入
+    saveGameData();
 
     // 2. 基礎狀態渲染 (加上防錯判斷防止找不到元素)
     const setInner = (id, val) => {
@@ -5131,40 +5237,77 @@ function delHist(id) {
 
 async function exportData() {
     const now = new Date();
+
     const timeStr =
         now.getFullYear() +
-        (now.getMonth()+1).toString().padStart(2,'0') +
-        now.getDate().toString().padStart(2,'0') + "_" +
-        now.getHours().toString().padStart(2,'0') +
-        now.getMinutes().toString().padStart(2,'0');
+        (now.getMonth() + 1).toString().padStart(2, '0') +
+        now.getDate().toString().padStart(2, '0') + "_" +
+        now.getHours().toString().padStart(2, '0') +
+        now.getMinutes().toString().padStart(2, '0');
 
-    // 消消樂
+    // 先確保主遊戲最新資料已落入 IndexedDB
+    saveGameData();
+    await flushMainSave();
+
+    let mainData = s;
     let shuffleData = null;
+    let catchData = null;
+
+    // 主遊戲：優先從 DB 取得已提交資料
     try {
-        const raw = localStorage.getItem('SHUFFLE_WEB_SAVE');
-        if (raw) shuffleData = JSON.parse(raw);
-    } catch(err) {
-        console.error("消消樂資料讀取失敗:", err);
+        const mainEnvelope = await dbGet(MAIN_SAVE_KEY);
+        const valid = await validateMainSaveEnvelope(mainEnvelope);
+
+        if (valid?.data) {
+            mainData = valid.data;
+        }
+    } catch (err) {
+        console.warn("主遊戲 DB 匯出讀取失敗，使用目前記憶體資料:", err);
     }
 
-    // 寶可夢大亂鬥
-    let catchData = null;
+    // 消消樂：DB 優先，舊 localStorage 相容
+    try {
+        shuffleData = await dbGet(MAIN_SHUFFLE_KEY);
+
+        if (shuffleData == null) {
+            const raw =
+                localStorage.getItem('SHUFFLE_WEB_SAVE');
+
+            if (raw) {
+                shuffleData = JSON.parse(raw);
+
+                await dbPutMany({
+                    [MAIN_SHUFFLE_KEY]: shuffleData
+                });
+            }
+        }
+    } catch (err) {
+        console.error("消消樂資料讀取失敗:", err);
+
+        try {
+            const raw =
+                localStorage.getItem('SHUFFLE_WEB_SAVE');
+
+            if (raw) shuffleData = JSON.parse(raw);
+        } catch (e) {}
+    }
+
+    // 寶可夢大亂鬥：維持原本 current_save，不碰
     try {
         catchData = await loadCatchSaveForExport();
-    } catch(err) {
+    } catch (err) {
         console.error("大亂鬥資料讀取失敗:", err);
     }
 
-    // 三個遊戲一起打包
     const bundleSave = {
-        main: s,
+        main: mainData,
         shuffle: shuffleData,
         catch: catchData
     };
 
     const blob = new Blob(
         [JSON.stringify(bundleSave)],
-        { type:"application/json" }
+        { type: "application/json" }
     );
 
     const a = document.createElement("a");
@@ -5177,24 +5320,20 @@ async function exportData() {
     setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(a.href);
-    },100);
+    }, 100);
 }
 
 
-async function importData(e) {
+async function importData(e){
     const file=e.target.files[0];
     if(!file)return;
-
-    if(!file.name.endsWith('.pkms')&&!file.name.endsWith('.json')){
+    if(!file.name.endsWith(".pkms")&&!file.name.endsWith(".json")){
         if(!confirm("這看起來不是標準的存檔格式，是否仍要嘗試讀取？"))return;
     }
-
     const reader=new FileReader();
-
-    reader.onload=async(ev)=>{
+    reader.onload=async ev=>{
         try{
             const loaded=JSON.parse(ev.target.result);
-
             let mainData=loaded;
             let shuffleData=null;
             let catchData=null;
@@ -5205,34 +5344,50 @@ async function importData(e) {
                 catchData=loaded.catch;
             }
 
+            if(!mainData||typeof mainData!=="object")throw new Error("主存檔格式錯誤");
+
+            // ① 載入主遊戲資料
             s={
                 ...s,
                 ...mainData,
                 claimedGifts:(mainData.claimedGifts||s.claimedGifts||[])
             };
 
-            localStorage.setItem('pokemaster_v60',JSON.stringify(s));
+            // ② localStorage 立即留下備援
+            writeLegacyLocalSave(s,Date.now());
 
-            if(shuffleData!==null&&shuffleData!==undefined){
-                localStorage.setItem('SHUFFLE_WEB_SAVE',JSON.stringify(shuffleData));
+            // ③ 正式寫入 IndexedDB，匯入後 DB 立即成為主檔
+            if(mainSaveInitialized){
+                scheduleMainSave(Date.now());
+                await flushMainSave();
+            }else{
+                await openMainSaveDB();
+                await writeMainSaveNow(s,true,Date.now());
             }
 
+            // ④ 消消樂維持原本相容
+            if(shuffleData!==null&&shuffleData!==undefined){
+                try{
+                    localStorage.setItem("SHUFFLE_WEB_SAVE",JSON.stringify(shuffleData));
+                    await dbPutMany({[MAIN_SHUFFLE_KEY]:shuffleData});
+                }catch(err){
+                    console.warn("⚠️ 消消樂存檔同步失敗:",err);
+                }
+            }
+
+            // ⑤ 大亂鬥維持 current_save，不改既有架構
             if(catchData!==null&&catchData!==undefined){
                 await saveCatchSaveFromImport(catchData);
             }
 
             updateUI();
-
             alert("✅ 存檔匯入成功！");
-
             e.target.value="";
-
         }catch(err){
             console.error("Import Error:",err);
             alert("❌ 讀取失敗：存檔內容損壞或格式不符");
         }
     };
-
     reader.readAsText(file);
 }
 
@@ -5295,12 +5450,30 @@ function lighten() {
 }
 
 
-function resetAll() {
-    if(confirm("🔥 確定重置？這會永久刪除所有紀錄與圖鑑！")) {
-        localStorage.removeItem('pokemaster_v60');
-        location.reload();
+async function resetAll(){
+    if(!confirm("🔥 確定重置？這會永久刪除所有紀錄與圖鑑！"))return;
+
+    try{
+        // ① 清除 localStorage 主遊戲資料
+        localStorage.removeItem(MAIN_LS_KEY);
+        localStorage.removeItem(MAIN_LS_TIME_KEY);
+
+        // ② 清除 IndexedDB 主遊戲三層存檔
+        await dbDelete(MAIN_SAVE_KEY);
+        await dbDelete(MAIN_BACKUP_1);
+        await dbDelete(MAIN_BACKUP_2);
+
+        // ③ 不碰 shuffle / catch，維持原本 reset 行為
+        console.log("🗑️ 主遊戲 localStorage + IndexedDB 已清除");
+    }catch(e){
+        console.error("❌ IndexedDB 重置失敗:",e);
+        alert("⚠️ 主存檔清除時發生錯誤，請再確認一次。");
+        return;
     }
+
+    location.reload();
 }
+
 
 </script>
 <script>
@@ -5321,51 +5494,424 @@ function getAccountAge() {
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
 }
 
-function updateStorageUI() {
-    try {
-        const dataStr = JSON.stringify(s);
-        const usedBytes = dataStr.length * 2; 
-        const limitBytes = 5 * 1024 * 1024; // 5MB
-        let percent = (usedBytes / limitBytes * 100).toFixed(1);
-        
-        // 防止超過 100% 導致 UI 破裂
-        if (percent > 100) percent = 100;
+// =========================================================
+// =========================================================
+// 🛡️ 主遊戲安全存檔系統
+// IndexedDB = 正式主存檔｜localStorage = 閃退緊急備援
+// 舊 localStorage 玩家自動遷移，兩邊都保留
+// =========================================================
+const MAIN_SAVE_DB_NAME="PokeMasterDB";
+const MAIN_SAVE_DB_VERSION=1;
+const MAIN_SAVE_STORE="gameData";
+const MAIN_SAVE_KEY="main_save_v1";
+const MAIN_BACKUP_1="main_backup_1";
+const MAIN_BACKUP_2="main_backup_2";
+const MAIN_SHUFFLE_KEY="shuffle_save_v1";
+const MAIN_SETTING_PREFIX="setting_";
+const MAIN_LS_KEY="pokemaster_v60";
+const MAIN_LS_TIME_KEY="pokemaster_v60_timestamp";
+let mainSaveDB=null;
+let mainSaveTimer=null;
+let mainSavePending=null;
+let mainSaveBusy=false;
+let mainSaveInitialized=false;
 
-        const bar = document.getElementById('storage-bar');
-        const text = document.getElementById('storage-percent');
-
-        if (bar && text) {
-            bar.style.width = percent + '%';
-            text.innerText = percent + '%';
-
-            // 根據比例切換顏色
-            if (percent > 90) {
-                bar.style.background = '#f44336'; // 危急紅色
-            } else if (percent > 70) {
-                bar.style.background = '#ff9800'; // 警告橘色
-            } else {
-                bar.style.background = '#4caf50'; // 安全綠色
-            }
+function openMainSaveDB(){
+    return new Promise((resolve,reject)=>{
+        if(mainSaveDB){
+            try{
+                if(mainSaveDB.objectStoreNames.contains(MAIN_SAVE_STORE)){
+                    resolve(mainSaveDB);
+                    return;
+                }
+            }catch(e){}
+            mainSaveDB=null;
         }
-    } catch (e) {
-        console.error("無法更新空間進度條", e);
+        const request=indexedDB.open(MAIN_SAVE_DB_NAME,MAIN_SAVE_DB_VERSION);
+        request.onupgradeneeded=event=>{
+            const db=event.target.result;
+            if(!db.objectStoreNames.contains(MAIN_SAVE_STORE)){
+                db.createObjectStore(MAIN_SAVE_STORE);
+            }
+        };
+        request.onsuccess=event=>{
+            mainSaveDB=event.target.result;
+            mainSaveDB.onversionchange=()=>{
+                try{mainSaveDB.close();}catch(e){}
+                mainSaveDB=null;
+            };
+            resolve(mainSaveDB);
+        };
+        request.onerror=()=>reject(request.error);
+        request.onblocked=()=>console.warn("⚠️ IndexedDB 開啟被其他分頁阻擋");
+    });
+}
+
+function createDurableTransaction(db,storeName,mode){
+    try{
+        return db.transaction(storeName,mode,{durability:"strict"});
+    }catch(e){
+        return db.transaction(storeName,mode);
     }
 }
 
-// 修改你原本的 saveGameData，讓它存檔後自動更新進度條
-function saveGameData() {
-    if (typeof saveData === 'function') {
-        saveData();
-    } else {
-        localStorage.setItem('pokemaster_v60', JSON.stringify(s));
+function dbGet(key){
+    return openMainSaveDB().then(db=>new Promise((resolve,reject)=>{
+        try{
+            const tx=createDurableTransaction(db,MAIN_SAVE_STORE,"readonly");
+            const request=tx.objectStore(MAIN_SAVE_STORE).get(key);
+            request.onsuccess=()=>resolve(request.result??null);
+            request.onerror=()=>reject(request.error);
+        }catch(e){
+            reject(e);
+        }
+    }));
+}
+
+function dbPutMany(items){
+    return openMainSaveDB().then(db=>new Promise((resolve,reject)=>{
+        try{
+            const tx=createDurableTransaction(db,MAIN_SAVE_STORE,"readwrite");
+            const store=tx.objectStore(MAIN_SAVE_STORE);
+            Object.entries(items).forEach(([key,value])=>{
+                if(value===undefined)store.delete(key);
+                else store.put(value,key);
+            });
+            tx.oncomplete=()=>resolve(true);
+            tx.onerror=()=>reject(tx.error);
+            tx.onabort=()=>reject(tx.error||new Error("IndexedDB transaction aborted"));
+        }catch(e){
+            reject(e);
+        }
+    }));
+}
+
+function dbDelete(key){
+    return openMainSaveDB().then(db=>new Promise((resolve,reject)=>{
+        try{
+            const tx=createDurableTransaction(db,MAIN_SAVE_STORE,"readwrite");
+            tx.objectStore(MAIN_SAVE_STORE).delete(key);
+            tx.oncomplete=()=>resolve(true);
+            tx.onerror=()=>reject(tx.error);
+            tx.onabort=()=>reject(tx.error||new Error("IndexedDB delete aborted"));
+        }catch(e){
+            reject(e);
+        }
+    }));
+}
+
+async function createSaveChecksum(json){
+    if(!window.crypto?.subtle)return "";
+    try{
+        const buffer=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(json));
+        return Array.from(new Uint8Array(buffer)).map(b=>b.toString(16).padStart(2,"0")).join("");
+    }catch(e){
+        return "";
     }
-    
-    // ✨ 存檔後立即更新進度條
+}
+
+async function makeMainSaveEnvelope(data,timestamp=Date.now()){
+    const json=JSON.stringify(data);
+    return{
+        format:"PokeMasterMainSave",
+        version:1,
+        timestamp:Number(timestamp)||Date.now(),
+        json,
+        checksum:await createSaveChecksum(json)
+    };
+}
+
+async function validateMainSaveEnvelope(envelope){
+    if(!envelope||typeof envelope!=="object")return null;
+    if(envelope.format==="PokeMasterMainSave"&&typeof envelope.json==="string"){
+        try{
+            const data=JSON.parse(envelope.json);
+            if(envelope.checksum&&window.crypto?.subtle){
+                const checksum=await createSaveChecksum(envelope.json);
+                if(checksum!==envelope.checksum){
+                    console.error("❌ 存檔完整性檢查失敗");
+                    return null;
+                }
+            }
+            return{data,timestamp:Number(envelope.timestamp)||0};
+        }catch(e){
+            console.error("❌ DB 存檔 JSON 損壞:",e);
+            return null;
+        }
+    }
+    // 相容舊版直接存 object
+    if(!envelope.format&&typeof envelope==="object"){
+        return{data:envelope,timestamp:0};
+    }
+    return null;
+}
+
+function readLegacyLocalSave(){
+    try{
+        const raw=localStorage.getItem(MAIN_LS_KEY);
+        if(!raw)return null;
+        const data=JSON.parse(raw);
+        if(!data||typeof data!=="object")return null;
+        return{
+            data,
+            timestamp:Number(localStorage.getItem(MAIN_LS_TIME_KEY))||0
+        };
+    }catch(e){
+        console.error("❌ localStorage 舊存檔讀取失敗:",e);
+        return null;
+    }
+}
+
+function writeLegacyLocalSave(data,timestamp=Date.now()){
+    try{
+        localStorage.setItem(MAIN_LS_KEY,JSON.stringify(data));
+        localStorage.setItem(MAIN_LS_TIME_KEY,String(timestamp));
+        return true;
+    }catch(e){
+        // 超過 5MB 時保留舊備援，不影響 DB
+        console.warn("⚠️ localStorage 備援寫入失敗，IndexedDB 繼續:",e);
+        return false;
+    }
+}
+
+async function writeMainSaveNow(data,createBackup=true,timestamp=Date.now()){
+    const envelope=await makeMainSaveEnvelope(data,timestamp);
+    let current=null;
+    let backup1=null;
+    if(createBackup){
+        try{
+            current=await dbGet(MAIN_SAVE_KEY);
+            backup1=await dbGet(MAIN_BACKUP_1);
+        }catch(e){
+            console.warn("⚠️ 讀取 DB 備份失敗，仍嘗試保存最新資料:",e);
+        }
+    }
+    const writes={[MAIN_SAVE_KEY]:envelope};
+    if(current)writes[MAIN_BACKUP_1]=current;
+    if(backup1)writes[MAIN_BACKUP_2]=backup1;
+    await dbPutMany(writes);
+    return true;
+}
+
+async function loadBestMainSave(){
+    let currentValid=null;
+    let backup1Valid=null;
+    let backup2Valid=null;
+    let localSave=null;
+
+    // ① 讀取 DB 三層存檔
+    try{
+        currentValid=await validateMainSaveEnvelope(await dbGet(MAIN_SAVE_KEY));
+    }catch(e){
+        console.warn("⚠️ DB 主存檔讀取失敗:",e);
+    }
+    try{
+        backup1Valid=await validateMainSaveEnvelope(await dbGet(MAIN_BACKUP_1));
+    }catch(e){
+        console.warn("⚠️ DB backup_1 讀取失敗:",e);
+    }
+    try{
+        backup2Valid=await validateMainSaveEnvelope(await dbGet(MAIN_BACKUP_2));
+    }catch(e){
+        console.warn("⚠️ DB backup_2 讀取失敗:",e);
+    }
+
+    // ② 永遠讀 localStorage，因為它是閃退救援資料
+    localSave=readLegacyLocalSave();
+
+    // ③ DB 主存檔正常：只有 localStorage 明確更新才救援
+    if(currentValid){
+        if(localSave&&localSave.timestamp>currentValid.timestamp){
+            console.warn("🟡 localStorage 比 DB 新，啟動閃退救援");
+            try{
+                await writeMainSaveNow(localSave.data,true,localSave.timestamp);
+                console.log("✅ localStorage 最新資料已恢復至 IndexedDB");
+            }catch(e){
+                console.error("❌ localStorage 救援至 DB 失敗:",e);
+            }
+            return{data:localSave.data,timestamp:localSave.timestamp,source:"localStorage-recovery"};
+        }
+        // DB 是正式主資料；同步一份到 localStorage 當備援
+        if(!localSave||currentValid.timestamp>localSave.timestamp){
+            writeLegacyLocalSave(currentValid.data,currentValid.timestamp);
+        }
+        return{data:currentValid.data,timestamp:currentValid.timestamp,source:"db-current"};
+    }
+
+    // ④ 主 DB 損壞：比較 backup 與 localStorage，最新者優先
+    const candidates=[];
+    if(backup1Valid)candidates.push({data:backup1Valid.data,timestamp:backup1Valid.timestamp,source:"db-backup-1"});
+    if(backup2Valid)candidates.push({data:backup2Valid.data,timestamp:backup2Valid.timestamp,source:"db-backup-2"});
+    if(localSave)candidates.push({data:localSave.data,timestamp:localSave.timestamp,source:"localStorage-recovery"});
+
+    if(candidates.length){
+        candidates.sort((a,b)=>b.timestamp-a.timestamp);
+        const best=candidates[0];
+        console.warn(`⚠️ 主存檔異常，採用：${best.source}`);
+        try{
+            await writeMainSaveNow(best.data,false,best.timestamp||Date.now());
+            writeLegacyLocalSave(best.data,best.timestamp||Date.now());
+            console.log("✅ 已重新建立 IndexedDB 主存檔");
+        }catch(e){
+            console.error("❌ DB 恢復失敗:",e);
+        }
+        return best;
+    }
+
+    // ⑤ 完全沒有 DB：相容舊玩家 localStorage
+    if(localSave){
+        const timestamp=localSave.timestamp||Date.now();
+        console.log("📦 偵測到舊版 localStorage，開始安全遷移");
+        try{
+            await writeMainSaveNow(localSave.data,false,timestamp);
+            writeLegacyLocalSave(localSave.data,timestamp);
+            console.log("✅ 舊版存檔已安全複製到 IndexedDB");
+        }catch(e){
+            console.error("❌ 舊版存檔遷移失敗:",e);
+        }
+        return{data:localSave.data,timestamp,source:"localStorage-migration"};
+    }
+
+    return null;
+}
+
+async function initSaveSystem(){
+    await openMainSaveDB();
+    const result=await loadBestMainSave();
+
+    if(result?.data){
+        s={...s,...result.data};
+        console.log(`💾 主存檔來源: ${result.source}`);
+    }
+
+    mainSaveInitialized=true;
+
+    // 啟動時同步舊版輔助資料
+    try{
+        const carrier=localStorage.getItem("user_carrier");
+        if(carrier&&!(await dbGet(MAIN_SETTING_PREFIX+"user_carrier"))){
+            await dbPutMany({[MAIN_SETTING_PREFIX+"user_carrier"]:carrier});
+        }
+        const hideDate=localStorage.getItem("hide_announcement_date");
+        if(hideDate&&!(await dbGet(MAIN_SETTING_PREFIX+"hide_announcement_date"))){
+            await dbPutMany({[MAIN_SETTING_PREFIX+"hide_announcement_date"]:hideDate});
+        }
+    }catch(e){
+        console.warn("⚠️ 輔助設定遷移失敗:",e);
+    }
+}
+
+function scheduleMainSave(timestamp=Date.now()){
+    if(!mainSaveInitialized)return;
+    try{
+        mainSavePending={
+            data:JSON.parse(JSON.stringify(s)),
+            timestamp:Number(timestamp)||Date.now()
+        };
+    }catch(e){
+        console.error("❌ 無法建立存檔快照:",e);
+        return;
+    }
+    clearTimeout(mainSaveTimer);
+    mainSaveTimer=setTimeout(()=>flushMainSave(),400);
+}
+
+async function flushMainSave(){
+    clearTimeout(mainSaveTimer);
+    mainSaveTimer=null;
+    if(mainSaveBusy||!mainSavePending)return;
+
+    mainSaveBusy=true;
+    const snapshot=mainSavePending;
+    mainSavePending=null;
+
+    try{
+        await writeMainSaveNow(snapshot.data,true,snapshot.timestamp);
+        console.log("💾 IndexedDB 主存檔完成");
+    }catch(e){
+        console.error("❌ IndexedDB 主存檔失敗:",e);
+        if(!mainSavePending)mainSavePending=snapshot;
+    }finally{
+        mainSaveBusy=false;
+        if(mainSavePending){
+            clearTimeout(mainSaveTimer);
+            mainSaveTimer=setTimeout(()=>flushMainSave(),400);
+        }
+    }
+}
+
+function saveGameData(){
+    const timestamp=Date.now();
+
+    // ① localStorage 立即保存，作為閃退最後防線
+    writeLegacyLocalSave(s,timestamp);
+
+    // ② IndexedDB 延遲寫入，避免頻繁交易
+    scheduleMainSave(timestamp);
+
+    // ③ 更新儲存空間顯示
     updateStorageUI();
+
+    return true;
 }
 
-// 介面初始化時也執行一次
+function saveData(){
+    return saveGameData();
+}
+
+// 分頁被關閉/切到背景時：localStorage 先留最新資料
+window.addEventListener("pagehide",()=>{
+    try{
+        writeLegacyLocalSave(s,Date.now());
+    }catch(e){}
+});
+
+// visibilitychange 只做快速 localStorage 備援，不等待非同步 DB
+document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState==="hidden"){
+        try{
+            writeLegacyLocalSave(s,Date.now());
+            if(mainSaveInitialized)scheduleMainSave(Date.now());
+        }catch(e){}
+    }
+});
+
+async function updateStorageUI(){
+    try{
+        const bar=document.getElementById("storage-bar");
+        const text=document.getElementById("storage-percent");
+        if(!bar||!text)return;
+
+        if(navigator.storage?.estimate){
+            const estimate=await navigator.storage.estimate();
+            const usage=Number(estimate.usage)||0;
+            const quota=Number(estimate.quota)||1;
+            let percent=(usage/quota)*100;
+            percent=Math.max(0,Math.min(percent,100));
+            const display=percent.toFixed(1);
+
+            bar.style.width=display+"%";
+            text.innerText=display+"%";
+            if(percent>90)bar.style.background="#f44336";
+            else if(percent>70)bar.style.background="#ff9800";
+            else bar.style.background="#4caf50";
+
+            bar.title=`本站儲存：約 ${(usage/1024/1024).toFixed(2)} MB / ${(quota/1024/1024).toFixed(2)} MB`;
+        }else{
+            const dataStr=JSON.stringify(s);
+            const usedBytes=dataStr.length*2;
+            const percent=Math.min((usedBytes/(5*1024*1024))*100,100);
+            bar.style.width=percent.toFixed(1)+"%";
+            text.innerText=percent.toFixed(1)+"%";
+        }
+    }catch(e){
+        console.warn("⚠️ 無法取得儲存空間資訊:",e);
+    }
+}
+
 updateStorageUI();
+
+
 
 // ==========================================
 // 3. UI 渲染：更新商店按鈕狀態
