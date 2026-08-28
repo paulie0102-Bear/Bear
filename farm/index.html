@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>寶可夢寶貝球餐車經營</title>
+<style>
+*{box-sizing:border-box}
+body{background:#1a252f;color:#fff;font-family:'Courier New',Courier,monospace;margin:0;padding:0;display:flex;flex-direction:column;align-items:center;height:100vh;overflow:hidden;image-rendering:pixelated}
+button,select,input{font-family:inherit}
+#header{width:100%;background:#3e2723;color:#fff;padding:10px 15px;display:flex;justify-content:space-between;align-items:center;font-size:15px;font-weight:bold;box-shadow:0 4px 10px rgba(0,0,0,.4);z-index:50}
+.currency-group{display:flex;align-items:center;gap:12px}
+.currency-item{display:flex;align-items:center;gap:4px}
+.currency-icon{width:22px;height:22px;vertical-align:middle;object-fit:contain}
+.btn-exchange{background:#e91e63;color:#fff;border:none;padding:4px 8px;font-size:12px;border-radius:4px;cursor:pointer;font-weight:bold;box-shadow:0 2px #ad1457}
+.btn-exchange:active{transform:translateY(1px);box-shadow:none}
+.btn-kitchen{background:#ff9800;border:none;color:#fff;padding:8px 12px;font-size:14px;font-weight:bold;border-radius:6px;box-shadow:0 3px #b26a00;cursor:pointer}
+.btn-kitchen:disabled{opacity:.5;cursor:not-allowed}
+#game-wrapper{width:100%;max-width:400px;height:600px;position:relative;background:#4caf50;overflow:hidden;box-shadow:0 0 20px rgba(0,0,0,.5);border-bottom:5px solid #2e7d32}
+.grass-top{position:absolute;top:0;left:0;width:100%;height:45px;background:#81c784}
+.stone-path{position:absolute;top:310px;left:130px;width:140px;bottom:0;background:#b0bec5;border-left:3px dashed #78909c;border-right:3px dashed #78909c}
+.stone-path:before,.stone-path:after{content:'';position:absolute;width:18px;height:8px;background:#90a4ae;opacity:.6}
+.stone-path:before{top:55px;left:18px}
+.stone-path:after{top:130px;right:20px}
+.nav-arrow{position:absolute;top:40%;transform:translateY(-50%);background:rgba(93,64,55,.9);color:#fff;border:3px solid #efebe9;border-radius:50%;width:48px;height:48px;font-size:23px;font-weight:bold;display:flex;justify-content:center;align-items:center;cursor:pointer;box-shadow:0 4px 8px rgba(0,0,0,.4);z-index:35;user-select:none}
+#arrow-left{left:10px}
+#arrow-right{right:10px}
+#truck-container{position:absolute;top:30px;left:30px;width:340px;height:310px;z-index:5}
+.pokeball-truck{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:280px;height:280px;border-radius:50%;border:9px solid #2d2d2d;box-shadow:0 12px 18px rgba(0,0,0,.4),inset -12px -12px 0 rgba(0,0,0,.15);z-index:5;cursor:pointer;background-color:#f5f5f5}
+.staff-window{position:absolute;top:18px;left:50%;transform:translateX(-50%);width:115px;height:115px;background:rgba(255,255,255,.25);border:4px solid rgba(0,0,0,.3);border-radius:50%;display:flex;justify-content:center;align-items:center;overflow:hidden;z-index:6}
+.staff-gif{width:100px;height:100px;object-fit:contain}
+.ball-button{position:absolute;left:50%;top:60%;transform:translate(-50%,-50%);width:88px;height:88px;border-radius:50%;background:#fff;border:7px solid #2d2d2d;box-shadow:0 0 0 4px rgba(255,255,255,.8),inset 0 0 10px rgba(0,0,0,.2);display:flex;justify-content:center;align-items:center;z-index:10;cursor:pointer}
+.food-icon{font-size:44px;line-height:1;user-select:none}
+.ball-button:hover{transform:translate(-50%,-50%) scale(1.08)}
+.hanging-sign{position:absolute;top:calc(60% + 52px);left:50%;transform:translateX(-50%);background:#f5deb3;border:3px solid #5d4037;border-radius:8px;padding:2px 16px;box-shadow:0 4px 6px rgba(0,0,0,.3);z-index:12;white-space:nowrap;text-align:center;min-width:60px}
+.hanging-sign:before,.hanging-sign:after{content:'';position:absolute;top:-8px;width:3px;height:8px;background:#3e2723}
+.hanging-sign:before{left:12px}
+.hanging-sign:after{right:12px}
+.food-status{font-size:16px;font-weight:bold;color:#4e342e}
+.food-soldout{font-size:14px;font-weight:bold;color:#d32f2f}
+.number-stand{position:absolute;bottom:0;right:10px;width:46px;height:54px;background:#8d6e63;border:3px solid #3e2723;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 6px rgba(0,0,0,.3);z-index:15;cursor:pointer}
+.number-stand:before{content:'';position:absolute;bottom:-12px;width:8px;height:12px;background:#3e2723}
+.number-stand-title{font-size:9px;color:#f5f5f5;margin-bottom:1px}
+.number-stand-num{font-size:20px;font-weight:bold;color:#ffeb3b;text-shadow:1px 1px 0 #000}
+.truck-locked-overlay{position:absolute;inset:0;background:rgba(0,0,0,.75);display:flex;justify-content:center;align-items:center;color:#fff;font-size:20px;font-weight:bold;z-index:30;border-radius:50%}
+#customers-layer{position:absolute;inset:0;z-index:25;pointer-events:none}
+.customer-container{position:absolute;width:100px;height:120px;display:flex;flex-direction:column;align-items:center;transition:left 8s linear,top 8s linear;z-index:25}
+.customer-gif{width:90px;height:90px;object-fit:contain}
+.speech-bubble{background:#fff3e0;color:#e65100;font-size:13px;font-weight:bold;padding:4px 8px;border-radius:8px;border:2px solid #ffb74d;box-shadow:0 2px 5px rgba(0,0,0,.3);white-space:nowrap;position:absolute;top:-5px;z-index:2}
+.full-modal{display:none;position:fixed;inset:0;width:100vw;height:100vh;background:rgba(0,0,0,.9);z-index:100;flex-direction:column}
+.modal-header{background:#5d4037;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:bold;border-bottom:3px solid #3e2723;flex-shrink:0}
+.btn-close{background:#e74c3c;color:#fff;border:none;padding:6px 12px;font-size:14px;border-radius:6px;cursor:pointer}
+.modal-content{flex:1;padding:12px;overflow-y:auto;background:#efebe9;color:#3e2723}
+.config-section{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.config-title{font-size:16px;font-weight:bold;margin-bottom:10px;color:#d35400}
+.skin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.skin-card{border:2px solid #bbb;border-radius:8px;padding:7px;background:#fafafa;text-align:center;cursor:pointer;position:relative}
+.skin-card.selected{border-color:#ff9800;box-shadow:0 0 0 2px #ffcc80}
+.skin-card.locked{opacity:.7}
+.skin-preview{width:50px;height:50px;border-radius:50%;margin:0 auto 5px;border:3px solid #222;position:relative;background-color:#f5f5f5}
+.skin-preview:after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid #222}
+.skin-name{font-size:11px;font-weight:bold}
+.skin-price{font-size:10px;color:#d81b60;margin-top:3px;display:flex;align-items:center;justify-content:center;gap:2px}
+.skin-state{font-size:10px;color:#4caf50;margin-top:3px}
+.staff-row{display:flex;align-items:center;gap:12px;padding:8px;border:2px solid #ddd;border-radius:8px;margin-bottom:8px;cursor:pointer}
+.staff-row.selected{border-color:#ff9800;background:#fff8e1}
+.staff-row img{width:65px;height:65px;object-fit:contain}
+.staff-info{flex:1}
+.staff-name{font-weight:bold;font-size:14px}
+select,input{width:100%;padding:8px;margin-top:5px;margin-bottom:8px;border:1px solid #bdc3c7;border-radius:5px;font-size:14px}
+.recipe-list{display:flex;flex-direction:column;gap:8px}
+.recipe-row{border:2px solid #ddd;border-radius:8px;padding:8px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.recipe-row.selected{border-color:#ff9800;background:#fff8e1}
+.recipe-icon{font-size:30px;width:42px;text-align:center}
+.recipe-info{flex:1}
+.recipe-name{font-size:13px;font-weight:bold}
+.recipe-price{font-size:11px;color:#e67e22}
+.stock-info{font-size:12px;color:#555;margin-top:3px}
+.stock-control{width:70px;text-align:center;margin:0}
+.stock-summary{background:#fff3cd;border:1px solid #ffe082;border-radius:6px;padding:8px;font-size:13px;margin-top:8px}
+.confirm-wrap{padding:12px;background:#5d4037;flex-shrink:0}
+.btn-confirm{width:100%;background:#4caf50;color:#fff;border:none;padding:13px;border-radius:8px;font-size:17px;font-weight:bold;box-shadow:0 4px #2e7d32;cursor:pointer}
+.btn-confirm:active{transform:translateY(2px);box-shadow:0 2px #2e7d32}
+.shop-item{background:#fff;border:1px solid #bdc3c7;border-radius:8px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.shop-price{color:#d81b60;font-size:13px;display:flex;align-items:center;gap:3px;font-weight:bold}
+.ball-skin-poke{background:linear-gradient(to bottom,#e53935 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-great{background:linear-gradient(135deg,transparent 40%,#e53935 40% 46%,transparent 46%) 0 0/100% 47% no-repeat,linear-gradient(45deg,transparent 40%,#e53935 40% 46%,transparent 46%) 0 0/100% 47% no-repeat,linear-gradient(to bottom,#1976d2 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-ultra{background:linear-gradient(to right,transparent 35%,#fdd835 35% 65%,transparent 65%) 0 20%/100% 12% no-repeat,linear-gradient(to bottom,transparent 15%,#fdd835 15% 47%,transparent 47%) 22% 0/18% 100% no-repeat,linear-gradient(to bottom,transparent 15%,#fdd835 15% 47%,transparent 47%) 78% 0/18% 100% no-repeat,linear-gradient(to bottom,#212121 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-master{background:radial-gradient(circle at 25% 25%,#f48fb1 0 12%,transparent 13%),radial-gradient(circle at 75% 25%,#f48fb1 0 12%,transparent 13%),linear-gradient(to bottom,#7b1fa2 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-premier{background:linear-gradient(to bottom,#fff 0 47%,#e53935 47% 53%,#fff 53% 100%)}
+.ball-skin-luxury{background:linear-gradient(to bottom,transparent 20%,#e53935 20% 26%,transparent 26%) 0 0/100% 47% no-repeat,linear-gradient(to bottom,#212121 0 47%,#fdd835 47% 53%,#212121 53% 100%)}
+.ball-skin-heal{background:linear-gradient(to bottom,transparent 30%,#81d4fa 30% 36%,transparent 36%) 0 0/100% 47% no-repeat,linear-gradient(to bottom,#f48fb1 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-quick{background:linear-gradient(135deg,transparent 42%,#fdd835 42% 58%,transparent 58%) 0 0/100% 47% no-repeat,linear-gradient(45deg,transparent 42%,#fdd835 42% 58%,transparent 58%) 0 0/100% 47% no-repeat,linear-gradient(to bottom,#0288d1 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-timer{background:linear-gradient(135deg,transparent 35%,#424242 35% 45%,transparent 45%) 0 0/100% 47% no-repeat,linear-gradient(45deg,transparent 55%,#424242 55% 65%,transparent 65%) 0 0/100% 47% no-repeat,linear-gradient(to bottom,#fff 0 47%,#2d2d2d 47% 53%,#e53935 53% 100%)}
+.ball-skin-repeat{background:radial-gradient(circle at 50% 30%,transparent 20%,#212121 21% 30%,transparent 31%),linear-gradient(to bottom,#fbc02d 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-dusk{background:radial-gradient(circle at 30% 25%,#ff5722 0 8%,transparent 9%),radial-gradient(circle at 70% 25%,#ff5722 0 8%,transparent 9%),linear-gradient(to bottom,#1b5e20 0 47%,#fdd835 47% 53%,#212121 53% 100%)}
+.ball-skin-net{background:repeating-linear-gradient(45deg,transparent,transparent 10px,#212121 10px,#212121 12px) 0 0/100% 47% no-repeat,repeating-linear-gradient(-45deg,transparent,transparent 10px,#212121 10px,#212121 12px) 0 0/100% 47% no-repeat,linear-gradient(to bottom,#00838f 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-dive{background:radial-gradient(circle at 50% 20%,#e0f7fa 0 25%,transparent 26%),linear-gradient(to bottom,#0288d1 0 47%,#01579b 47% 53%,#e0f7fa 53% 100%)}
+.ball-skin-level{background:linear-gradient(135deg,transparent 40%,#fbc02d 40% 50%,transparent 50%) 0 0/50% 47% no-repeat,linear-gradient(225deg,transparent 40%,#fbc02d 40% 50%,transparent 50%) 100% 0/50% 47% no-repeat,linear-gradient(to bottom,#37474f 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-lure{background:linear-gradient(135deg,transparent 40%,#e53935 40% 50%,transparent 50%) 0 0/50% 47% no-repeat,linear-gradient(225deg,transparent 40%,#e53935 40% 50%,transparent 50%) 100% 0/50% 47% no-repeat,linear-gradient(to bottom,#1976d2 0 47%,#fdd835 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-moon{background:radial-gradient(circle at 35% 20%,#1a237e 0 15%,transparent 16%),radial-gradient(circle at 30% 22%,#fbc02d 0 18%,transparent 19%),linear-gradient(to bottom,#1a237e 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-friend{background:radial-gradient(circle at 50% 20%,#e53935 0 8%,transparent 9%),linear-gradient(to bottom,#43a047 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-love{background:radial-gradient(circle at 38% 22%,#ec407a 0 12%,transparent 13%),radial-gradient(circle at 62% 22%,#ec407a 0 12%,transparent 13%),linear-gradient(to bottom,#f06292 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-heavy{background:radial-gradient(circle at 20% 20%,#1976d2 0 10%,transparent 11%),radial-gradient(circle at 80% 20%,#1976d2 0 10%,transparent 11%),radial-gradient(circle at 50% 12%,#1976d2 0 10%,transparent 11%),linear-gradient(to bottom,#607d8b 0 47%,#37474f 47% 53%,#78909c 53% 100%)}
+.ball-skin-fast{background:linear-gradient(120deg,transparent 40%,#ff5722 40% 52%,transparent 52%) 0 0/100% 47% no-repeat,linear-gradient(to bottom,#fbc02d 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-sport{background:radial-gradient(circle at 50% 23%,#fff 0 12%,transparent 13%),linear-gradient(to bottom,#e64a19 0 47%,#2d2d2d 47% 53%,#f5f5f5 53% 100%)}
+.ball-skin-safari{background:radial-gradient(circle at 30% 20%,#33691e 0 20%,transparent 21%),radial-gradient(circle at 70% 30%,#558b2f 0 25%,transparent 26%),radial-gradient(circle at 40% 70%,#33691e 0 22%,transparent 23%),linear-gradient(to bottom,#689f38 0 47%,#2d2d2d 47% 53%,#558b2f 53% 100%)}
+.ball-skin-dream{background:radial-gradient(circle at 50% 25%,#f8bbd0 0 30%,transparent 31%),linear-gradient(to bottom,#ce93d8 0 47%,#8e24aa 47% 53%,#f8bbd0 53% 100%)}
+.ball-skin-beast{background:linear-gradient(45deg,transparent 30%,#fbc02d 30% 38%,transparent 38%) 0 0/100% 47% no-repeat,linear-gradient(-45deg,transparent 30%,#fbc02d 30% 38%,transparent 38%) 0 0/100% 47% no-repeat,linear-gradient(to bottom,#0d47a1 0 47%,#000 47% 53%,#1565c0 53% 100%)}
+.ball-skin-cherish{background:linear-gradient(to right,transparent 15%,#212121 15% 22%,transparent 22%),linear-gradient(to right,transparent 78%,#212121 78% 85%,transparent 85%),linear-gradient(to bottom,#d32f2f 0 47%,#2d2d2d 47% 53%,#b71c1c 53% 100%)}
+
+/* ==================== 店員選擇彈窗 ==================== */
+
+.staff-picker-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    background:#fff;
+    border:2px solid #ddd;
+
+    border-radius:10px;
+
+    padding:10px;
+
+    margin-bottom:8px;
+
+    cursor:pointer;
+
+    transition:.15s;
+}
+
+.staff-picker-row:hover{
+    background:#fff8e1;
+    border-color:#ff9800;
+}
+
+.staff-picker-row.selected{
+    background:#fff8e1;
+    border-color:#ff9800;
+
+    box-shadow:
+        0 0 0 2px #ffcc80;
+}
+
+.staff-picker-row img{
+    width:65px;
+    height:65px;
+
+    object-fit:contain;
+
+    image-rendering:pixelated;
+}
+
+.staff-picker-info{
+    flex:1;
+}
+
+.staff-picker-number{
+    font-size:12px;
+
+    color:#777;
+
+    margin-bottom:3px;
+}
+
+.staff-picker-name{
+    font-size:15px;
+
+    font-weight:bold;
+
+    color:#3e2723;
+}
+
+.staff-picker-state{
+    font-size:11px;
+
+    color:#4caf50;
+
+    margin-top:4px;
+}
+
+.staff-picker-none{
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    background:#fff;
+
+    border:2px solid #ddd;
+
+    border-radius:10px;
+
+    padding:12px;
+
+    margin-bottom:10px;
+
+    cursor:pointer;
+}
+
+.staff-picker-none.selected{
+    border-color:#e74c3c;
+
+    background:#ffebee;
+}
+
+
+</style>
+</head>
+<body>
+<div id="header">
+<div class="currency-group">
+<div class="currency-item">💰 <span id="coin-count">0</span></div>
+<div class="currency-item"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/heart-scale.png" class="currency-icon" alt="心之鱗片"><span id="scale-count">0</span></div>
+<button class="btn-exchange" onclick="exchangeScales()">兌換</button>
+</div>
+<button class="btn-kitchen" onclick="goToGarden()">返回秘密花園 🌿</button>
+</div>
+<div id="game-wrapper">
+<div class="grass-top"></div>
+<div class="stone-path"></div>
+<div class="nav-arrow" id="arrow-left" onclick="changeStall(-1)">◄</div>
+<div class="nav-arrow" id="arrow-right" onclick="changeStall(1)">►</div>
+<div id="truck-container">
+<div id="pokeball-truck" class="pokeball-truck" onclick="openConfigModal()">
+<div class="staff-window"><img id="staff-gif" class="staff-gif" src="" alt="店員寶可夢" style="display:none"></div>
+<div class="ball-button"><span id="food-icon" class="food-icon">🍱</span></div>
+<div class="hanging-sign"><span id="food-status" class="food-status"></span></div>
+<div id="truck-locked" class="truck-locked-overlay" style="display:none">🔒 未解鎖</div>
+</div>
+<div class="number-stand" onclick="handleStandClick()"><div class="number-stand-title">餐車</div><div class="number-stand-num" id="stand-number">1</div></div>
+</div>
+<div id="customers-layer"></div>
+</div>
+<div id="shop-modal" class="full-modal">
+<div class="modal-header"><div>🚚 解鎖餐車</div><button class="btn-close" onclick="closeModal('shop-modal')">✕</button></div>
+<div class="modal-content" id="shop-list"></div>
+</div>
+<div id="config-modal" class="full-modal">
+<div class="modal-header"><div id="config-header">🍱 餐車設定</div><button class="btn-close" onclick="closeModal('config-modal')">✕</button></div>
+<div class="modal-content">
+<div class="config-section"><div class="config-title">🎨 ① 選擇寶貝球餐車外觀</div><div id="skin-grid" class="skin-grid"></div></div>
+<div class="config-section"><div class="config-title">👥 ② 選擇店員</div><div id="staff-grid"></div></div>
+<div class="config-section"><div class="config-title">🍱 ③ 選擇料理與補貨</div><div id="recipe-grid" class="recipe-list"></div><div id="stock-summary" class="stock-summary"></div></div>
+</div>
+<div class="confirm-wrap"><button class="btn-confirm" onclick="confirmConfig()">確認並套用</button></div>
+</div>
+
+<!-- ==================== 店員選擇彈窗 ==================== -->
+<div id="staff-picker-modal" class="full-modal">
+
+    <div class="modal-header">
+        <div>👥 選擇餐車店員</div>
+
+        <button
+            class="btn-close"
+            onclick="closeStaffPicker()"
+        >
+            ✕
+        </button>
+    </div>
+
+    <div
+        id="staff-picker-list"
+        class="modal-content"
+    >
+    </div>
+
+    <div class="confirm-wrap">
+
+        <div
+            id="staff-picker-page"
+            style="
+                text-align:center;
+                margin-bottom:10px;
+                color:#fff;
+                font-weight:bold;
+            "
+        >
+        </div>
+
+        <div
+            style="
+                display:flex;
+                gap:10px;
+            "
+        >
+
+            <button
+                id="staff-prev-btn"
+                class="btn-kitchen"
+                style="flex:1"
+                onclick="changeStaffPage(-1)"
+            >
+                ◀ 上一頁
+            </button>
+
+            <button
+                id="staff-next-btn"
+                class="btn-kitchen"
+                style="flex:1"
+                onclick="changeStaffPage(1)"
+            >
+                下一頁 ▶
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+// ==================== 主遊戲共用存檔 ====================
+// 主程式使用 PokeMasterDB / gameData / main_save_v1
+const MAIN_DB_NAME="PokeMasterDB";
+const MAIN_DB_VERSION=1;
+const MAIN_STORE="gameData";
+const MAIN_SAVE_KEY="main_save_v1";
+const MAIN_BACKUP_1="main_backup_1";
+const MAIN_BACKUP_2="main_backup_2";
+const MAIN_LS_KEY="pokemaster_v60";
+const MAIN_LS_TIME_KEY="pokemaster_v60_timestamp";
+let mainDB=null;
+let mainData=null;
+let mainSaveTimestamp=0;
+
+// 開啟與主程式相同的 IndexedDB
+function openMainDB(){
+return new Promise((resolve,reject)=>{
+if(mainDB){resolve(mainDB);return}
+const request=indexedDB.open(MAIN_DB_NAME,MAIN_DB_VERSION);
+request.onupgradeneeded=e=>{
+const db=e.target.result;
+if(!db.objectStoreNames.contains(MAIN_STORE))db.createObjectStore(MAIN_STORE);
+};
+request.onsuccess=e=>{
+mainDB=e.target.result;
+mainDB.onversionchange=()=>{try{mainDB.close()}catch(e){}mainDB=null};
+resolve(mainDB);
+};
+request.onerror=()=>reject(request.error);
+});
+}
+
+function dbGet(key){
+return openMainDB().then(db=>new Promise((resolve,reject)=>{
+try{
+const tx=db.transaction(MAIN_STORE,"readonly");
+const req=tx.objectStore(MAIN_STORE).get(key);
+req.onsuccess=()=>resolve(req.result??null);
+req.onerror=()=>reject(req.error);
+}catch(e){reject(e)}
+}));
+}
+
+function dbPutMany(items){
+return openMainDB().then(db=>new Promise((resolve,reject)=>{
+try{
+const tx=db.transaction(MAIN_STORE,"readwrite");
+const store=tx.objectStore(MAIN_STORE);
+Object.entries(items).forEach(([key,value])=>{
+if(value===undefined)store.delete(key);
+else store.put(value,key);
+});
+tx.oncomplete=()=>resolve(true);
+tx.onerror=()=>reject(tx.error);
+tx.onabort=()=>reject(tx.error||new Error("DB transaction aborted"));
+}catch(e){reject(e)}
+}));
+}
+
+async function createChecksum(json){
+if(!window.crypto?.subtle)return"";
+try{
+const buffer=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(json));
+return Array.from(new Uint8Array(buffer)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}catch(e){return""}
+}
+
+async function validateEnvelope(envelope){
+if(!envelope||typeof envelope!=="object")return null;
+if(envelope.format==="PokeMasterMainSave"&&typeof envelope.json==="string"){
+try{
+const data=JSON.parse(envelope.json);
+if(envelope.checksum&&window.crypto?.subtle){
+const checksum=await createChecksum(envelope.json);
+if(checksum!==envelope.checksum)return null;
+}
+return{data,timestamp:Number(envelope.timestamp)||0};
+}catch(e){return null}
+}
+if(!envelope.format&&typeof envelope==="object")return{data:envelope,timestamp:0};
+return null;
+}
+
+// 讀取主程式目前最新資料
+async function loadMainGameData(){
+try{
+let candidates=[];
+const current=await validateEnvelope(await dbGet(MAIN_SAVE_KEY));
+const backup1=await validateEnvelope(await dbGet(MAIN_BACKUP_1));
+const backup2=await validateEnvelope(await dbGet(MAIN_BACKUP_2));
+if(current)candidates.push({data:current.data,timestamp:current.timestamp});
+if(backup1)candidates.push({data:backup1.data,timestamp:backup1.timestamp});
+if(backup2)candidates.push({data:backup2.data,timestamp:backup2.timestamp});
+try{
+const raw=localStorage.getItem(MAIN_LS_KEY);
+const timestamp=Number(localStorage.getItem(MAIN_LS_TIME_KEY))||0;
+if(raw)candidates.push({data:JSON.parse(raw),timestamp});
+}catch(e){}
+if(!candidates.length)throw new Error("找不到主遊戲存檔");
+candidates.sort((a,b)=>b.timestamp-a.timestamp);
+mainData=candidates[0].data;
+mainSaveTimestamp=candidates[0].timestamp||Date.now();
+if(!mainData||typeof mainData!=="object")throw new Error("主遊戲資料格式錯誤");
+if(!mainData.farm)mainData.farm={};
+if(!mainData.farm.dishes)mainData.farm.dishes={};
+if(!mainData.farm.foodTruck)mainData.farm.foodTruck={};
+return true;
+}catch(e){
+console.error("❌ 無法讀取主遊戲資料:",e);
+alert("無法讀取主遊戲存檔，請先開啟一次主遊戲後再進入餐車。");
+return false;
+}
+}
+
+// 將餐車修改後的 s 完整寫回主程式存檔
+async function saveMainGameData(){
+if(!mainData)return false;
+const timestamp=Date.now();
+const json=JSON.stringify(mainData);
+const envelope={
+format:"PokeMasterMainSave",
+version:1,
+timestamp,
+json,
+checksum:await createChecksum(json)
+};
+try{
+const current=await dbGet(MAIN_SAVE_KEY);
+const backup1=await dbGet(MAIN_BACKUP_1);
+const writes={[MAIN_SAVE_KEY]:envelope};
+if(current)writes[MAIN_BACKUP_1]=current;
+if(backup1)writes[MAIN_BACKUP_2]=backup1;
+await dbPutMany(writes);
+try{
+localStorage.setItem(MAIN_LS_KEY,json);
+localStorage.setItem(MAIN_LS_TIME_KEY,String(timestamp));
+}catch(e){}
+mainSaveTimestamp=timestamp;
+return true;
+}catch(e){
+console.error("❌ 餐車寫回主存檔失敗:",e);
+return false;
+}
+}
+
+// ==================== 餐車資料 ====================
+const getGif=id=>id?`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/${id}.gif`:'';
+
+const RECIPES={
+"陸海空豪華便當":{icon:"🍱",price:1},
+"滑蛋鮮魚粥":{icon:"🥣",price:1},
+"鮮蝦燒肉飯":{icon:"🍛",price:1},
+"黃金蝦仁炒飯":{icon:"🍤",price:1},
+"海陸健身沙拉":{icon:"🥗",price:1},
+"時蔬魚排歐姆蛋":{icon:"🍳",price:1},
+"鮮蝦時蔬快炒":{icon:"🥘",price:1},
+"嫩蝦蔬菜蒸蛋":{icon:"🍮",price:1}
+};
+
+const BALL_SKINS=[
+{id:"poke",name:"寶貝球",price:0,cssClass:"ball-skin-poke"},
+{id:"great",name:"超級球",price:30,cssClass:"ball-skin-great"},
+{id:"ultra",name:"高級球",price:30,cssClass:"ball-skin-ultra"},
+{id:"master",name:"大師球",price:30,cssClass:"ball-skin-master"},
+{id:"premier",name:"紀念球",price:30,cssClass:"ball-skin-premier"},
+{id:"luxury",name:"豪華球",price:30,cssClass:"ball-skin-luxury"},
+{id:"heal",name:"治癒球",price:30,cssClass:"ball-skin-heal"},
+{id:"quick",name:"速度球",price:30,cssClass:"ball-skin-quick"},
+{id:"timer",name:"計時球",price:30,cssClass:"ball-skin-timer"},
+{id:"repeat",name:"重複球",price:30,cssClass:"ball-skin-repeat"},
+{id:"dusk",name:"黑暗球",price:30,cssClass:"ball-skin-dusk"},
+{id:"net",name:"捕網球",price:30,cssClass:"ball-skin-net"},
+{id:"dive",name:"潛水球",price:30,cssClass:"ball-skin-dive"},
+{id:"level",name:"等級球",price:30,cssClass:"ball-skin-level"},
+{id:"lure",name:"誘餌球",price:30,cssClass:"ball-skin-lure"},
+{id:"moon",name:"月亮球",price:30,cssClass:"ball-skin-moon"},
+{id:"friend",name:"朋友球",price:30,cssClass:"ball-skin-friend"},
+{id:"love",name:"甜蜜球",price:30,cssClass:"ball-skin-love"},
+{id:"heavy",name:"沉重球",price:30,cssClass:"ball-skin-heavy"},
+{id:"fast",name:"快速球",price:30,cssClass:"ball-skin-fast"},
+{id:"sport",name:"競賽球",price:30,cssClass:"ball-skin-sport"},
+{id:"safari",name:"狩獵球",price:30,cssClass:"ball-skin-safari"},
+{id:"dream",name:"夢境球",price:30,cssClass:"ball-skin-dream"},
+{id:"beast",name:"究極球",price:30,cssClass:"ball-skin-beast"},
+{id:"cherish",name:"珍貴球",price:30,cssClass:"ball-skin-cherish"}
+];
+
+const DEFAULT_STALLS=[
+{id:0,name:"寶貝球餐車 1 號",price:0,unlocked:true,staffId:25,recipe:"黃金蝦仁炒飯",stock:10,skinId:"poke"},
+{id:1,name:"寶貝球餐車 2 號",price:10,unlocked:false,staffId:null,recipe:"",stock:0,skinId:"poke"},
+{id:2,name:"寶貝球餐車 3 號",price:10,unlocked:false,staffId:null,recipe:"",stock:0,skinId:"poke"},
+{id:3,name:"寶貝球餐車 4 號",price:10,unlocked:false,staffId:null,recipe:"",stock:0,skinId:"poke"},
+{id:4,name:"寶貝球餐車 5 號",price:10,unlocked:false,staffId:null,recipe:"",stock:0,skinId:"poke"},
+{id:5,name:"寶貝球餐車 6 號",price:10,unlocked:false,staffId:null,recipe:"",stock:0,skinId:"poke"},
+{id:6,name:"寶貝球餐車 7 號",price:10,unlocked:false,staffId:null,recipe:"",stock:0,skinId:"poke"},
+{id:7,name:"寶貝球餐車 8 號",price:10,unlocked:false,staffId:null,recipe:"",stock:0,skinId:"poke"}
+];
+
+let stalls=[];
+let currentStallIndex=0;
+let coins=0;
+let heartScales=0;
+let customerBusy=false;
+let customerTimer=null;
+let backgroundTimer=null;
+let configDraft=null;
+let mainReady=false;
+
+/* ==================== 店員選擇器 ==================== */
+
+let staffPickerPage=0;
+
+const STAFF_PER_PAGE=10;
+
+// ==================== 餐車狀態存放在主遊戲 s.farm.foodTruck ====================
+function initFoodTruckData(){
+const saved=mainData.farm.foodTruck||{};
+stalls=Array.isArray(saved.stalls)?saved.stalls.map((s,i)=>({...DEFAULT_STALLS[i],...s})):JSON.parse(JSON.stringify(DEFAULT_STALLS));
+for(let i=0;i<DEFAULT_STALLS.length;i++)if(!stalls[i])stalls[i]=JSON.parse(JSON.stringify(DEFAULT_STALLS[i]));
+currentStallIndex=Math.max(0,Math.min(Number(saved.currentStallIndex)||0,stalls.length-1));
+heartScales=Number(saved.heartScales)||0;
+const savedSkins=Array.isArray(saved.ownedSkins)?saved.ownedSkins:["poke"];
+mainData.farm.foodTruck={stalls,currentStallIndex,heartScales,ownedSkins:Array.from(new Set(["poke",...savedSkins]))};
+coins=Number(mainData.bal)||0;
+}
+
+// ==================== 主遊戲料理共用 ====================
+function getDishCount(name){
+const recipe=RECIPES[name];
+if(!recipe)return 0;
+return Number(mainData.farm.dishes[recipe.icon])||0;
+}
+
+function setDishCount(name,count){
+const recipe=RECIPES[name];
+if(!recipe)return;
+mainData.farm.dishes[recipe.icon]=Math.max(0,Number(count)||0);
+}
+
+// ==================== UI ====================
+function updateUI(){
+coins=Number(mainData?.bal)||0;
+document.getElementById("coin-count").innerText=coins;
+document.getElementById("scale-count").innerText=heartScales;
+}
+
+// ==================== 心之鱗片兌換 ====================
+async function exchangeScales(){
+const RATE=3000;
+const maxScales=Math.floor(coins/RATE);
+if(maxScales<=0){
+alert(`金幣不足！至少需要 ${RATE} 金幣才能兌換 1 片心之鱗片。`);
+return;
+}
+const input=prompt(`請輸入欲兌換的心之鱗片數量：\n(${RATE} 金幣 = 1 片心之鱗片)\n目前金幣：💰 ${coins}\n最多可兌換：${maxScales} 片`,"1");
+if(input===null)return;
+const amount=parseInt(input);
+if(isNaN(amount)||amount<=0){
+alert("請輸入有效的數量！");
+return;
+}
+const cost=amount*RATE;
+if(coins<cost){
+alert(`金幣不足！兌換 ${amount} 片需要 💰 ${cost}。`);
+return;
+}
+if(!confirm(`兌換 ${amount} 片心之鱗片？\n花費 💰 ${cost} 金幣。`))return;
+mainData.bal-=cost;
+heartScales+=amount;
+syncTruckToMain();
+await saveMainGameData();
+updateUI();
+alert(`成功兌換 ${amount} 片心之鱗片！`);
+}
+
+
+async function goToGarden(){
+    try{
+        syncTruckToMain();
+        await saveMainGameData();
+    }catch(e){
+        console.error("返回秘密花園前存檔失敗：",e);
+    }
+
+    window.location.href="../index.html";
+}
+
+// ==================== 餐車存檔 ====================
+function syncTruckToMain(){
+
+    mainData.farm.foodTruck={
+
+        stalls:
+            stalls,
+
+        currentStallIndex:
+            currentStallIndex,
+
+        heartScales:
+            heartScales,
+
+        ownedSkins:
+            getOwnedSkins()
+
+    };
+
+}
+
+function getOwnedSkins(){
+return Array.from(new Set(["poke",...(mainData.farm.foodTruck?.ownedSkins||[])]));
+}
+
+async function saveTruck(){
+syncTruckToMain();
+await saveMainGameData();
+}
+
+// ==================== 餐車渲染 ====================
+function getCurrentStall(){return stalls[currentStallIndex]}
+function getSkin(id){return BALL_SKINS.find(s=>s.id===id)||BALL_SKINS[0]}
+
+function renderTruck(){
+const stall=getCurrentStall();
+const ballTruck=document.getElementById("pokeball-truck");
+const staffImg=document.getElementById("staff-gif");
+const foodIcon=document.getElementById("food-icon");
+const foodStatus=document.getElementById("food-status");
+const locked=document.getElementById("truck-locked");
+document.getElementById("stand-number").innerText=stall.id+1;
+
+if(!stall.unlocked){
+locked.style.display="flex";
+staffImg.style.display="none";
+foodIcon.innerText="🔒";
+foodStatus.className="food-soldout";
+foodStatus.innerText="未解鎖";
+return;
+}
+locked.style.display="none";
+ballTruck.className="pokeball-truck";
+const skin=getSkin(stall.skinId);
+ballTruck.classList.add(skin.cssClass);
+foodIcon.innerText=stall.recipe?(RECIPES[stall.recipe]?.icon||"🍱"):"🍽️";
+if(stall.recipe&&stall.stock>0){
+foodStatus.className="food-status";
+foodStatus.innerText=stall.stock;
+}else if(stall.recipe){
+foodStatus.className="food-soldout";
+foodStatus.innerText="完售";
+}else{
+foodStatus.className="food-status";
+foodStatus.innerText="0";
+}
+if(stall.staffId){
+staffImg.src=getGif(stall.staffId);
+staffImg.style.display="block";
+}else{
+staffImg.style.display="none";
+}
+}
+
+function handleStandClick(){
+const stall=getCurrentStall();
+if(stall.unlocked)openConfigModal();
+else openShop();
+}
+
+function changeStall(direction){
+currentStallIndex+=direction;
+if(currentStallIndex<0)currentStallIndex=stalls.length-1;
+if(currentStallIndex>=stalls.length)currentStallIndex=0;
+customerBusy=false;
+if(customerTimer){clearTimeout(customerTimer);customerTimer=null}
+document.getElementById("customers-layer").innerHTML="";
+syncTruckToMain();
+saveMainGameData();
+renderTruck();
+scheduleNextCustomer(300);
+}
+
+
+
+// ==================== 顧客寶可夢完整名單 ====================
+// 顧客名單直接使用秘密花園 PKM_TAG_MAP 的全部寶可夢。
+// 不管寶可夢是否已解鎖，都可以隨機來餐車消費。
+// 注意：店員名單仍然由 getEligibleStaff() 控制，
+// 只有 mainData.pkm 中已解鎖的寶可夢才能當店員。
+
+const CUSTOMER_POKEMON_IDS = [
+
+    // 🔴 紅標
+    4, 5, 6,
+    37, 38,
+    58, 59,
+    77, 78,
+    136,
+    155, 156, 157,
+    196,
+    255, 256, 257,
+    322, 323,
+    390, 391, 392,
+    498, 499, 500,
+    570,
+    607,
+    636, 637,
+    653, 654, 655,
+    661, 662, 663,
+
+    // 🔵 藍標
+    7, 8, 9,
+    54, 55,
+    134,
+    158, 159, 160,
+    183, 184,
+    258, 259, 260,
+    341, 342,
+    393, 394, 395,
+    418, 419,
+    471,
+    501, 502, 503,
+    564,
+    580,
+    582,
+    615,
+    656, 657, 658,
+    692, 693,
+    698,
+
+    // 🟢 綠標
+    1, 2, 3,
+    135,
+    152, 153, 154,
+    197,
+    214,
+    252, 253, 254,
+    280, 281, 282,
+    387, 388, 389,
+    407,
+    470,
+    475,
+    495, 496, 497,
+    546, 547,
+    577,
+    585,
+    650, 651, 652,
+    672, 673,
+    674,
+    714,
+
+    // ⚫ 黑標
+    25,
+    133,
+    94,
+    147, 148, 149,
+    246, 247, 248,
+    304, 305, 306,
+    371, 372, 373,
+    374, 375, 376,
+    417,
+    443, 444, 445,
+    447, 448,
+    610, 611, 612,
+    633, 634, 635,
+    678,
+    702,
+    704, 705, 706,
+
+    // ⚪ 白標／神獸
+    144, 145, 146, 150, 151,
+    243, 244, 245, 249, 250, 251,
+    377, 378, 379,
+    380, 381,
+    382, 383, 384, 385, 386,
+    480, 481, 482,
+    483, 484, 485, 486, 487,
+    488, 489, 490, 491, 492, 493,
+    494,
+    638, 639, 640,
+    641, 642,
+    643, 644, 645, 646, 647, 648, 649,
+    716, 717, 718, 719, 720, 721
+
+];
+
+function getCustomerPokemonList(){
+
+    /*
+       🍽️ 餐車顧客寶可夢名單
+
+       直接使用秘密花園的完整圖鑑 POKEDEX_DATA。
+
+       這代表：
+       ✅ 已解鎖寶可夢可以當顧客
+       ✅ 尚未解鎖寶可夢也可以當顧客
+       ✅ 普通寶可夢可以當顧客
+       ✅ 白標神獸也可以當顧客
+       ✅ 不會受到 s.pkm 已解鎖名單限制
+    */
+
+    if(
+        Array.isArray(POKEDEX_DATA) &&
+        POKEDEX_DATA.length>0
+    ){
+
+        return [
+            ...new Set(
+
+                POKEDEX_DATA
+
+                    .map(p=>Number(p?.id))
+
+                    .filter(id=>
+                        Number.isFinite(id)
+                    )
+
+            )
+        ];
+
+    }
+
+    /*
+       保護機制：
+       如果 POKEDEX_DATA 尚未建立，
+       才退回目前玩家已擁有的寶可夢。
+    */
+
+    const unlocked=
+        Array.isArray(mainData?.pkm)
+        ?mainData.pkm
+        :[];
+
+    return [
+        ...new Set(
+
+            unlocked
+
+                .map(p=>Number(p?.id))
+
+                .filter(id=>
+                    Number.isFinite(id)
+                )
+
+        )
+    ];
+
+}
+
+function startCustomerLoop(){
+if(customerTimer)clearTimeout(customerTimer);
+scheduleNextCustomer(500);
+}
+
+function scheduleNextCustomer(delay){
+if(customerTimer)clearTimeout(customerTimer);
+customerTimer=setTimeout(spawnCustomer,delay);
+}
+
+function spawnCustomer(){
+const stall=getCurrentStall();
+if(!stall.unlocked||!stall.staffId||!stall.recipe||stall.stock<=0){
+scheduleNextCustomer(2000);
+return;
+}
+if(customerBusy){
+scheduleNextCustomer(1000);
+return;
+}
+customerBusy=true;
+const layer=document.getElementById("customers-layer");
+const customer=document.createElement("div");
+// 取得秘密花園完整寶可夢名單
+// 已解鎖與未解鎖的寶可夢都可以成為顧客
+const customerPokemonList=
+    getCustomerPokemonList();
+
+
+// 如果沒有任何寶可夢資料
+// 就等待下一次顧客刷新
+if(
+    customerPokemonList.length===0
+){
+
+    customerBusy=false;
+
+    scheduleNextCustomer(
+        2000
+    );
+
+    return;
+
+}
+
+
+// 從完整名單中隨機挑選一隻
+const randomPokeId=
+
+    customerPokemonList[
+        Math.floor(
+            Math.random()*
+            customerPokemonList.length
+        )
+    ];
+customer.className="customer-container";
+customer.style.left="150px";
+customer.style.top="585px";
+customer.innerHTML=`<div class="speech-bubble" style="display:none">點餐中..</div><img class="customer-gif" src="${getGif(randomPokeId)}" alt="顧客寶可夢">`;
+layer.appendChild(customer);
+requestAnimationFrame(()=>setTimeout(()=>customer.style.top="245px",80));
+
+setTimeout(async()=>{
+if(!customer.isConnected)return;
+const bubble=customer.querySelector(".speech-bubble");
+if(bubble)bubble.style.display="block";
+const current=getCurrentStall();
+if(current===stall&&stall.unlocked&&stall.staffId&&stall.recipe&&stall.stock>0){
+const available=getDishCount(stall.recipe);
+if(available>0){
+setDishCount(stall.recipe,available-1);
+stall.stock--;
+mainData.bal=(Number(mainData.bal)||0)+(RECIPES[stall.recipe]?.price||1);
+heartScales++;
+coins=mainData.bal;
+updateUI();
+renderTruck();
+await saveTruck();
+}
+}
+setTimeout(()=>{
+if(!customer.isConnected)return;
+if(bubble)bubble.style.display="none";
+customer.style.top="585px";
+setTimeout(()=>{
+customer.remove();
+customerBusy=false;
+scheduleNextCustomer(500);
+},8000);
+},14000);
+},8100);
+}
+
+// ==================== 背景販售：直接消耗主遊戲料理並增加主遊戲金幣 ====================
+function startBackgroundSalesTimer(){
+if(backgroundTimer)clearInterval(backgroundTimer);
+backgroundTimer=setInterval(async()=>{
+let changed=false;
+for(const stall of stalls){
+if(stall.id===getCurrentStall().id)continue;
+if(!stall.unlocked||!stall.staffId||!stall.recipe||stall.stock<=0)continue;
+const dishes=getDishCount(stall.recipe);
+if(dishes<=0){
+stall.stock=0;
+changed=true;
+continue;
+}
+stall.stock--;
+setDishCount(stall.recipe,dishes-1);
+mainData.bal=(Number(mainData.bal)||0)+(RECIPES[stall.recipe]?.price||1);
+heartScales++;
+changed=true;
+}
+if(changed){
+coins=mainData.bal;
+updateUI();
+await saveTruck();
+renderTruck();
+}
+},5*60*1000);
+}
+
+// ==================== 店員：只顯示已正式加入 s.pkm 的寶可夢，並依圖鑑號碼排序 ====================
+function getEligibleStaff(){
+
+    /* 
+       餐車店員直接讀取主遊戲：
+       mainData.pkm
+
+       這就是秘密花園冒險小隊可使用的
+       寶可夢資料來源
+    */
+
+    const list =
+    Array.isArray(mainData?.pkm)
+        ? mainData.pkm.filter(p => p && p.unlocked !== false)
+        : [];
+
+    const seen=new Set();
+
+    return list
+
+        .filter(p=>{
+
+            return p &&
+                Number.isFinite(
+                    Number(p.id)
+                );
+
+        })
+
+        /* 
+           相同圖鑑編號只顯示一次
+        */
+
+        .filter(p=>{
+
+            const id=
+                Number(p.id);
+
+            if(seen.has(id)){
+                return false;
+            }
+
+            seen.add(id);
+
+            return true;
+
+        })
+
+        .map(p=>({
+
+            id:Number(p.id),
+
+            name:
+                p.name ||
+                getPokemonName(
+                    Number(p.id)
+                ),
+
+            uniqueId:
+                p.uniqueId || "",
+
+            color:
+                p.color || ""
+
+        }))
+
+        /*
+           依照圖鑑編號排序
+        */
+
+        .sort((a,b)=>{
+
+            return a.id-b.id;
+
+        });
+
+}
+
+const FALLBACK_NAMES={
+1:"妙蛙種子",4:"小火龍",7:"傑尼龜",25:"皮卡丘",39:"胖丁",94:"耿鬼",143:"卡比獸",150:"超夢",384:"烈空坐",448:"路卡利歐"
+};
+
+function getPokemonName(id){
+return FALLBACK_NAMES[id]||`No.${id}`;
+}
+
+// ==================== 餐車設定 ====================
+function openConfigModal(){
+const stall=getCurrentStall();
+if(!stall.unlocked){
+openShop();
+return;
+}
+configDraft={
+skinId:stall.skinId||"poke",
+staffId:stall.staffId||null,
+recipe:stall.recipe||"",
+stock:stall.stock||0
+};
+renderConfig();
+document.getElementById("config-modal").style.display="flex";
+}
+
+function closeModal(id){
+document.getElementById(id).style.display="none";
+}
+
+function renderConfig(){
+const stall=getCurrentStall();
+document.getElementById("config-header").innerText=`🍱 ${stall.name} 設定`;
+renderSkinGrid();
+renderStaffGrid();
+renderRecipeGrid();
+updateStockSummary();
+}
+
+// ==================== 球種 ====================
+function isSkinOwned(id){
+return getOwnedSkins().includes(id);
+}
+
+function renderSkinGrid(){
+const container=document.getElementById("skin-grid");
+container.innerHTML="";
+BALL_SKINS.forEach(skin=>{
+const owned=skin.price===0||isSkinOwned(skin.id);
+const selected=configDraft.skinId===skin.id;
+const div=document.createElement("div");
+div.className=`skin-card ${selected?"selected":""} ${owned?"":"locked"}`;
+div.innerHTML=`<div class="skin-preview ${skin.cssClass}"></div><div class="skin-name">${skin.name}</div><div class="skin-price">${skin.price===0?"免費":`<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/heart-scale.png" class="currency-icon"> ${skin.price}`}</div><div class="skin-state">${selected?"✓ 使用中":owned?"已解鎖":"點擊購買"}</div>`;
+div.onclick=()=>selectSkin(skin.id);
+container.appendChild(div);
+});
+}
+
+async function selectSkin(id){
+const skin=getSkin(id);
+if(!isSkinOwned(id)){
+if(heartScales<skin.price){
+alert(`心之鱗片不足！解鎖「${skin.name}」需要 ${skin.price} 片。`);
+return;
+}
+if(!confirm(`花費 ${skin.price} 片心之鱗片解鎖「${skin.name}」？`))return;
+heartScales-=skin.price;
+mainData.farm.foodTruck.ownedSkins=getOwnedSkins().concat(id);
+await saveTruck();
+updateUI();
+}
+configDraft.skinId=id;
+renderSkinGrid();
+}
+
+// ==================== 店員 ====================
+function renderStaffGrid(){
+
+    const container=
+        document.getElementById(
+            "staff-grid"
+        );
+
+    container.innerHTML="";
+
+
+    /* ====================
+       目前選擇的店員
+    ==================== */
+
+    const currentStaff=
+        configDraft.staffId
+        ?getEligibleStaff().find(
+            p=>
+                Number(p.id)===
+                Number(
+                    configDraft.staffId
+                )
+        )
+        :null;
+
+
+    /* ====================
+       顯示目前店員
+    ==================== */
+
+    const currentBox=
+        document.createElement("div");
+
+
+    currentBox.className=
+        "staff-row";
+
+
+    if(currentStaff){
+
+        currentBox.innerHTML=`
+
+            <img
+                src="${getGif(
+                    currentStaff.id
+                )}"
+                alt="${currentStaff.name}"
+            >
+
+            <div class="staff-info">
+
+                <div
+                    class="staff-name"
+                >
+
+                    No.${
+                        String(
+                            currentStaff.id
+                        ).padStart(
+                            3,
+                            "0"
+                        )
+                    }
+
+                    ${currentStaff.name}
+
+                </div>
+
+                <div>
+
+                    目前餐車店員
+
+                </div>
+
+            </div>
+
+        `;
+
+    }else{
+
+        currentBox.innerHTML=`
+
+            <div
+                style="
+                    font-size:40px;
+                    width:65px;
+                    text-align:center
+                "
+            >
+                ❌
+            </div>
+
+            <div
+                class="staff-info"
+            >
+
+                <div
+                    class="staff-name"
+                >
+
+                    尚未配置店員
+
+                </div>
+
+                <div>
+
+                    餐車目前停止營業
+
+                </div>
+
+            </div>
+
+        `;
+
+    }
+
+
+    container.appendChild(
+        currentBox
+    );
+
+
+    /* ====================
+       選擇寶可夢按鈕
+    ==================== */
+
+    const chooseButton=
+        document.createElement(
+            "button"
+        );
+
+
+    chooseButton.className=
+        "btn-kitchen";
+
+
+    chooseButton.style.width=
+        "100%";
+
+
+    chooseButton.style.marginTop=
+        "10px";
+
+
+    chooseButton.innerText=
+        "👥 選擇冒險小隊寶可夢";
+
+
+    chooseButton.onclick=()=>{
+
+        openStaffPicker();
+
+    };
+
+
+    container.appendChild(
+        chooseButton
+    );
+
+}
+
+/* ==================== 店員彈窗 ==================== */
+
+
+function openStaffPicker(){
+
+    staffPickerPage=0;
+
+
+    renderStaffPicker();
+
+
+    document
+        .getElementById(
+            "staff-picker-modal"
+        )
+        .style.display=
+        "flex";
+
+}
+
+
+/* ====================
+   關閉店員彈窗
+==================== */
+
+function closeStaffPicker(){
+
+    document
+        .getElementById(
+            "staff-picker-modal"
+        )
+        .style.display=
+        "none";
+
+}
+
+
+/* ====================
+   切換頁數
+==================== */
+
+function changeStaffPage(
+    direction
+){
+
+    const staff=
+        getEligibleStaff();
+
+
+    const totalPages=
+        Math.max(
+            1,
+            Math.ceil(
+                staff.length /
+                STAFF_PER_PAGE
+            )
+        );
+
+
+    staffPickerPage+=
+        direction;
+
+
+    if(
+        staffPickerPage<0
+    ){
+
+        staffPickerPage=0;
+
+    }
+
+
+    if(
+        staffPickerPage>=
+        totalPages
+    ){
+
+        staffPickerPage=
+            totalPages-1;
+
+    }
+
+
+    renderStaffPicker();
+
+}
+
+
+/* ====================
+   渲染店員列表
+==================== */
+
+function renderStaffPicker(){
+
+    const container=
+        document.getElementById(
+            "staff-picker-list"
+        );
+
+
+    const pageText=
+        document.getElementById(
+            "staff-picker-page"
+        );
+
+
+    const prevButton=
+        document.getElementById(
+            "staff-prev-btn"
+        );
+
+
+    const nextButton=
+        document.getElementById(
+            "staff-next-btn"
+        );
+
+
+    container.innerHTML="";
+
+
+    const staff = getEligibleStaff()
+    .slice()
+    .sort((a, b) => Number(a.id) - Number(b.id));
+
+
+    /* ====================
+       計算總頁數
+    ==================== */
+
+    const totalPages=
+        Math.max(
+            1,
+            Math.ceil(
+                staff.length /
+                STAFF_PER_PAGE
+            )
+        );
+
+
+    if(
+        staffPickerPage>=
+        totalPages
+    ){
+
+        staffPickerPage=
+            totalPages-1;
+
+    }
+
+
+    const start=
+        staffPickerPage*
+        STAFF_PER_PAGE;
+
+
+    const end=
+        Math.min(
+            start+
+            STAFF_PER_PAGE,
+
+            staff.length
+        );
+
+
+    const pageStaff=
+        staff.slice(
+            start,
+            end
+        );
+
+
+    /* ====================
+       不配置店員
+    ==================== */
+
+    const noneRow=
+        document.createElement(
+            "div"
+        );
+
+
+    noneRow.className=
+        "staff-picker-none"+
+        (
+            configDraft.staffId===
+            null
+            ?" selected"
+            :""
+        );
+
+
+    noneRow.innerHTML=`
+
+        <div
+            style="
+                font-size:38px;
+                width:55px;
+                text-align:center
+            "
+        >
+            ❌
+        </div>
+
+        <div>
+
+            <strong>
+                不配置店員
+            </strong>
+
+            <br>
+
+            <span
+                style="
+                    font-size:12px;
+                    color:#777
+                "
+            >
+
+                餐車將停止營業
+
+            </span>
+
+        </div>
+
+    `;
+
+
+    noneRow.onclick=()=>{
+
+        configDraft.staffId=
+            null;
+
+
+        closeStaffPicker();
+
+
+        renderStaffGrid();
+
+    };
+
+
+    container.appendChild(
+        noneRow
+    );
+
+
+    /* ====================
+       沒有可選寶可夢
+    ==================== */
+
+    if(
+        staff.length===0
+    ){
+
+        const empty=
+            document.createElement(
+                "div"
+            );
+
+
+        empty.style.cssText=`
+
+            padding:25px;
+            text-align:center;
+            color:#777;
+
+        `;
+
+
+        empty.innerText=
+            "目前冒險小隊中沒有可選擇的寶可夢。";
+
+
+        container.appendChild(
+            empty
+        );
+
+    }
+
+
+    /* ====================
+       顯示本頁 10 隻
+    ==================== */
+
+    pageStaff.forEach(
+        pokemon=>{
+
+            const row=
+                document.createElement(
+                    "div"
+                );
+
+
+            const selected=
+
+                Number(
+                    configDraft.staffId
+                )===
+
+                Number(
+                    pokemon.id
+                );
+
+
+            row.className=
+
+                "staff-picker-row"+
+
+                (
+                    selected
+                    ?" selected"
+                    :""
+                );
+
+
+            row.innerHTML=`
+
+                <img
+                    src="${getGif(
+                        pokemon.id
+                    )}"
+                    alt="${pokemon.name}"
+                >
+
+                <div
+                    class="
+                        staff-picker-info
+                    "
+                >
+
+                    <div
+                        class="
+                            staff-picker-number
+                        "
+                    >
+
+                        No.${
+                            String(
+                                pokemon.id
+                            ).padStart(
+                                3,
+                                "0"
+                            )
+                        }
+
+                    </div>
+
+
+                    <div
+                        class="
+                            staff-picker-name
+                        "
+                    >
+
+                        ${pokemon.name}
+
+                    </div>
+
+
+                    <div
+                        class="
+                            staff-picker-state
+                        "
+                    >
+
+                        冒險小隊成員
+
+                    </div>
+
+                </div>
+
+            `;
+
+
+            row.onclick=()=>{
+
+                configDraft.staffId=
+                    pokemon.id;
+
+
+                closeStaffPicker();
+
+
+                renderStaffGrid();
+
+            };
+
+
+            container.appendChild(
+                row
+            );
+
+        }
+    );
+
+
+    /* ====================
+       頁碼
+    ==================== */
+
+    pageText.innerText=
+
+        `第 ${
+            staffPickerPage+1
+        } / ${
+            totalPages
+        } 頁｜共 ${
+            staff.length
+        } 隻`;
+
+
+    /* ====================
+       上一頁按鈕
+    ==================== */
+
+    prevButton.disabled=
+
+        staffPickerPage<=0;
+
+
+    /* ====================
+       下一頁按鈕
+    ==================== */
+
+    nextButton.disabled=
+
+        staffPickerPage>=
+        totalPages-1;
+
+}
+
+// ==================== 料理：直接讀主遊戲 s.farm.dishes ====================
+function renderRecipeGrid(){
+const container=document.getElementById("recipe-grid");
+container.innerHTML="";
+Object.keys(RECIPES).forEach(name=>{
+const recipe=RECIPES[name];
+const selected=configDraft.recipe===name;
+const count=getDishCount(name);
+const row=document.createElement("div");
+row.className=`recipe-row ${selected?"selected":""}`;
+row.innerHTML=`<div class="recipe-icon">${recipe.icon}</div><div class="recipe-info"><div class="recipe-name">${name}</div><div class="recipe-price">售價 💰 ${recipe.price} / 份</div><div class="stock-info">主遊戲料理庫存：${count} 份${selected?"｜目前配置中":"｜點擊選擇"}</div></div>`;
+row.onclick=()=>{
+if(configDraft.recipe!==name){
+configDraft.recipe=name;
+configDraft.stock=0;
+}
+renderRecipeGrid();
+updateStockSummary();
+};
+container.appendChild(row);
+});
+
+if(configDraft.recipe){
+const stockBox=document.createElement("div");
+stockBox.style.marginTop="10px";
+stockBox.innerHTML=`<label><strong>補充料理數量：</strong></label><input id="refill-input" class="stock-control" type="number" min="0" max="99" value="0" style="width:100%">`;
+container.appendChild(stockBox);
+const input=document.getElementById("refill-input");
+input.addEventListener("input",updateStockSummary);
+}
+}
+
+function getRefillAmount(){
+const input=document.getElementById("refill-input");
+if(!input)return 0;
+let value=parseInt(input.value);
+if(isNaN(value)||value<0)value=0;
+if(value>99)value=99;
+return value;
+}
+
+function updateStockSummary(){
+const box=document.getElementById("stock-summary");
+if(!configDraft.recipe){
+box.innerText="尚未選擇料理。";
+return;
+}
+const refill=getRefillAmount();
+const current=Number(configDraft.stock)||0;
+const total=Math.min(99,current+refill);
+const mainDishCount=getDishCount(configDraft.recipe);
+box.innerHTML=`目前餐車庫存：<strong>${current} 份</strong><br>本次補充：<strong>+${refill} 份</strong><br>確認後餐車庫存：<strong>${total} 份</strong><br>主遊戲目前料理庫存：<strong>${mainDishCount} 份</strong><br>售價：💰 ${RECIPES[configDraft.recipe].price} / 份`;
+}
+
+// ==================== 套用設定：補貨時直接扣主遊戲料理 ====================
+async function confirmConfig(){
+const stall=getCurrentStall();
+if(!configDraft.recipe){
+if(!confirm("目前沒有選擇料理，餐車將停止販售。確定嗎？"))return;
+}
+const refill=getRefillAmount();
+const current=Number(configDraft.stock)||0;
+if(refill>0&&configDraft.recipe){
+const available=getDishCount(configDraft.recipe);
+if(available<refill){
+alert(`主遊戲料理庫存不足！\n需要 ${refill} 份，目前只有 ${available} 份。`);
+return;
+}
+setDishCount(configDraft.recipe,available-refill);
+}
+stall.skinId=configDraft.skinId||"poke";
+stall.staffId=configDraft.staffId||null;
+stall.recipe=configDraft.recipe||"";
+stall.stock=stall.recipe?Math.min(99,current+refill):0;
+await saveTruck();
+renderTruck();
+closeModal("config-modal");
+updateUI();
+if(stall.recipe&&stall.staffId)alert(`${stall.name} 設定完成！`);
+}
+
+// ==================== 餐車商店 ====================
+function openShop(){
+renderShop();
+document.getElementById("shop-modal").style.display="flex";
+}
+
+function renderShop(){
+const container=document.getElementById("shop-list");
+container.innerHTML="";
+stalls.forEach(stall=>{
+if(stall.id===0)return;
+const canAfford=heartScales>=stall.price;
+const item=document.createElement("div");
+item.className="shop-item";
+item.innerHTML=`<div><strong>${stall.name}</strong><br><span class="shop-price"><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/heart-scale.png" class="currency-icon"> ${stall.price} 心之鱗片</span></div><button class="btn-kitchen" ${stall.unlocked||!canAfford?"disabled":""}>${stall.unlocked?"已解鎖":canAfford?"購買":"鱗片不足"}</button>`;
+if(!stall.unlocked&&canAfford)item.querySelector("button").onclick=()=>buyStall(stall.id);
+container.appendChild(item);
+});
+}
+
+async function buyStall(id){
+const stall=stalls[id];
+if(!stall||stall.unlocked)return;
+if(heartScales<stall.price){
+alert("心之鱗片不足！");
+return;
+}
+if(!confirm(`花費 ${stall.price} 片心之鱗片解鎖 ${stall.name}？`))return;
+heartScales-=stall.price;
+stall.unlocked=true;
+await saveTruck();
+updateUI();
+renderShop();
+renderTruck();
+}
+
+// ==================== 啟動 ====================
+async function init(){
+mainReady=await loadMainGameData();
+if(!mainReady)return;
+initFoodTruckData();
+updateUI();
+renderTruck();
+startCustomerLoop();
+startBackgroundSalesTimer();
+await saveMainGameData();
+}
+
+document.addEventListener("visibilitychange",()=>{
+if(document.visibilityState==="hidden"&&mainReady)saveTruck();
+});
+
+window.addEventListener("pagehide",()=>{
+if(mainReady){
+try{
+syncTruckToMain();
+const json=JSON.stringify(mainData);
+localStorage.setItem(MAIN_LS_KEY,json);
+localStorage.setItem(MAIN_LS_TIME_KEY,String(Date.now()));
+}catch(e){}
+}
+});
+
+init();
+</script>
+</body>
+</html>
