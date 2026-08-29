@@ -837,6 +837,103 @@ mainData.farm.foodTruck={stalls,currentStallIndex,heartScales,ownedSkins:Array.f
 coins=Number(mainData.bal)||0;
 }
 
+//【新增】
+// ==================== 餐車批次庫存初始化 ====================
+
+function initFoodTruckStockBatches(){
+
+    const now = Date.now();
+
+    stalls.forEach(stall=>{
+
+        if(!stall){
+            return;
+        }
+
+        // 已經有 stockBatches 就直接使用
+        if(Array.isArray(stall.stockBatches)){
+
+            // 清理無效資料
+            stall.stockBatches =
+                stall.stockBatches
+                    .map(batch=>({
+
+                        qty:
+                            Math.max(
+                                0,
+                                Math.floor(
+                                    Number(batch?.qty)||0
+                                )
+                            ),
+
+                        listedAt:
+                            Number(batch?.listedAt)||now
+
+                    }))
+                    .filter(batch=>
+                        batch.qty>0
+                    );
+
+            // stock 永遠由 batches 計算
+            stall.stock =
+                stall.stockBatches.reduce(
+                    (sum,batch)=>
+                        sum+batch.qty,
+                    0
+                );
+
+            return;
+        }
+
+
+        // =========================
+        // 舊存檔相容
+        // =========================
+
+        const oldStock =
+            Math.max(
+                0,
+                Math.floor(
+                    Number(stall.stock)||0
+                )
+            );
+
+
+        /*
+           舊版本沒有 stockBatches。
+
+           為避免玩家原本庫存消失，
+           把舊庫存全部轉成一個 batch。
+
+           listedAt 使用現在時間，
+           因此不會讓舊庫存一載入就瞬間全部賣掉。
+        */
+
+        if(oldStock>0){
+
+            stall.stockBatches=[{
+
+                qty:oldStock,
+
+                listedAt:now
+
+            }];
+
+        }else{
+
+            stall.stockBatches=[];
+
+        }
+
+
+        stall.stock=
+            oldStock;
+
+    });
+
+}
+
+
 // ==================== 主遊戲料理共用 ====================
 function getDishCount(name){
 const recipe=RECIPES[name];
@@ -1143,57 +1240,122 @@ function getCustomerPokemonList(){
 }
 
 function startCustomerLoop(){
-if(customerTimer)clearTimeout(customerTimer);
-scheduleNextCustomer(500);
+    if(customerTimer){
+        clearTimeout(customerTimer);
+    }
+    scheduleNextCustomer(500);
 }
 
 function scheduleNextCustomer(delay){
-if(customerTimer)clearTimeout(customerTimer);
-customerTimer=setTimeout(spawnCustomer,delay);
+    if(customerTimer){
+        clearTimeout(customerTimer);
+    }
+    customerTimer=setTimeout(spawnCustomer,delay);
 }
+
+
+
+// ====================
+// 顧客演出循環
+// ====================
+//
+// 【重要】
+//
+// 顧客現在只負責演出：
+//
+// 1. 隨機出現一隻寶可夢
+// 2. 走到餐車前
+// 3. 顯示「點餐中..」
+// 4. 等待
+// 5. 離開
+//
+// 顧客完全不負責收益。
+//
+// ❌ 不扣 stock
+// ❌ 不扣 stockBatches
+// ❌ 不增加 mainData.bal
+// ❌ 不增加 heartScales
+//
+// 真正收益統一由：
+// processFoodTruckSales()
+// 負責。
+// ====================
 
 function spawnCustomer(){
 
-    const stall=getCurrentStall();
+    const stall=
+        getCurrentStall();
+
+
+    // ====================
+    // 餐車目前不能營業
+    // ====================
 
     if(
-        !stall.unlocked||
-        !stall.staffId||
-        !stall.recipe||
+        !stall.unlocked ||
+        !stall.staffId ||
+        !stall.recipe ||
         stall.stock<=0
     ){
+
         scheduleNextCustomer(2000);
+
         return;
+
     }
 
+
+    // ====================
+    // 已經有顧客
+    // ====================
+
     if(customerBusy){
+
         scheduleNextCustomer(1000);
+
         return;
+
     }
+
 
     customerBusy=true;
 
+
     const layer=
-        document.getElementById("customers-layer");
+        document.getElementById(
+            "customers-layer"
+        );
+
 
     const customer=
         document.createElement("div");
 
-    // 取得秘密花園完整寶可夢名單
+
+    // ====================
+    // 取得完整顧客寶可夢名單
+    // ====================
+
     const customerPokemonList=
         getCustomerPokemonList();
 
-    // 沒有寶可夢資料就等待下一次
-    if(customerPokemonList.length===0){
+
+    if(
+        customerPokemonList.length===0
+    ){
 
         customerBusy=false;
 
         scheduleNextCustomer(2000);
 
         return;
+
     }
 
+
+    // ====================
     // 隨機挑選顧客
+    // ====================
+
     const randomPokeId=
         customerPokemonList[
             Math.floor(
@@ -1202,11 +1364,22 @@ function spawnCustomer(){
             )
         ];
 
+
+    // ====================
+    // 建立顧客
+    // ====================
+
     customer.className=
         "customer-container";
 
-    customer.style.left="150px";
-    customer.style.top="585px";
+
+    customer.style.left=
+        "150px";
+
+
+    customer.style.top=
+        "585px";
+
 
     customer.innerHTML=`
 
@@ -1224,357 +1397,308 @@ function spawnCustomer(){
 
     `;
 
+
+    // ====================
+    // 設定寶可夢圖片
+    // ====================
+
     const customerImg=
         customer.querySelector(
             ".customer-gif"
         );
 
-    // GIF 失敗自動改用 PNG
+
     setPokemonImage(
         customerImg,
         randomPokeId
     );
 
+
     layer.appendChild(customer);
 
+
+    // ====================
     // 顧客走到餐車前
+    // ====================
+
     requestAnimationFrame(()=>{
 
         setTimeout(()=>{
 
-            customer.style.top="245px";
+            if(
+                !customer.isConnected
+            ){
+                return;
+            }
+
+
+            customer.style.top=
+                "245px";
 
         },80);
 
     });
 
 
-    // 到達餐車後開始點餐
-    setTimeout(async()=>{
+    // ====================
+    // 到達餐車後
+    // ====================
 
-        if(!customer.isConnected)return;
+    setTimeout(()=>{
+
+        if(
+            !customer.isConnected
+        ){
+
+            customerBusy=false;
+
+            scheduleNextCustomer(500);
+
+            return;
+
+        }
+
 
         const bubble=
             customer.querySelector(
                 ".speech-bubble"
             );
 
+
         if(bubble){
-            bubble.style.display="block";
-        }
 
-        const current=
-            getCurrentStall();
+            bubble.style.display=
+                "block";
 
-
-        // =========================
-        // 顧客購買料理
-        // =========================
-
-        if(
-            current===stall&&
-            stall.unlocked&&
-            stall.staffId&&
-            stall.recipe&&
-            stall.stock>0
-        ){
-
-            // 只扣餐車架上庫存
-            stall.stock--;
-
-            // 增加金幣
-            mainData.bal=
-                (Number(mainData.bal)||0)+
-                (RECIPES[stall.recipe]?.price||1);
-
-            // 增加心之鱗片
-            heartScales++;
-
-            // 同步金幣
-            coins=
-                mainData.bal;
-
-            updateUI();
-
-            renderTruck();
-
-            // 儲存
-            await saveTruck();
         }
 
 
-        // =========================
-        // 顧客離開
-        // =========================
+        // ====================
+        // 【純演出】
+        // ====================
+        //
+        // 這裡故意什麼都不扣。
+        //
+        // 不要放：
+        //
+        // stall.stock--
+        // stockBatches
+        // mainData.bal
+        // heartScales
+        //
+        // ====================
+
 
         setTimeout(()=>{
 
-            if(!customer.isConnected)return;
-
-            if(bubble){
-                bubble.style.display="none";
-            }
-
-            customer.style.top="585px";
-
-            setTimeout(()=>{
-
-                customer.remove();
+            if(
+                !customer.isConnected
+            ){
 
                 customerBusy=false;
 
                 scheduleNextCustomer(500);
 
+                return;
+
+            }
+
+
+            // ====================
+            // 點餐結束
+            // ====================
+
+            if(bubble){
+
+                bubble.style.display=
+                    "none";
+
+            }
+
+
+            // ====================
+            // 顧客離開
+            // ====================
+
+            customer.style.top=
+                "585px";
+
+
+            // ====================
+            // 等待離場動畫
+            // ====================
+
+            setTimeout(()=>{
+
+                if(
+                    customer.isConnected
+                ){
+
+                    customer.remove();
+
+                }
+
+
+                customerBusy=false;
+
+
+                scheduleNextCustomer(500);
+
             },6000);
+
 
         },13000);
 
+
     },6100);
+
 }
 
 
-// ==================== 餐車離線販售 ====================
-
-// 取得指定餐車最後結算時間
-function getFoodTruckStamp(truckId){
-    const key=`foodTruck_lastStamp_${truckId}`;
-    const saved=Number(localStorage.getItem(key));
-
-    // 第一次使用時，從現在開始計算
-    if(!saved){
-        const now=Date.now();
-        localStorage.setItem(key,String(now));
-        return now;
-    }
-
-    return saved;
-}
-
-
-// 更新指定餐車最後結算時間
-function updateFoodTruckStamp(truckId,time=Date.now()){
-    const key=`foodTruck_lastStamp_${truckId}`;
-    localStorage.setItem(key,String(time));
-}
-
-
-// 計算離線期間理論販售數量
-function calculateFoodTruckOfflineSales(truckId){
-
+//【新增】
+// ==================================================
+// 餐車統一收益系統
+//
+// 所有販售都從 stockBatch 的 listedAt 開始計算。
+// 在線、離線完全使用同一套邏輯。
+//
+// 每滿 5 分鐘
+// → 賣出 1 份
+//
+// 顧客只是演出。
+// 真正收益全部由這裡處理。
+// ==================================================
+async function processFoodTruckSales(){
     const now=Date.now();
-    const lastStamp=getFoodTruckStamp(truckId);
-
     const fiveMinutes=5*60*1000;
+    let totalChanged=false;
 
-    const elapsed=now-lastStamp;
+    for(const stall of stalls){
+        if(!stall) continue;
 
-    if(elapsed<fiveMinutes)return 0;
+        if(!Array.isArray(stall.stockBatches)){
+            stall.stockBatches=[];
+        }
 
-    return Math.floor(elapsed/fiveMinutes);
+        if(!stall.unlocked||!stall.staffId||!stall.recipe){
+            continue;
+        }
+
+        const price=Number(RECIPES[stall.recipe]?.price)||1;
+        let stallChanged=false;
+
+        for(const batch of stall.stockBatches){
+            if(!batch||Number(batch.qty)<=0) continue;
+
+            const qty=Number(batch.qty)||0;
+            const listedAt=Number(batch.listedAt)||now;
+            const soldUnits=Math.max(0,Number(batch.soldUnits)||0);
+
+            const elapsed=Math.max(0,now-listedAt);
+            const theoreticalSales=Math.floor(elapsed/fiveMinutes);
+            const availableSales=Math.max(0,theoreticalSales-soldUnits);
+
+            if(availableSales<=0) continue;
+
+            const sales=Math.min(availableSales,qty);
+
+            if(sales<=0) continue;
+
+            batch.qty=Math.max(0,qty-sales);
+            batch.soldUnits=soldUnits+sales;
+
+            const income=sales*price;
+
+            mainData.bal=(Number(mainData.bal)||0)+income;
+            heartScales+=sales;
+
+            totalChanged=true;
+            stallChanged=true;
+        }
+
+        stall.stockBatches=stall.stockBatches.filter(
+            batch=>Number(batch?.qty)>0
+        );
+
+        stall.stock=stall.stockBatches.reduce(
+            (sum,batch)=>sum+(Number(batch?.qty)||0),
+            0
+        );
+
+        if(stallChanged){
+            totalChanged=true;
+        }
+    }
+
+    coins=Number(mainData.bal)||0;
+
+    if(totalChanged){
+        updateUI();
+
+        if(
+            typeof currentStallIndex!=="undefined" &&
+            Number.isFinite(Number(currentStallIndex))
+        ){
+            renderTruck();
+        }
+
+        syncTruckToMain();
+        await saveMainGameData();
+    }
+
+    return totalChanged;
 }
 
 
-// ==================== 離線販售結算 ====================
-async function settleFoodTruckOfflineSales(truckId){
 
-    const stall=stalls[truckId];
+//【新增】
+// ====================
+// 餐車收益循環
+// ====================
 
-    if(!stall)return 0;
-
-
-    const now=Date.now();
-    const lastStamp=getFoodTruckStamp(truckId);
-
-    const fiveMinutes=5*60*1000;
+let foodTruckSalesTimer=
+    null;
 
 
-    // ====================
-    // 1. 計算理論販售量
-    // ====================
+function startFoodTruckSalesLoop(){
 
-    const elapsed=now-lastStamp;
+    if(foodTruckSalesTimer){
 
-    const theoreticalSales=
-        Math.floor(elapsed/fiveMinutes);
+        clearInterval(
+            foodTruckSalesTimer
+        );
 
-
-    // 不足 5 分鐘
-    if(theoreticalSales<=0)return 0;
-
-
-    // ====================
-    // 2. 檢查餐車是否可以營業
-    // ====================
-
-    if(
-        !stall.unlocked||
-        !stall.staffId||
-        !stall.recipe
-    ){
-        // 尚未營業
-        // 從現在重新開始計時
-        updateFoodTruckStamp(truckId,now);
-
-        return 0;
     }
 
 
-    // ====================
-    // 3. 檢查架上料理
-    // ====================
-
-    const shelfStock=
-        Math.max(
-            0,
-            Number(stall.stock)||0
-        );
-
-
-    // ====================
-    // 4. 理論值 vs 架上數量
+    // 每 10 秒檢查一次
     //
-    // 架上 >= 理論值
-    // → 賣理論值
+    // 不是每 10 秒賣一份。
     //
-    // 架上 < 理論值
-    // → 賣架上全部
-    // ====================
+    // 實際規則仍然是：
+    // 上架滿 5 分鐘 → 賣 1 份
 
-    const actualSales=
-        Math.min(
-            theoreticalSales,
-            shelfStock
+    foodTruckSalesTimer=
+        setInterval(
+
+            ()=>{
+
+                if(!mainReady){
+                    return;
+                }
+
+
+                processFoodTruckSales();
+
+            },
+
+            10000
+
         );
 
-
-    // ====================
-    // 5. 沒有料理可以賣
-    // ====================
-
-    if(actualSales<=0){
-
-        // 架上已經沒有料理
-        // 不讓時間一直累積
-        updateFoodTruckStamp(truckId,now);
-
-        return 0;
-    }
-
-
-    const finalSales=actualSales;
-
-if(finalSales<=0){
-    updateFoodTruckStamp(truckId,now);
-    return 0;
 }
 
-    // ====================
-    // 9. 扣除架上料理
-    // ====================
 
-    stall.stock=
-        Math.max(
-            0,
-            shelfStock-finalSales
-        );
-
-
-    // ====================
-    // 10. 計算收益
-    // ====================
-
-    const price=
-        Number(
-            RECIPES[stall.recipe]?.price
-        )||1;
-
-
-    const income=
-        finalSales*price;
-
-
-    // 增加金幣
-    mainData.bal=
-        (Number(mainData.bal)||0)+income;
-
-
-    // 增加心之鱗片
-    heartScales+=finalSales;
-
-
-    // 同步金幣
-    coins=mainData.bal;
-
-
-    // ====================
-    // 11. 更新時間戳記
-    // ====================
-
-    /*
-       如果架上料理足夠：
-
-       例如：
-       離線 1 小時
-       理論販售 12
-       架上 20
-
-       → 賣 12
-       → 時間完整往前推 60 分鐘
-    */
-
-    if(shelfStock>=theoreticalSales){
-
-        const newStamp=
-            lastStamp+
-            theoreticalSales*fiveMinutes;
-
-        updateFoodTruckStamp(
-            truckId,
-            Math.min(newStamp,now)
-        );
-
-    }else{
-
-        /*
-           如果架上料理不足：
-
-           例如：
-           離線 1 小時
-           理論販售 12
-           架上只有 5
-
-           → 只賣 5
-
-           架上已經在第 25 分鐘賣完，
-           所以不能讓剩餘 35 分鐘
-           繼續累積成未來的販售量。
-
-           直接把時間重置到現在。
-        */
-
-        updateFoodTruckStamp(
-            truckId,
-            now
-        );
-    }
-    // ====================
-    // 12. 更新畫面
-    // ====================
-    updateUI();
-    if(
-        Number(currentStallIndex)===
-        Number(truckId)
-    ){
-        renderTruck();
-    }
-    // ====================
-    // 13. 儲存
-    // ====================
-
-    syncTruckToMain();
-    await saveMainGameData();
-    return finalSales;
-}
 
 // ==================== 店員：只顯示已正式加入 s.pkm 的寶可夢，並依圖鑑號碼排序 ====================
 function getEligibleStaff(){
@@ -2003,31 +2127,221 @@ box.innerHTML=`目前餐車庫存：<strong>${current} 份</strong><br>本次補
 }
 
 // ==================== 套用設定：補貨時直接扣主遊戲料理 ====================
+//【新增】
+// ==================================================
+// 套用餐車設定
+// ==================================================
+
 async function confirmConfig(){
-const stall=getCurrentStall();
-if(!configDraft.recipe){
-if(!confirm("目前沒有選擇料理，餐車將停止販售。確定嗎？"))return;
+
+    const stall=getCurrentStall();
+
+
+    // =========================
+    // 沒有料理
+    // =========================
+
+    if(!configDraft.recipe){
+
+        if(
+            !confirm(
+                "目前沒有選擇料理，餐車將停止販售。確定嗎？"
+            )
+        ){
+
+            return;
+
+        }
+
+    }
+
+
+    const refill =
+        getRefillAmount();
+
+
+    const currentRecipe =
+        stall.recipe||"";
+
+
+    const newRecipe =
+        configDraft.recipe||"";
+
+
+    // =========================
+    // 初始化 batches
+    // =========================
+
+    if(
+        !Array.isArray(
+            stall.stockBatches
+        )
+    ){
+
+        stall.stockBatches=[];
+
+    }
+
+
+    // =========================
+    // 檢查補貨
+    // =========================
+
+    if(
+        refill>0&&
+        newRecipe
+    ){
+
+        const available =
+            getDishCount(
+                newRecipe
+            );
+
+
+        if(
+            available<refill
+        ){
+
+            alert(
+                `主遊戲料理庫存不足！\n需要 ${refill} 份，目前只有 ${available} 份。`
+            );
+
+            return;
+
+        }
+
+    }
+
+
+    // =========================
+    // 更換料理
+    // =========================
+
+    if(
+        currentRecipe&&
+        currentRecipe!==newRecipe
+    ){
+
+        /*
+           餐車改賣另一種料理。
+
+           原本餐車架上的料理不再繼續販售，
+           因此清除原本 batches。
+
+           注意：
+           這裡不退回主遊戲料理，
+           因為那些料理已經被視為上架。
+        */
+
+        stall.stockBatches=[];
+
+    }
+
+
+    // =========================
+    // 套用基本設定
+    // =========================
+
+    stall.skinId =
+        configDraft.skinId||"poke";
+
+
+    stall.staffId =
+        configDraft.staffId||null;
+
+
+    stall.recipe =
+        newRecipe;
+
+
+    // =========================
+    // 沒有料理
+    // =========================
+
+    if(!newRecipe){
+
+        stall.stockBatches=[];
+
+        stall.stock=0;
+
+    }
+
+
+    // =========================
+    // 補貨
+    // =========================
+
+    if(
+        newRecipe&&
+        refill>0
+    ){
+
+        const available =
+            getDishCount(
+                newRecipe
+            );
+
+
+        // 扣除主遊戲料理
+        setDishCount(
+            newRecipe,
+            available-refill
+        );
+
+        stall.stockBatches.push({
+    qty:refill,
+    listedAt:Date.now(),
+    soldUnits:0
+});
+
+
+    }
+
+
+    // =========================
+    // 同步 stock
+    // =========================
+
+    stall.stock =
+        stall.stockBatches.reduce(
+            (sum,batch)=>
+                sum+
+                (
+                    Number(batch?.qty)||0
+                ),
+            0
+        );
+
+
+    // =========================
+    // 儲存
+    // =========================
+
+    await saveTruck();
+
+
+    renderTruck();
+
+    closeModal(
+        "config-modal"
+    );
+
+    updateUI();
+
+
+    if(
+        stall.recipe&&
+        stall.staffId
+    ){
+
+        alert(
+            `${stall.name} 設定完成！`
+        );
+
+    }
+
 }
-const refill=getRefillAmount();
-const current=Number(configDraft.stock)||0;
-if(refill>0&&configDraft.recipe){
-const available=getDishCount(configDraft.recipe);
-if(available<refill){
-alert(`主遊戲料理庫存不足！\n需要 ${refill} 份，目前只有 ${available} 份。`);
-return;
-}
-setDishCount(configDraft.recipe,available-refill);
-}
-stall.skinId=configDraft.skinId||"poke";
-stall.staffId=configDraft.staffId||null;
-stall.recipe=configDraft.recipe||"";
-stall.stock=stall.recipe?Math.min(99,current+refill):0;
-await saveTruck();
-renderTruck();
-closeModal("config-modal");
-updateUI();
-if(stall.recipe&&stall.staffId)alert(`${stall.name} 設定完成！`);
-}
+
 
 // ==================== 餐車商店 ====================
 function openShop(){
@@ -2065,41 +2379,28 @@ renderShop();
 renderTruck();
 }
 
+
+
 // ==================== 啟動 ====================
-
 async function init(){
-mainReady=await loadMainGameData();
-if(!mainReady)return;
+    mainReady=await loadMainGameData();
 
-initFoodTruckData();
+    if(!mainReady)return;
 
-for(let i=0;i<stalls.length;i++){
-await settleFoodTruckOfflineSales(i);
+    initFoodTruckData();
+
+    await processFoodTruckSales();
+
+    updateUI();
+    renderTruck();
+
+    startCustomerLoop();
+    startFoodTruckSalesLoop();
+
+    await saveMainGameData();
 }
 
-updateUI();
-renderTruck();
-startCustomerLoop();
 
-await saveMainGameData();
-}
-
-document.addEventListener("visibilitychange",()=>{
-if(document.visibilityState==="hidden"&&mainReady)saveTruck();
-});
-
-window.addEventListener("pagehide",()=>{
-if(mainReady){
-try{
-syncTruckToMain();
-const json=JSON.stringify(mainData);
-localStorage.setItem(MAIN_LS_KEY,json);
-localStorage.setItem(MAIN_LS_TIME_KEY,String(Date.now()));
-}catch(e){}
-}
-});
-
-init();
 
 </script>
 </body>
