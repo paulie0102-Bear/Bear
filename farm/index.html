@@ -1290,81 +1290,6 @@ function getCurrentStall(){
 
 function getSkin(id){return BALL_SKINS.find(s=>s.id===id)||BALL_SKINS[0]}
 
-function renderTruck(){
-
-    const stall=getCurrentStall();
-
-    // 餐車資料還沒載入完成時，不進行渲染
-    if(!stall){
-        console.warn("renderTruck：目前沒有可用的餐車資料。");
-        return;
-    }
-
-    const ballTruck=document.getElementById("pokeball-truck");
-    const staffImg=document.getElementById("staff-gif");
-    const foodIcon=document.getElementById("food-icon");
-    const foodStatus=document.getElementById("food-status");
-    const locked=document.getElementById("truck-locked");
-
-    document.getElementById("stand-number").innerText=stall.id+1;
-
-    if(!stall.unlocked){
-
-        locked.style.display="flex";
-        staffImg.style.display="none";
-        foodIcon.innerText="🔒";
-        foodStatus.className="food-soldout";
-        foodStatus.innerText="未解鎖";
-
-        return;
-    }
-
-    locked.style.display="none";
-
-    ballTruck.className="pokeball-truck";
-
-    const skin=getSkin(stall.skinId);
-
-    ballTruck.classList.add(skin.cssClass);
-
-    foodIcon.innerText=
-        stall.recipe
-            ?(RECIPES[stall.recipe]?.icon||"🍱")
-            :"🍽️";
-
-    if(stall.recipe&&stall.stock>0){
-
-        foodStatus.className="food-status";
-        foodStatus.innerText=stall.stock;
-
-    }else if(stall.recipe){
-
-        foodStatus.className="food-soldout";
-        foodStatus.innerText="完售";
-
-    }else{
-
-        foodStatus.className="food-status";
-        foodStatus.innerText="0";
-
-    }
-
-    if(stall.staffId){
-
-        setPokemonImage(
-            staffImg,
-            stall.staffId
-        );
-
-        staffImg.style.display="block";
-
-    }else{
-
-        staffImg.style.display="none";
-
-    }
-
-}
 
 
 function handleStandClick(){
@@ -2175,168 +2100,6 @@ async function processFoodTruckSales(){
 
 
     return totalChanged;
-
-}
-
-
-
-// ====================
-// 餐車完售倒數
-// ====================
-//
-// 計算目前餐車所有 stockBatch
-// 最後一份料理預計什麼時候賣掉。
-// ====================
-
-function updateSelloutCountdown(){
-
-    const stall=getCurrentStall();
-
-    const countdown=
-        document.getElementById(
-            "sellout-countdown"
-        );
-
-    if(!countdown){
-        return;
-    }
-
-
-    // =========================
-    // 沒有可營業的餐車
-    // =========================
-    if(
-        !stall ||
-        !stall.unlocked ||
-        !stall.staffId ||
-        !stall.recipe ||
-        !Array.isArray(stall.stockBatches) ||
-        stall.stockBatches.length===0
-    ){
-
-        countdown.innerText="--:--";
-
-        return;
-
-    }
-
-
-    const now=Date.now();
-
-    let lastSaleTime=0;
-
-
-    // =========================
-    // 找出最後一份料理的販售時間
-    // =========================
-    stall.stockBatches.forEach(batch=>{
-
-        if(
-            !batch ||
-            Number(batch.qty)<=0
-        ){
-            return;
-        }
-
-
-        const qty=
-            Math.max(
-                0,
-                Math.floor(
-                    Number(batch.qty)||0
-                )
-            );
-
-
-        const listedAt=
-            Number(batch.listedAt)||now;
-
-
-        const soldUnits=
-            Math.max(
-                0,
-                Math.floor(
-                    Number(batch.soldUnits)||0
-                )
-            );
-
-
-        // 這一批最後一份的預計販售時間
-        const finalSaleTime=
-            listedAt+
-            (
-                (soldUnits+qty)*
-                5*60*1000
-            );
-
-
-        if(
-            finalSaleTime>lastSaleTime
-        ){
-
-            lastSaleTime=
-                finalSaleTime;
-
-        }
-
-    });
-
-
-    if(lastSaleTime<=0){
-
-        countdown.innerText="--:--";
-
-        return;
-
-    }
-
-
-    let remaining=
-        Math.max(
-            0,
-            lastSaleTime-now
-        );
-
-
-    // =========================
-    // 顯示 HH:MM:SS
-    // =========================
-    const totalSeconds=
-        Math.ceil(
-            remaining/1000
-        );
-
-
-    const hours=
-        Math.floor(
-            totalSeconds/3600
-        );
-
-
-    const minutes=
-        Math.floor(
-            (totalSeconds%3600)/60
-        );
-
-
-    const seconds=
-        totalSeconds%60;
-
-
-    if(hours>0){
-
-        countdown.innerText=
-            `${String(hours).padStart(2,"0")}:`+
-            `${String(minutes).padStart(2,"0")}:`+
-            `${String(seconds).padStart(2,"0")}`;
-
-    }else{
-
-        countdown.innerText=
-            `${String(minutes).padStart(2,"0")}:`+
-            `${String(seconds).padStart(2,"0")}`;
-
-    }
 
 }
 
@@ -3207,235 +2970,315 @@ function renderSalesQueue(){
 }
 
 // ==================== 套用設定：補貨時直接扣主遊戲料理 ====================
-//【新增】
-// ==================================================
-// 套用餐車設定
-// ==================================================
 async function confirmConfig(){
-
     const stall=getCurrentStall();
-
-    if(!stall){
-
-        return;
-
-    }
-
-
-    // =========================
-    // 沒有料理
-    // =========================
+    if(!stall)return;
 
     if(!configDraft.recipe){
+        if(!confirm("目前沒有選擇料理，餐車將停止營業。\n\n已經排入販賣列表的料理不會被刪除。確定嗎？"))return;
+    }
 
-        if(
-            !confirm(
-                "目前沒有選擇料理，餐車將停止販售。\n目前販賣列表不會被刪除。確定嗎？"
-            )
-        ){
+    const refill=getRefillAmount();
+    const newRecipe=configDraft.recipe||"";
 
-            return;
-
+    // =========================
+    // 統一使用 salesQueue
+    // =========================
+    if(!Array.isArray(stall.salesQueue)){
+        if(Array.isArray(stall.stockBatches)){
+            stall.salesQueue=stall.stockBatches;
+        }else{
+            stall.salesQueue=[];
         }
-
     }
-
-
-    const refill=
-        getRefillAmount();
-
-
-    const newRecipe=
-        configDraft.recipe||"";
-
-
-    // =========================
-    // 初始化販賣列表
-    // =========================
-
-    if(
-        !Array.isArray(
-            stall.salesQueue
-        )
-    ){
-
-        stall.salesQueue=[];
-
-    }
-
 
     // =========================
     // 檢查補貨數量
     // =========================
-
-    if(
-        refill>0 &&
-        newRecipe
-    ){
-
-        const available=
-            getDishCount(
-                newRecipe
-            );
-
-
-        if(
-            available<refill
-        ){
-
-            alert(
-                `主遊戲料理庫存不足！\n需要 ${refill} 份，目前只有 ${available} 份。`
-            );
-
+    if(refill>0&&newRecipe){
+        const available=getDishCount(newRecipe);
+        if(available<refill){
+            alert(`主遊戲料理庫存不足！\n需要 ${refill} 份，目前只有 ${available} 份。`);
             return;
-
         }
-
     }
 
-
     // =========================
-    // 套用外觀
+    // 套用外觀與店員
     // =========================
-
-    stall.skinId=
-        configDraft.skinId||"poke";
-
-
-    // =========================
-    // 套用店員
-    //
-    // 注意：
-    // 這裡只改店員
-    // 絕對不碰 salesQueue
-    // =========================
-
-    stall.staffId=
-        configDraft.staffId||null;
-
-
-    // =========================
-    // 料理
-    // =========================
-
-    stall.recipe=
-        newRecipe;
-
+    stall.skinId=configDraft.skinId||"poke";
+    stall.staffId=configDraft.staffId||null;
 
     // =========================
     // 補貨
-    //
-    // 每一次補貨：
-    // 新增一個批次到列表尾端
+    // 每次都是新增到列表最後
+    // 絕對不修改舊批次
     // =========================
+    if(newRecipe&&refill>0){
+        const available=getDishCount(newRecipe);
 
-    if(
-        newRecipe &&
-        refill>0
-    ){
+        setDishCount(newRecipe,available-refill);
 
-        const available=
-            getDishCount(
-                newRecipe
-            );
-
-
-        // 扣主遊戲料理
-        setDishCount(
-            newRecipe,
-            available-refill
-        );
-
-
-        // 推進販賣列表
         stall.salesQueue.push({
-
-            recipe:
-                newRecipe,
-
-            qty:
-                refill,
-
-            listedAt:
-                Date.now(),
-
-            soldUnits:
-                0
-
+            recipe:newRecipe,
+            qty:refill,
+            listedAt:Date.now(),
+            soldUnits:0
         });
-
     }
 
+    // =========================
+    // 清理無效批次
+    // =========================
+    stall.salesQueue=stall.salesQueue.filter(batch=>
+        batch&&
+        batch.recipe&&
+        Number(batch.qty)>0
+    );
 
     // =========================
-    // 如果沒有料理
-    //
-    // 只代表停止營業
-    // 不刪販賣列表
+    // 第一筆 = 目前正在販售
     // =========================
+    const currentBatch=stall.salesQueue[0];
 
-    if(!newRecipe){
-
-        stall.recipe="";
-
-    }
-
+    stall.recipe=currentBatch?currentBatch.recipe:"";
 
     // =========================
-    // 更新目前總庫存
+    // 更新總庫存
     // =========================
-
-    stall.stock=
-        stall.salesQueue.reduce(
-            (sum,batch)=>
-                sum+
-                (
-                    Number(batch?.qty)||0
-                ),
-            0
-        );
-
+    stall.stock=stall.salesQueue.reduce(
+        (sum,batch)=>sum+(Number(batch?.qty)||0),
+        0
+    );
 
     // =========================
-    // 相容舊欄位
+    // 舊欄位同步
     // =========================
-
-    stall.stockBatches=
-        stall.salesQueue;
-
-
-    // =========================
-    // 儲存
-    // =========================
+    stall.stockBatches=stall.salesQueue;
 
     await saveTruck();
 
-
     renderTruck();
-
-    renderSalesQueue();
-
     updateSelloutCountdown();
 
-    closeModal(
-        "config-modal"
-    );
-
+    closeModal("config-modal");
     updateUI();
 
+    if(stall.recipe&&stall.staffId){
+        alert(`${stall.name} 設定完成！`);
+    }
+}
 
-    if(
-        stall.recipe &&
-        stall.staffId
-    ){
 
-        alert(
-            `${stall.name} 設定完成！`
-        );
+function renderTruck(){
+    const stall=getCurrentStall();
 
+    if(!stall){
+        console.warn("renderTruck：目前沒有可用的餐車資料。");
+        return;
     }
 
+    const ballTruck=document.getElementById("pokeball-truck");
+    const staffImg=document.getElementById("staff-gif");
+    const foodIcon=document.getElementById("food-icon");
+    const foodStatus=document.getElementById("food-status");
+    const locked=document.getElementById("truck-locked");
+
+    document.getElementById("stand-number").innerText=stall.id+1;
+
+    // =========================
+    // 未解鎖
+    // =========================
+    if(!stall.unlocked){
+        locked.style.display="flex";
+        staffImg.style.display="none";
+        foodIcon.innerText="🔒";
+        foodStatus.className="food-soldout";
+        foodStatus.innerText="未解鎖";
+        return;
+    }
+
+    locked.style.display="none";
+
+    // =========================
+    // 餐車外觀
+    // =========================
+    ballTruck.className="pokeball-truck";
+
+    const skin=getSkin(stall.skinId);
+    ballTruck.classList.add(skin.cssClass);
+
+    // =========================
+    // 統一使用 salesQueue
+    // =========================
+    if(!Array.isArray(stall.salesQueue)){
+        if(Array.isArray(stall.stockBatches)){
+            stall.salesQueue=stall.stockBatches;
+        }else{
+            stall.salesQueue=[];
+        }
+    }
+
+    // 清理已賣完批次
+    stall.salesQueue=stall.salesQueue.filter(batch=>
+        batch&&
+        batch.recipe&&
+        Number(batch.qty)>0
+    );
+
+    // =========================
+    // 第一筆 = 現在正在賣
+    // =========================
+    const currentBatch=stall.salesQueue[0]||null;
+
+    if(currentBatch){
+        const currentRecipe=currentBatch.recipe;
+        const recipeData=RECIPES[currentRecipe];
+
+        stall.recipe=currentRecipe;
+
+        foodIcon.innerText=recipeData?.icon||"🍱";
+
+        const currentQty=Math.max(
+            0,
+            Math.floor(Number(currentBatch.qty)||0)
+        );
+
+        if(currentQty>0){
+            foodStatus.className="food-status";
+            foodStatus.innerText=currentQty;
+        }else{
+            foodStatus.className="food-soldout";
+            foodStatus.innerText="完售";
+        }
+    }else{
+    stall.recipe="";
+    foodIcon.innerText="🍽️";
+    foodStatus.className="food-soldout";
+    foodStatus.innerText="完售";
 }
+
+
+    // 舊欄位同步
+    stall.stockBatches=stall.salesQueue;
+
+    stall.stock=stall.salesQueue.reduce(
+        (sum,batch)=>sum+(Number(batch?.qty)||0),
+        0
+    );
+
+    // =========================
+    // 店員
+    // =========================
+    if(stall.staffId){
+        setPokemonImage(staffImg,stall.staffId);
+        staffImg.style.display="block";
+    }else{
+        staffImg.style.display="none";
+    }
+}
+
+
+function updateSelloutCountdown(){
+    const stall=getCurrentStall();
+    const countdown=document.getElementById("sellout-countdown");
+
+    if(!countdown)return;
+
+    if(
+        !stall||
+        !stall.unlocked||
+        !stall.staffId||
+        !Array.isArray(stall.salesQueue)||
+        stall.salesQueue.length===0
+    ){
+        countdown.innerText="--:--";
+        return;
+    }
+
+    const now=Date.now();
+    const fiveMinutes=5*60*1000;
+
+    let previousEndTime=0;
+    let hasBatch=false;
+
+    for(const batch of stall.salesQueue){
+        if(
+            !batch||
+            !batch.recipe||
+            Number(batch.qty)<=0
+        ){
+            continue;
+        }
+
+        const remainingQty=Math.max(
+            0,
+            Math.floor(Number(batch.qty)||0)
+        );
+
+        if(remainingQty<=0)continue;
+
+        const soldUnits=Math.max(
+            0,
+            Math.floor(Number(batch.soldUnits)||0)
+        );
+
+        const listedAt=Number(batch.listedAt)||now;
+
+        /*
+         * 第一批使用原本 listedAt。
+         * 後面的批次從前一批完售時間開始。
+         */
+        const batchStartTime=
+            previousEndTime>0
+                ?Math.max(listedAt,previousEndTime)
+                :listedAt;
+
+        /*
+         * 這一批剩餘的料理還需要多少時間。
+         *
+         * soldUnits 已經賣掉的份數不能再算一次，
+         * 所以只計算目前剩餘 qty。
+         */
+        const batchEndTime=
+            Math.max(
+                batchStartTime,
+                now
+            )+
+            remainingQty*fiveMinutes;
+
+        previousEndTime=batchEndTime;
+        hasBatch=true;
+    }
+
+    if(!hasBatch||previousEndTime<=0){
+        countdown.innerText="--:--";
+        return;
+    }
+
+    const remaining=Math.max(
+        0,
+        previousEndTime-now
+    );
+
+    const totalSeconds=Math.ceil(remaining/1000);
+
+    const hours=Math.floor(totalSeconds/3600);
+    const minutes=Math.floor((totalSeconds%3600)/60);
+    const seconds=totalSeconds%60;
+
+    if(hours>0){
+        countdown.innerText=
+            `${String(hours).padStart(2,"0")}:`+
+            `${String(minutes).padStart(2,"0")}:`+
+            `${String(seconds).padStart(2,"0")}`;
+    }else{
+        countdown.innerText=
+            `${String(minutes).padStart(2,"0")}:`+
+            `${String(seconds).padStart(2,"0")}`;
+    }
+}
+
 
 
 
