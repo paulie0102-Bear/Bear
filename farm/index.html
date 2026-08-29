@@ -1153,9 +1153,15 @@ customerTimer=setTimeout(spawnCustomer,delay);
 }
 
 function spawnCustomer(){
+
     const stall=getCurrentStall();
 
-    if(!stall.unlocked||!stall.staffId||!stall.recipe||stall.stock<=0){
+    if(
+        !stall.unlocked||
+        !stall.staffId||
+        !stall.recipe||
+        stall.stock<=0
+    ){
         scheduleNextCustomer(2000);
         return;
     }
@@ -1167,16 +1173,23 @@ function spawnCustomer(){
 
     customerBusy=true;
 
-    const layer=document.getElementById("customers-layer");
-    const customer=document.createElement("div");
+    const layer=
+        document.getElementById("customers-layer");
+
+    const customer=
+        document.createElement("div");
 
     // 取得秘密花園完整寶可夢名單
-    const customerPokemonList=getCustomerPokemonList();
+    const customerPokemonList=
+        getCustomerPokemonList();
 
     // 沒有寶可夢資料就等待下一次
     if(customerPokemonList.length===0){
+
         customerBusy=false;
+
         scheduleNextCustomer(2000);
+
         return;
     }
 
@@ -1184,16 +1197,23 @@ function spawnCustomer(){
     const randomPokeId=
         customerPokemonList[
             Math.floor(
-                Math.random()*customerPokemonList.length
+                Math.random()*
+                customerPokemonList.length
             )
         ];
 
-    customer.className="customer-container";
+    customer.className=
+        "customer-container";
+
     customer.style.left="150px";
     customer.style.top="585px";
 
     customer.innerHTML=`
-        <div class="speech-bubble" style="display:none">
+
+        <div
+            class="speech-bubble"
+            style="display:none"
+        >
             點餐中..
         </div>
 
@@ -1201,33 +1221,55 @@ function spawnCustomer(){
             class="customer-gif"
             alt="顧客寶可夢"
         >
+
     `;
 
     const customerImg=
-        customer.querySelector(".customer-gif");
+        customer.querySelector(
+            ".customer-gif"
+        );
 
-    // GIF失敗自動改用PNG
-    setPokemonImage(customerImg,randomPokeId);
+    // GIF 失敗自動改用 PNG
+    setPokemonImage(
+        customerImg,
+        randomPokeId
+    );
 
     layer.appendChild(customer);
 
+    // 顧客走到餐車前
     requestAnimationFrame(()=>{
+
         setTimeout(()=>{
+
             customer.style.top="245px";
+
         },80);
+
     });
 
+
+    // 到達餐車後開始點餐
     setTimeout(async()=>{
+
         if(!customer.isConnected)return;
 
         const bubble=
-            customer.querySelector(".speech-bubble");
+            customer.querySelector(
+                ".speech-bubble"
+            );
 
         if(bubble){
             bubble.style.display="block";
         }
 
-        const current=getCurrentStall();
+        const current=
+            getCurrentStall();
+
+
+        // =========================
+        // 顧客購買料理
+        // =========================
 
         if(
             current===stall&&
@@ -1236,33 +1278,37 @@ function spawnCustomer(){
             stall.recipe&&
             stall.stock>0
         ){
-            if(
-    current===stall&&
-    stall.unlocked&&
-    stall.staffId&&
-    stall.recipe&&
-    stall.stock>0
-){
 
-    stall.stock--;
+            // 只扣餐車架上庫存
+            stall.stock--;
 
-    mainData.bal=
-        (Number(mainData.bal)||0)+
-        (RECIPES[stall.recipe]?.price||1);
+            // 增加金幣
+            mainData.bal=
+                (Number(mainData.bal)||0)+
+                (RECIPES[stall.recipe]?.price||1);
 
-    heartScales++;
+            // 增加心之鱗片
+            heartScales++;
 
-    coins=mainData.bal;
+            // 同步金幣
+            coins=
+                mainData.bal;
 
-    updateUI();
-    renderTruck();
+            updateUI();
 
-    await saveTruck();
-}
+            renderTruck();
 
+            // 儲存
+            await saveTruck();
         }
 
+
+        // =========================
+        // 顧客離開
+        // =========================
+
         setTimeout(()=>{
+
             if(!customer.isConnected)return;
 
             if(bubble){
@@ -1272,15 +1318,20 @@ function spawnCustomer(){
             customer.style.top="585px";
 
             setTimeout(()=>{
+
                 customer.remove();
+
                 customerBusy=false;
+
                 scheduleNextCustomer(500);
+
             },6000);
 
         },13000);
 
     },6100);
 }
+
 
 // ==================== 餐車離線販售 ====================
 
