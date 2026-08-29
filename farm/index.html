@@ -42,6 +42,62 @@ button,select,input{font-family:inherit}
 .number-stand:before{content:'';position:absolute;bottom:-12px;width:8px;height:12px;background:#3e2723}
 .number-stand-title{font-size:9px;color:#f5f5f5;margin-bottom:1px}
 .number-stand-num{font-size:20px;font-weight:bold;color:#ffeb3b;text-shadow:1px 1px 0 #000}
+/* ==================== 完售倒數立牌 ==================== */
+
+.sellout-stand{
+    position:absolute;
+    bottom:0;
+    left:10px;
+
+    width:76px;
+    height:54px;
+
+    background:#8d6e63;
+    border:3px solid #3e2723;
+    border-radius:6px;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+
+    box-shadow:
+        0 4px 6px rgba(0,0,0,.3);
+
+    z-index:15;
+
+    text-align:center;
+}
+
+.sellout-stand:before{
+    content:'';
+
+    position:absolute;
+    bottom:-12px;
+
+    width:8px;
+    height:12px;
+
+    background:#3e2723;
+}
+
+.sellout-stand-title{
+    font-size:9px;
+    color:#f5f5f5;
+    margin-bottom:2px;
+}
+
+.sellout-stand-time{
+    font-size:15px;
+    font-weight:bold;
+    color:#ffeb3b;
+
+    text-shadow:
+        1px 1px 0 #000;
+
+    white-space:nowrap;
+}
+
 .truck-locked-overlay{position:absolute;inset:0;background:rgba(0,0,0,.75);display:flex;justify-content:center;align-items:center;color:#fff;font-size:20px;font-weight:bold;z-index:30;border-radius:50%}
 #customers-layer{position:absolute;inset:0;z-index:25;pointer-events:none}
 .customer-container{position:absolute;width:100px;height:120px;display:flex;flex-direction:column;align-items:center;transition:left 6s linear,top 6s linear;z-index:25}
@@ -423,7 +479,16 @@ select,input{width:100%;padding:8px;margin-top:5px;margin-bottom:8px;border:1px 
 <div class="hanging-sign"><span id="food-status" class="food-status"></span></div>
 <div id="truck-locked" class="truck-locked-overlay" style="display:none">🔒 未解鎖</div>
 </div>
-<div class="number-stand" onclick="handleStandClick()"><div class="number-stand-title">餐車</div><div class="number-stand-num" id="stand-number">1</div></div>
+<div class="number-stand" onclick="handleStandClick()">
+    <div class="number-stand-title">餐車</div>
+    <div class="number-stand-num" id="stand-number">1</div>
+</div>
+
+<div id="sellout-stand" class="sellout-stand">
+    <div class="sellout-stand-title">完售倒數</div>
+    <div class="sellout-stand-time" id="sellout-countdown">--:--</div>
+</div>
+
 </div>
 <div id="customers-layer"></div>
 </div>
@@ -815,6 +880,7 @@ let coins=0;
 let heartScales=0;
 let customerBusy=false;
 let customerTimer=null;
+let customerGeneration=0;
 let backgroundTimer=null;
 let configDraft=null;
 let mainReady=false;
@@ -1109,17 +1175,42 @@ function handleStandClick(){
 
 
 function changeStall(direction){
-currentStallIndex+=direction;
-if(currentStallIndex<0)currentStallIndex=stalls.length-1;
-if(currentStallIndex>=stalls.length)currentStallIndex=0;
-customerBusy=false;
-if(customerTimer){clearTimeout(customerTimer);customerTimer=null}
-document.getElementById("customers-layer").innerHTML="";
-syncTruckToMain();
-saveMainGameData();
-renderTruck();
-scheduleNextCustomer(300);
+
+    currentStallIndex+=direction;
+
+    if(currentStallIndex<0){
+        currentStallIndex=stalls.length-1;
+    }
+
+    if(currentStallIndex>=stalls.length){
+        currentStallIndex=0;
+    }
+
+    // =========================
+    // 取消上一台餐車的顧客循環
+    // =========================
+    customerGeneration++;
+
+    customerBusy=false;
+
+    if(customerTimer){
+        clearTimeout(customerTimer);
+        customerTimer=null;
+    }
+
+    document
+        .getElementById("customers-layer")
+        .innerHTML="";
+
+    syncTruckToMain();
+    saveMainGameData();
+
+    renderTruck();
+    updateSelloutCountdown();
+    // 新餐車只啟動一次新的顧客循環
+    scheduleNextCustomer(300);
 }
+
 
 
 
@@ -1316,15 +1407,13 @@ function scheduleNextCustomer(delay){
 
 function spawnCustomer(){
 
-    const stall=
-        getCurrentStall();
+    const stall=getCurrentStall();
 
-
-    // ====================
+    // =========================
     // 餐車目前不能營業
-    // ====================
-
+    // =========================
     if(
+        !stall ||
         !stall.unlocked ||
         !stall.staffId ||
         !stall.recipe ||
@@ -1338,10 +1427,9 @@ function spawnCustomer(){
     }
 
 
-    // ====================
+    // =========================
     // 已經有顧客
-    // ====================
-
+    // =========================
     if(customerBusy){
 
         scheduleNextCustomer(1000);
@@ -1350,6 +1438,9 @@ function spawnCustomer(){
 
     }
 
+
+    // 記住這一次顧客循環屬於哪一台餐車
+    const myGeneration=customerGeneration;
 
     customerBusy=true;
 
@@ -1364,10 +1455,9 @@ function spawnCustomer(){
         document.createElement("div");
 
 
-    // ====================
-    // 取得完整顧客寶可夢名單
-    // ====================
-
+    // =========================
+    // 取得顧客寶可夢
+    // =========================
     const customerPokemonList=
         getCustomerPokemonList();
 
@@ -1376,18 +1466,15 @@ function spawnCustomer(){
         customerPokemonList.length===0
     ){
 
-        customerBusy=false;
-
-        scheduleNextCustomer(2000);
+        if(myGeneration===customerGeneration){
+            customerBusy=false;
+            scheduleNextCustomer(2000);
+        }
 
         return;
 
     }
 
-
-    // ====================
-    // 隨機挑選顧客
-    // ====================
 
     const randomPokeId=
         customerPokemonList[
@@ -1398,21 +1485,14 @@ function spawnCustomer(){
         ];
 
 
-    // ====================
+    // =========================
     // 建立顧客
-    // ====================
-
+    // =========================
     customer.className=
         "customer-container";
 
-
-    customer.style.left=
-        "150px";
-
-
-    customer.style.top=
-        "585px";
-
+    customer.style.left="150px";
+    customer.style.top="585px";
 
     customer.innerHTML=`
 
@@ -1431,10 +1511,6 @@ function spawnCustomer(){
     `;
 
 
-    // ====================
-    // 設定寶可夢圖片
-    // ====================
-
     const customerImg=
         customer.querySelector(
             ".customer-gif"
@@ -1447,45 +1523,47 @@ function spawnCustomer(){
     );
 
 
+    // 如果建立期間已經切換餐車
+    if(myGeneration!==customerGeneration){
+
+        return;
+
+    }
+
+
     layer.appendChild(customer);
 
 
-    // ====================
+    // =========================
     // 顧客走到餐車前
-    // ====================
-
+    // =========================
     requestAnimationFrame(()=>{
 
         setTimeout(()=>{
 
             if(
+                myGeneration!==customerGeneration ||
                 !customer.isConnected
             ){
                 return;
             }
 
-
-            customer.style.top=
-                "245px";
+            customer.style.top="245px";
 
         },80);
 
     });
 
 
-    // ====================
+    // =========================
     // 到達餐車後
-    // ====================
-
+    // =========================
     setTimeout(()=>{
 
         if(
+            myGeneration!==customerGeneration ||
             !customer.isConnected
         ){
-
-            customerBusy=false;
-
-            scheduleNextCustomer(500);
 
             return;
 
@@ -1500,68 +1578,52 @@ function spawnCustomer(){
 
         if(bubble){
 
-            bubble.style.display=
-                "block";
+            bubble.style.display="block";
 
         }
 
 
-        // ====================
-        // 【純演出】
-        // ====================
-        //
-        // 這裡故意什麼都不扣。
-        //
-        // 不要放：
-        //
-        // stall.stock--
-        // stockBatches
-        // mainData.bal
-        // heartScales
-        //
-        // ====================
-
-
+        // =========================
+        // 點餐等待
+        // =========================
         setTimeout(()=>{
 
             if(
+                myGeneration!==customerGeneration ||
                 !customer.isConnected
             ){
-
-                customerBusy=false;
-
-                scheduleNextCustomer(500);
 
                 return;
 
             }
 
 
-            // ====================
-            // 點餐結束
-            // ====================
-
             if(bubble){
 
-                bubble.style.display=
-                    "none";
+                bubble.style.display="none";
 
             }
 
 
-            // ====================
+            // =========================
             // 顧客離開
-            // ====================
-
-            customer.style.top=
-                "585px";
+            // =========================
+            customer.style.top="585px";
 
 
-            // ====================
+            // =========================
             // 等待離場動畫
-            // ====================
-
+            // =========================
             setTimeout(()=>{
+
+                if(
+                    myGeneration!==customerGeneration
+                ){
+
+                    return;
+
+                }
+
 
                 if(
                     customer.isConnected
@@ -1574,18 +1636,16 @@ function spawnCustomer(){
 
                 customerBusy=false;
 
-
                 scheduleNextCustomer(500);
 
             },6000);
 
-
         },13000);
-
 
     },6100);
 
 }
+
 
 
 //【新增】
@@ -1705,6 +1765,165 @@ async function processFoodTruckSales(){
 }
 
 
+// ====================
+// 餐車完售倒數
+// ====================
+//
+// 計算目前餐車所有 stockBatch
+// 最後一份料理預計什麼時候賣掉。
+// ====================
+
+function updateSelloutCountdown(){
+
+    const stall=getCurrentStall();
+
+    const countdown=
+        document.getElementById(
+            "sellout-countdown"
+        );
+
+    if(!countdown){
+        return;
+    }
+
+
+    // =========================
+    // 沒有可營業的餐車
+    // =========================
+    if(
+        !stall ||
+        !stall.unlocked ||
+        !stall.staffId ||
+        !stall.recipe ||
+        !Array.isArray(stall.stockBatches) ||
+        stall.stockBatches.length===0
+    ){
+
+        countdown.innerText="--:--";
+
+        return;
+
+    }
+
+
+    const now=Date.now();
+
+    let lastSaleTime=0;
+
+
+    // =========================
+    // 找出最後一份料理的販售時間
+    // =========================
+    stall.stockBatches.forEach(batch=>{
+
+        if(
+            !batch ||
+            Number(batch.qty)<=0
+        ){
+            return;
+        }
+
+
+        const qty=
+            Math.max(
+                0,
+                Math.floor(
+                    Number(batch.qty)||0
+                )
+            );
+
+
+        const listedAt=
+            Number(batch.listedAt)||now;
+
+
+        const soldUnits=
+            Math.max(
+                0,
+                Math.floor(
+                    Number(batch.soldUnits)||0
+                )
+            );
+
+
+        // 這一批最後一份的預計販售時間
+        const finalSaleTime=
+            listedAt+
+            (
+                (soldUnits+qty)*
+                5*60*1000
+            );
+
+
+        if(
+            finalSaleTime>lastSaleTime
+        ){
+
+            lastSaleTime=
+                finalSaleTime;
+
+        }
+
+    });
+
+
+    if(lastSaleTime<=0){
+
+        countdown.innerText="--:--";
+
+        return;
+
+    }
+
+
+    let remaining=
+        Math.max(
+            0,
+            lastSaleTime-now
+        );
+
+
+    // =========================
+    // 顯示 HH:MM:SS
+    // =========================
+    const totalSeconds=
+        Math.ceil(
+            remaining/1000
+        );
+
+
+    const hours=
+        Math.floor(
+            totalSeconds/3600
+        );
+
+
+    const minutes=
+        Math.floor(
+            (totalSeconds%3600)/60
+        );
+
+
+    const seconds=
+        totalSeconds%60;
+
+
+    if(hours>0){
+
+        countdown.innerText=
+            `${String(hours).padStart(2,"0")}:`+
+            `${String(minutes).padStart(2,"0")}:`+
+            `${String(seconds).padStart(2,"0")}`;
+
+    }else{
+
+        countdown.innerText=
+            `${String(minutes).padStart(2,"0")}:`+
+            `${String(seconds).padStart(2,"0")}`;
+
+    }
+
+}
 
 
 //【新增】
@@ -1712,8 +1931,8 @@ async function processFoodTruckSales(){
 // 餐車收益循環
 // ====================
 
-let foodTruckSalesTimer=
-    null;
+let foodTruckSalesTimer= null;
+let selloutCountdownTimer=null;
 
 
 function startFoodTruckSalesLoop(){
@@ -1726,14 +1945,16 @@ function startFoodTruckSalesLoop(){
 
     }
 
+    if(selloutCountdownTimer){
 
-    // 每 10 秒檢查一次
-    //
-    // 不是每 10 秒賣一份。
-    //
-    // 實際規則仍然是：
-    // 上架滿 5 分鐘 → 賣 1 份
+        clearInterval(
+            selloutCountdownTimer
+        );
 
+    }
+    // =========================
+    // 每 10 秒檢查一次真正販售
+    // =========================
     foodTruckSalesTimer=
         setInterval(
 
@@ -1743,7 +1964,6 @@ function startFoodTruckSalesLoop(){
                     return;
                 }
 
-
                 processFoodTruckSales();
 
             },
@@ -1751,8 +1971,32 @@ function startFoodTruckSalesLoop(){
             10000
 
         );
+    // =========================
+    // 每 1 秒更新完售倒數
+    // =========================
+    selloutCountdownTimer=
+        setInterval(
+
+            ()=>{
+
+                if(!mainReady){
+                    return;
+                }
+
+                updateSelloutCountdown();
+
+            },
+
+            1000
+
+        );
+
+
+    // 立即顯示一次
+    updateSelloutCountdown();
 
 }
+
 
 
 
