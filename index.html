@@ -3060,10 +3060,13 @@ function autoFillSlot(emoji) {
 }
 
 function startCook(i){
-    const f=s.farm,p=f.prod[`cook_${i}`];
+    const f=s.farm;
+    const p=f.prod[`cook_${i}`];
+
     if(!p)return alert("找不到料理線！");
     if(p.end>Date.now())return alert("這條料理線目前正在料理中！");
-    if(!Array.isArray(p.slots)||p.slots.some(x=>!x))return alert("請放滿三種材料！");
+    if(!Array.isArray(p.slots)||p.slots.some(x=>!x))
+        return alert("請放滿三種材料！");
 
     const [s1,s2,s3]=p.slots;
     const isJirachi=!!p.jirachiEnabled;
@@ -3082,36 +3085,143 @@ function startCook(i){
         if(f.jirachiJobs?.[`cook_${i}`])
             return alert("小幫手目前正在協助這條料理線！");
 
-        const sets=jirachiCanStart(i);
-        if(sets<=0)return alert("材料不足，快去生產吧！");
+        /*
+         * =========================
+         * 每日小幫手委託次數
+         *
+         * 今天固定 4 個指定料理。
+         * 每送出 1 種，就記錄到 jirachiServed。
+         *
+         * 四種全部送完：
+         * → 直接判定今日次數已用完
+         * → 不再檢查料理庫存
+         * → 不再顯示「沒有指定料理」
+         * =========================
+         */
 
-        if(!f.jirachiRequests||f.jirachiRequests.length===0){
+        const requests=
+            Array.isArray(f.jirachiRequests)
+                ?f.jirachiRequests
+                :[];
+
+        const served=
+            f.jirachiServed||{};
+
+        const servedCount=
+            requests.filter(
+                formula=>!!served[formula]
+            ).length;
+
+        if(
+            requests.length>0 &&
+            servedCount>=requests.length
+        ){
             p.jirachiEnabled=false;
-            if(typeof saveGameData==="function")saveGameData();
-            return alert("✨ 小幫手今天的料理委託次數已用完！");
+
+            if(typeof saveGameData==="function")
+                saveGameData();
+
+            renderGarden();
+
+            return alert(
+                "✨ 小幫手今天的料理委託次數已用完！\n\n明天會重新產生 4 種指定料理。"
+            );
         }
 
-        const available=f.jirachiRequests.filter(formula=>{
-            const recipe=GARDEN.recipes[formula];
-            const alreadyServed=!!(f.jirachiServed||{})[formula];
-            return recipe&&!alreadyServed&&(f.dishes[recipe.icon]||0)>0;
-        });
+        /*
+         * =========================
+         * 檢查材料套數
+         * =========================
+         */
 
-        if(available.length===0)
-            return alert("✨ 小幫手今天指定的料理你目前都沒有。\n\n請先製作指定料理，再啟用小幫手。");
+        const sets=jirachiCanStart(i);
 
-        const payFormula=available[Math.floor(Math.random()*available.length)];
-        const payRecipe=GARDEN.recipes[payFormula];
+        if(sets<=0)
+            return alert("材料不足，快去生產吧！");
+
+        /*
+         * =========================
+         * 找出今天尚未完成、
+         * 而且玩家目前擁有的指定料理
+         * =========================
+         */
+
+        const available=
+            requests.filter(formula=>{
+                const recipe=
+                    GARDEN.recipes[formula];
+
+                const alreadyServed=
+                    !!served[formula];
+
+                return(
+                    recipe&&
+                    !alreadyServed&&
+                    (f.dishes[recipe.icon]||0)>0
+                );
+            });
+
+        /*
+         * 今天還有委託，
+         * 但玩家沒有任何指定料理
+         */
+
+        if(available.length===0){
+            return alert(
+                "✨ 小幫手今天指定的料理你目前都沒有。\n\n請先製作指定料理，再啟用小幫手。"
+            );
+        }
+
+        /*
+         * =========================
+         * 隨機選一個今天尚未支付
+         * 且玩家擁有的指定料理
+         * =========================
+         */
+
+        const payFormula=
+            available[
+                Math.floor(
+                    Math.random()*available.length
+                )
+            ];
+
+        const payRecipe=
+            GARDEN.recipes[payFormula];
+
+        /*
+         * =========================
+         * 支付料理
+         * =========================
+         */
 
         f.dishes[payRecipe.icon]--;
-        f.jirachiServed=f.jirachiServed||{};
+
+        f.jirachiServed=
+            f.jirachiServed||{};
+
         f.jirachiServed[payFormula]=true;
+
+        /*
+         * =========================
+         * 消耗材料
+         * =========================
+         */
 
         f.inv[s1]-=sets;
         f.inv[s2]-=sets;
         f.inv[s3]-=sets;
 
+        /*
+         * =========================
+         * 建立小幫手工作
+         * =========================
+         */
+
         const now=Date.now();
+
+        f.jirachiJobs=
+            f.jirachiJobs||{};
 
         f.jirachiJobs[`cook_${i}`]={
             startTime:now,
@@ -3121,22 +3231,38 @@ function startCook(i){
             done:false
         };
 
-        p.end=now+sets*3600000;
+        p.end=
+            now+sets*3600000;
 
-        alert(`✨ 小幫手開始協助料理 #${i+1}！\n\n🍽️ 支付：${payRecipe.icon} ${payRecipe.name}\n📦 消耗：${sets} 套材料\n⏰ 協助時間：${sets} 小時`);
+        alert(
+            `✨ 小幫手開始協助料理 #${i+1}！\n\n`+
+            `🍽️ 支付：${payRecipe.icon} ${payRecipe.name}\n`+
+            `📦 消耗：${sets} 套材料\n`+
+            `⏰ 協助時間：${sets} 小時`
+        );
     }else{
-        if((f.inv[s1]||0)<=0||(f.inv[s2]||0)<=0||(f.inv[s3]||0)<=0)
+        if(
+            (f.inv[s1]||0)<=0||
+            (f.inv[s2]||0)<=0||
+            (f.inv[s3]||0)<=0
+        ){
             return alert("材料不足，快去生產吧！");
+        }
 
         f.inv[s1]--;
         f.inv[s2]--;
         f.inv[s3]--;
-        p.end=Date.now()+3600000;
+
+        p.end=
+            Date.now()+3600000;
     }
 
     renderGarden();
-    if(typeof saveGameData==="function")saveGameData();
+
+    if(typeof saveGameData==="function")
+        saveGameData();
 }
+
 
 function collectDish(lineIdx) {
     const f = s.farm;
