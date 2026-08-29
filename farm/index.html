@@ -1617,7 +1617,6 @@ async function processFoodTruckSales(){
             continue;
         }
 
-        const price=Number(RECIPES[stall.recipe]?.price)||1;
         let stallChanged=false;
 
         for(const batch of stall.stockBatches){
@@ -1629,34 +1628,53 @@ async function processFoodTruckSales(){
 
             const elapsed=Math.max(0,now-listedAt);
             const theoreticalSales=Math.floor(elapsed/fiveMinutes);
-            const availableSales=Math.max(0,theoreticalSales-soldUnits);
+            const availableSales=Math.max(
+                0,
+                theoreticalSales-soldUnits
+            );
 
             if(availableSales<=0) continue;
 
-            const sales=Math.min(availableSales,qty);
+            const sales=Math.min(
+                availableSales,
+                qty
+            );
 
             if(sales<=0) continue;
 
-            batch.qty=Math.max(0,qty-sales);
-            batch.soldUnits=soldUnits+sales;
+            batch.qty=Math.max(
+                0,
+                qty-sales
+            );
 
-            const income=sales*price;
+            batch.soldUnits=
+                soldUnits+sales;
 
-            mainData.bal=(Number(mainData.bal)||0)+income;
+            // =========================
+            // 餐車唯一收益
+            // 每賣出 1 份料理
+            // → +1 心之鱗片
+            //
+            // 不增加金幣
+            // =========================
             heartScales+=sales;
 
             totalChanged=true;
             stallChanged=true;
         }
 
-        stall.stockBatches=stall.stockBatches.filter(
-            batch=>Number(batch?.qty)>0
-        );
+        stall.stockBatches=
+            stall.stockBatches.filter(
+                batch=>Number(batch?.qty)>0
+            );
 
-        stall.stock=stall.stockBatches.reduce(
-            (sum,batch)=>sum+(Number(batch?.qty)||0),
-            0
-        );
+        stall.stock=
+            stall.stockBatches.reduce(
+                (sum,batch)=>
+                    sum+
+                    (Number(batch?.qty)||0),
+                0
+            );
 
         if(stallChanged){
             totalChanged=true;
@@ -1666,21 +1684,26 @@ async function processFoodTruckSales(){
     coins=Number(mainData.bal)||0;
 
     if(totalChanged){
+
         updateUI();
 
         if(
             typeof currentStallIndex!=="undefined" &&
-            Number.isFinite(Number(currentStallIndex))
+            Number.isFinite(
+                Number(currentStallIndex)
+            )
         ){
             renderTruck();
         }
 
         syncTruckToMain();
+
         await saveMainGameData();
     }
 
     return totalChanged;
 }
+
 
 
 
@@ -2146,7 +2169,8 @@ const selected=configDraft.recipe===name;
 const count=getDishCount(name);
 const row=document.createElement("div");
 row.className=`recipe-row ${selected?"selected":""}`;
-row.innerHTML=`<div class="recipe-icon">${recipe.icon}</div><div class="recipe-info"><div class="recipe-name">${name}</div><div class="recipe-price">售價 💰 ${recipe.price} / 份</div><div class="stock-info">主遊戲料理庫存：${count} 份${selected?"｜目前配置中":"｜點擊選擇"}</div></div>`;
+row.innerHTML=`<div class="recipe-icon">${recipe.icon}</div><div class="recipe-info"><div class="recipe-name">${name}</div><div class="recipe-price">收益 <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/heart-scale.png" class="currency-icon" alt="心之鱗片"> 1 / 份</div>
+<div class="stock-info">主遊戲料理庫存：${count} 份${selected?"｜目前配置中":"｜點擊選擇"}</div></div>`;
 row.onclick=()=>{
 if(configDraft.recipe!==name){
 configDraft.recipe=name;
@@ -2187,7 +2211,8 @@ const refill=getRefillAmount();
 const current=Number(configDraft.stock)||0;
 const total=Math.min(99,current+refill);
 const mainDishCount=getDishCount(configDraft.recipe);
-box.innerHTML=`目前餐車庫存：<strong>${current} 份</strong><br>本次補充：<strong>+${refill} 份</strong><br>確認後餐車庫存：<strong>${total} 份</strong><br>主遊戲目前料理庫存：<strong>${mainDishCount} 份</strong><br>售價：💰 ${RECIPES[configDraft.recipe].price} / 份`;
+box.innerHTML=`目前餐車庫存：<strong>${current} 份</strong><br>本次補充：<strong>+${refill} 份</strong><br>確認後餐車庫存：<strong>${total} 份</strong><br>主遊戲目前料理庫存：<strong>${mainDishCount} 份</strong><br>收益：<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/heart-scale.png" class="currency-icon" alt="心之鱗片"> 1 / 份
+`;
 }
 
 // ==================== 套用設定：補貨時直接扣主遊戲料理 ====================
