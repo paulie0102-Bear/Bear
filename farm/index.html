@@ -839,99 +839,54 @@ coins=Number(mainData.bal)||0;
 
 //【新增】
 // ==================== 餐車批次庫存初始化 ====================
-
 function initFoodTruckStockBatches(){
-
-    const now = Date.now();
+    const now=Date.now();
 
     stalls.forEach(stall=>{
+        if(!stall)return;
 
-        if(!stall){
-            return;
-        }
-
-        // 已經有 stockBatches 就直接使用
         if(Array.isArray(stall.stockBatches)){
+            stall.stockBatches=stall.stockBatches
+                .map(batch=>({
+                    qty:Math.max(
+                        0,
+                        Math.floor(Number(batch?.qty)||0)
+                    ),
+                    listedAt:Number(batch?.listedAt)||now,
+                    soldUnits:Math.max(
+                        0,
+                        Math.floor(Number(batch?.soldUnits)||0)
+                    )
+                }))
+                .filter(batch=>batch.qty>0);
 
-            // 清理無效資料
-            stall.stockBatches =
-                stall.stockBatches
-                    .map(batch=>({
-
-                        qty:
-                            Math.max(
-                                0,
-                                Math.floor(
-                                    Number(batch?.qty)||0
-                                )
-                            ),
-
-                        listedAt:
-                            Number(batch?.listedAt)||now
-
-                    }))
-                    .filter(batch=>
-                        batch.qty>0
-                    );
-
-            // stock 永遠由 batches 計算
-            stall.stock =
-                stall.stockBatches.reduce(
-                    (sum,batch)=>
-                        sum+batch.qty,
-                    0
-                );
-
-            return;
-        }
-
-
-        // =========================
-        // 舊存檔相容
-        // =========================
-
-        const oldStock =
-            Math.max(
-                0,
-                Math.floor(
-                    Number(stall.stock)||0
-                )
+            stall.stock=stall.stockBatches.reduce(
+                (sum,batch)=>sum+batch.qty,
+                0
             );
 
-
-        /*
-           舊版本沒有 stockBatches。
-
-           為避免玩家原本庫存消失，
-           把舊庫存全部轉成一個 batch。
-
-           listedAt 使用現在時間，
-           因此不會讓舊庫存一載入就瞬間全部賣掉。
-        */
-
-        if(oldStock>0){
-
-            stall.stockBatches=[{
-
-                qty:oldStock,
-
-                listedAt:now
-
-            }];
-
-        }else{
-
-            stall.stockBatches=[];
-
+            return;
         }
 
+        const oldStock=Math.max(
+            0,
+            Math.floor(Number(stall.stock)||0)
+        );
 
-        stall.stock=
-            oldStock;
+        if(oldStock>0){
+            stall.stockBatches=[{
+                qty:oldStock,
+                listedAt:now,
+                soldUnits:0
+            }];
+        }else{
+            stall.stockBatches=[];
+        }
 
+        stall.stock=oldStock;
     });
-
 }
+
 
 
 // ==================== 主遊戲料理共用 ====================
@@ -2389,6 +2344,8 @@ async function init(){
 
     initFoodTruckData();
 
+    initFoodTruckStockBatches();
+
     await processFoodTruckSales();
 
     updateUI();
@@ -2399,6 +2356,7 @@ async function init(){
 
     await saveMainGameData();
 }
+
 
 
 
