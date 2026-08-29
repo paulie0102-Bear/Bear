@@ -981,54 +981,132 @@ await saveMainGameData();
 }
 
 // ==================== 餐車渲染 ====================
-function getCurrentStall(){return stalls[currentStallIndex]}
+function getCurrentStall(){
+
+    // 餐車資料還沒準備好
+    if(!Array.isArray(stalls) || stalls.length===0){
+        return null;
+    }
+
+    // 防止 currentStallIndex 無效
+    if(
+        !Number.isInteger(currentStallIndex) ||
+        currentStallIndex<0 ||
+        currentStallIndex>=stalls.length
+    ){
+        currentStallIndex=0;
+    }
+
+    return stalls[currentStallIndex]||null;
+}
+
 function getSkin(id){return BALL_SKINS.find(s=>s.id===id)||BALL_SKINS[0]}
 
 function renderTruck(){
-const stall=getCurrentStall();
-const ballTruck=document.getElementById("pokeball-truck");
-const staffImg=document.getElementById("staff-gif");
-const foodIcon=document.getElementById("food-icon");
-const foodStatus=document.getElementById("food-status");
-const locked=document.getElementById("truck-locked");
-document.getElementById("stand-number").innerText=stall.id+1;
 
-if(!stall.unlocked){
-locked.style.display="flex";
-staffImg.style.display="none";
-foodIcon.innerText="🔒";
-foodStatus.className="food-soldout";
-foodStatus.innerText="未解鎖";
-return;
+    const stall=getCurrentStall();
+
+    // 餐車資料還沒載入完成時，不進行渲染
+    if(!stall){
+        console.warn("renderTruck：目前沒有可用的餐車資料。");
+        return;
+    }
+
+    const ballTruck=document.getElementById("pokeball-truck");
+    const staffImg=document.getElementById("staff-gif");
+    const foodIcon=document.getElementById("food-icon");
+    const foodStatus=document.getElementById("food-status");
+    const locked=document.getElementById("truck-locked");
+
+    document.getElementById("stand-number").innerText=stall.id+1;
+
+    if(!stall.unlocked){
+
+        locked.style.display="flex";
+        staffImg.style.display="none";
+        foodIcon.innerText="🔒";
+        foodStatus.className="food-soldout";
+        foodStatus.innerText="未解鎖";
+
+        return;
+    }
+
+    locked.style.display="none";
+
+    ballTruck.className="pokeball-truck";
+
+    const skin=getSkin(stall.skinId);
+
+    ballTruck.classList.add(skin.cssClass);
+
+    foodIcon.innerText=
+        stall.recipe
+            ?(RECIPES[stall.recipe]?.icon||"🍱")
+            :"🍽️";
+
+    if(stall.recipe&&stall.stock>0){
+
+        foodStatus.className="food-status";
+        foodStatus.innerText=stall.stock;
+
+    }else if(stall.recipe){
+
+        foodStatus.className="food-soldout";
+        foodStatus.innerText="完售";
+
+    }else{
+
+        foodStatus.className="food-status";
+        foodStatus.innerText="0";
+
+    }
+
+    if(stall.staffId){
+
+        setPokemonImage(
+            staffImg,
+            stall.staffId
+        );
+
+        staffImg.style.display="block";
+
+    }else{
+
+        staffImg.style.display="none";
+
+    }
+
 }
-locked.style.display="none";
-ballTruck.className="pokeball-truck";
-const skin=getSkin(stall.skinId);
-ballTruck.classList.add(skin.cssClass);
-foodIcon.innerText=stall.recipe?(RECIPES[stall.recipe]?.icon||"🍱"):"🍽️";
-if(stall.recipe&&stall.stock>0){
-foodStatus.className="food-status";
-foodStatus.innerText=stall.stock;
-}else if(stall.recipe){
-foodStatus.className="food-soldout";
-foodStatus.innerText="完售";
-}else{
-foodStatus.className="food-status";
-foodStatus.innerText="0";
-}
-if(stall.staffId){
-    setPokemonImage(staffImg,stall.staffId);
-    staffImg.style.display="block";
-}else{
-staffImg.style.display="none";
-}
-}
+
 
 function handleStandClick(){
-const stall=getCurrentStall();
-if(stall.unlocked)openConfigModal();
-else openShop();
+
+    // 主遊戲資料尚未準備好
+    if(!mainReady){
+        console.warn("主遊戲資料尚未載入完成。");
+        return;
+    }
+
+    const stall=getCurrentStall();
+
+    // 找不到餐車資料
+    if(!stall){
+        console.warn("找不到目前餐車資料。");
+        return;
+    }
+
+    if(stall.unlocked){
+
+        openConfigModal();
+
+    }else{
+
+        openShop();
+
+    }
+
 }
+
 
 function changeStall(direction){
 currentStallIndex+=direction;
@@ -1743,20 +1821,51 @@ return FALLBACK_NAMES[id]||`No.${id}`;
 
 // ==================== 餐車設定 ====================
 function openConfigModal(){
-const stall=getCurrentStall();
-if(!stall.unlocked){
-openShop();
-return;
+
+    // 主遊戲資料尚未載入完成
+    if(!mainReady){
+        console.warn("餐車資料尚未初始化完成，暫時無法開啟設定。");
+        return;
+    }
+
+    const stall=getCurrentStall();
+
+    // 防止餐車資料不存在
+    if(!stall){
+        console.warn("找不到目前餐車資料。");
+        return;
+    }
+
+    // 餐車尚未解鎖
+    if(!stall.unlocked){
+        openShop();
+        return;
+    }
+
+    configDraft={
+
+        skinId:
+            stall.skinId||"poke",
+
+        staffId:
+            stall.staffId||null,
+
+        recipe:
+            stall.recipe||"",
+
+        stock:
+            stall.stock||0
+
+    };
+
+    renderConfig();
+
+    document
+        .getElementById("config-modal")
+        .style.display="flex";
+
 }
-configDraft={
-skinId:stall.skinId||"poke",
-staffId:stall.staffId||null,
-recipe:stall.recipe||"",
-stock:stall.stock||0
-};
-renderConfig();
-document.getElementById("config-modal").style.display="flex";
-}
+
 
 function closeModal(id){
 document.getElementById(id).style.display="none";
@@ -2338,6 +2447,7 @@ renderTruck();
 
 // ==================== 啟動 ====================
 async function init(){
+
     mainReady=await loadMainGameData();
 
     if(!mainReady)return;
@@ -2349,13 +2459,18 @@ async function init(){
     await processFoodTruckSales();
 
     updateUI();
+
     renderTruck();
 
     startCustomerLoop();
+
     startFoodTruckSalesLoop();
 
     await saveMainGameData();
+
 }
+
+init();
 
 
 
