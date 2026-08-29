@@ -1236,30 +1236,30 @@ function spawnCustomer(){
             stall.recipe&&
             stall.stock>0
         ){
-            const available=
-                getDishCount(stall.recipe);
+            if(
+    current===stall&&
+    stall.unlocked&&
+    stall.staffId&&
+    stall.recipe&&
+    stall.stock>0
+){
 
-            if(available>0){
-                setDishCount(
-                    stall.recipe,
-                    available-1
-                );
+    stall.stock--;
 
-                stall.stock--;
+    mainData.bal=
+        (Number(mainData.bal)||0)+
+        (RECIPES[stall.recipe]?.price||1);
 
-                mainData.bal=
-                    (Number(mainData.bal)||0)+
-                    (RECIPES[stall.recipe]?.price||1);
+    heartScales++;
 
-                heartScales++;
+    coins=mainData.bal;
 
-                coins=mainData.bal;
+    updateUI();
+    renderTruck();
 
-                updateUI();
-                renderTruck();
+    await saveTruck();
+}
 
-                await saveTruck();
-            }
         }
 
         setTimeout(()=>{
@@ -1410,48 +1410,12 @@ async function settleFoodTruckOfflineSales(truckId){
     }
 
 
-    // ====================
-    // 6. 檢查秘密花園料理
-    // ====================
+    const finalSales=actualSales;
 
-    const dishCount=
-        Math.max(
-            0,
-            Number(getDishCount(stall.recipe))||0
-        );
-
-
-    // 實際能賣出的數量
-    // 還要受到秘密花園料理數量限制
-    const finalSales=
-        Math.min(
-            actualSales,
-            dishCount
-        );
-
-
-    // ====================
-    // 7. 秘密花園料理不足
-    // ====================
-
-    if(finalSales<=0){
-
-        // 沒有料理可以供應
-        updateFoodTruckStamp(truckId,now);
-
-        return 0;
-    }
-
-
-    // ====================
-    // 8. 扣除秘密花園料理
-    // ====================
-
-    setDishCount(
-        stall.recipe,
-        dishCount-finalSales
-    );
-
+if(finalSales<=0){
+    updateFoodTruckStamp(truckId,now);
+    return 0;
+}
 
     // ====================
     // 9. 扣除架上料理
