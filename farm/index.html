@@ -454,6 +454,93 @@ select,input{width:100%;padding:8px;margin-top:5px;margin-bottom:8px;border:1px 
 
     background:#ffebee;
 }
+/* ==================== 餐車販賣列表 ==================== */
+
+.sales-queue{
+    margin-top:10px;
+    background:#f8f9fa;
+    border:2px solid #ddd;
+    border-radius:8px;
+    padding:8px;
+}
+
+.sales-queue-title{
+    font-size:14px;
+    font-weight:bold;
+    color:#d35400;
+    margin-bottom:8px;
+}
+
+.sales-queue-empty{
+    text-align:center;
+    color:#888;
+    padding:10px 5px;
+    font-size:12px;
+}
+
+.sales-queue-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:#fff;
+    border:1px solid #ddd;
+    border-radius:6px;
+    padding:7px;
+    margin-bottom:6px;
+}
+
+.sales-queue-row:last-child{
+    margin-bottom:0;
+}
+
+.sales-queue-index{
+    width:28px;
+    height:28px;
+    flex-shrink:0;
+    background:#8d6e63;
+    color:#ffeb3b;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    font-size:13px;
+}
+
+.sales-queue-icon{
+    width:35px;
+    text-align:center;
+    font-size:25px;
+}
+
+.sales-queue-info{
+    flex:1;
+    min-width:0;
+}
+
+.sales-queue-name{
+    font-size:12px;
+    font-weight:bold;
+    color:#3e2723;
+}
+
+.sales-queue-count{
+    font-size:11px;
+    color:#666;
+    margin-top:2px;
+}
+
+.sales-queue-status{
+    font-size:10px;
+    font-weight:bold;
+    color:#4caf50;
+    margin-top:2px;
+}
+
+.sales-queue-row:first-child{
+    border-color:#ff9800;
+    background:#fff8e1;
+}
 
 
 </style>
@@ -501,7 +588,23 @@ select,input{width:100%;padding:8px;margin-top:5px;margin-bottom:8px;border:1px 
 <div class="modal-content">
 <div class="config-section"><div class="config-title">🎨 ① 選擇寶貝球餐車外觀</div><div id="skin-grid" class="skin-grid"></div></div>
 <div class="config-section"><div class="config-title">👥 ② 選擇店員</div><div id="staff-grid"></div></div>
-<div class="config-section"><div class="config-title">🍱 ③ 選擇料理與補貨</div><div id="recipe-grid" class="recipe-list"></div><div id="stock-summary" class="stock-summary"></div></div>
+<div class="config-section">
+    <div class="config-title">🍱 ③ 選擇料理與補貨</div>
+
+    <div id="recipe-grid" class="recipe-list"></div>
+
+    <div id="stock-summary" class="stock-summary"></div>
+
+    <div class="sales-queue">
+        <div class="sales-queue-title">
+            📋 本餐車販賣列表
+        </div>
+
+        <div id="sales-queue-list">
+        </div>
+    </div>
+</div>
+
 </div>
 <div class="confirm-wrap"><button class="btn-confirm" onclick="confirmConfig()">確認並套用</button></div>
 </div>
@@ -904,54 +1007,173 @@ coins=Number(mainData.bal)||0;
 }
 
 //【新增】
-// ==================== 餐車批次庫存初始化 ====================
 function initFoodTruckStockBatches(){
+
     const now=Date.now();
 
     stalls.forEach(stall=>{
+
         if(!stall)return;
 
-        if(Array.isArray(stall.stockBatches)){
-            stall.stockBatches=stall.stockBatches
-                .map(batch=>({
-                    qty:Math.max(
-                        0,
-                        Math.floor(Number(batch?.qty)||0)
-                    ),
-                    listedAt:Number(batch?.listedAt)||now,
-                    soldUnits:Math.max(
-                        0,
-                        Math.floor(Number(batch?.soldUnits)||0)
-                    )
-                }))
-                .filter(batch=>batch.qty>0);
 
-            stall.stock=stall.stockBatches.reduce(
-                (sum,batch)=>sum+batch.qty,
+        // =========================
+        // 新版販賣列表
+        // =========================
+
+        if(Array.isArray(stall.salesQueue)){
+
+            stall.salesQueue=
+                stall.salesQueue
+                    .map(batch=>({
+
+                        recipe:
+                            batch?.recipe ||
+                            stall.recipe ||
+                            "",
+
+                        qty:
+                            Math.max(
+                                0,
+                                Math.floor(
+                                    Number(batch?.qty)||0
+                                )
+                            ),
+
+                        listedAt:
+                            Number(batch?.listedAt)||now,
+
+                        soldUnits:
+                            Math.max(
+                                0,
+                                Math.floor(
+                                    Number(batch?.soldUnits)||0
+                                )
+                            )
+
+                    }))
+                    .filter(batch=>
+                        batch.qty>0 &&
+                        batch.recipe
+                    );
+
+        }else{
+
+            // =========================
+            // 舊版資料轉換
+            // =========================
+
+            stall.salesQueue=[];
+
+            const oldStock=
+                Math.max(
+                    0,
+                    Math.floor(
+                        Number(stall.stock)||0
+                    )
+                );
+
+            if(
+                oldStock>0 &&
+                stall.recipe
+            ){
+
+                stall.salesQueue.push({
+
+                    recipe:
+                        stall.recipe,
+
+                    qty:
+                        oldStock,
+
+                    listedAt:
+                        now,
+
+                    soldUnits:
+                        0
+
+                });
+
+            }
+
+        }
+
+
+        // =========================
+        // 相容舊 stockBatches
+        // =========================
+
+        if(
+            stall.salesQueue.length===0 &&
+            Array.isArray(stall.stockBatches)
+        ){
+
+            stall.stockBatches=
+                stall.stockBatches
+                    .map(batch=>({
+
+                        recipe:
+                            batch?.recipe ||
+                            stall.recipe ||
+                            "",
+
+                        qty:
+                            Math.max(
+                                0,
+                                Math.floor(
+                                    Number(batch?.qty)||0
+                                )
+                            ),
+
+                        listedAt:
+                            Number(batch?.listedAt)||now,
+
+                        soldUnits:
+                            Math.max(
+                                0,
+                                Math.floor(
+                                    Number(batch?.soldUnits)||0
+                                )
+                            )
+
+                    }))
+                    .filter(batch=>
+                        batch.qty>0 &&
+                        batch.recipe
+                    );
+
+            stall.salesQueue=
+                stall.stockBatches;
+
+        }
+
+
+        // =========================
+        // 永遠讓舊 stockBatches
+        // 跟販賣列表保持相容
+        // =========================
+
+        stall.stockBatches=
+            stall.salesQueue;
+
+
+        // =========================
+        // 計算目前總庫存
+        // =========================
+
+        stall.stock=
+            stall.salesQueue.reduce(
+                (sum,batch)=>
+                    sum+
+                    (
+                        Number(batch?.qty)||0
+                    ),
                 0
             );
 
-            return;
-        }
-
-        const oldStock=Math.max(
-            0,
-            Math.floor(Number(stall.stock)||0)
-        );
-
-        if(oldStock>0){
-            stall.stockBatches=[{
-                qty:oldStock,
-                listedAt:now,
-                soldUnits:0
-            }];
-        }else{
-            stall.stockBatches=[];
-        }
-
-        stall.stock=oldStock;
     });
+
 }
+
 
 
 
@@ -1662,90 +1884,274 @@ function spawnCustomer(){
 // 真正收益全部由這裡處理。
 // ==================================================
 async function processFoodTruckSales(){
+
     const now=Date.now();
-    const fiveMinutes=5*60*1000;
+
+    const fiveMinutes=
+        5*60*1000;
+
     let totalChanged=false;
 
+
     for(const stall of stalls){
-        if(!stall) continue;
 
-        if(!Array.isArray(stall.stockBatches)){
-            stall.stockBatches=[];
+        if(!stall)continue;
+
+
+        if(
+            !Array.isArray(
+                stall.salesQueue
+            )
+        ){
+
+            stall.salesQueue=[];
+
         }
 
-        if(!stall.unlocked||!stall.staffId||!stall.recipe){
+
+        // =========================
+        // 不能營業
+        // =========================
+
+        if(
+            !stall.unlocked ||
+            !stall.staffId
+        ){
+
             continue;
+
         }
 
-        let stallChanged=false;
 
-        for(const batch of stall.stockBatches){
-            if(!batch||Number(batch.qty)<=0) continue;
+        let queueChanged=false;
 
-            const qty=Number(batch.qty)||0;
-            const listedAt=Number(batch.listedAt)||now;
-            const soldUnits=Math.max(0,Number(batch.soldUnits)||0);
+        let previousEndTime=0;
 
-            const elapsed=Math.max(0,now-listedAt);
-            const theoreticalSales=Math.floor(elapsed/fiveMinutes);
-            const availableSales=Math.max(
-                0,
-                theoreticalSales-soldUnits
+
+        // =========================
+        // 嚴格按照列表順序販售
+        // =========================
+
+        for(
+            let i=0;
+            i<stall.salesQueue.length;
+            i++
+        ){
+
+            const batch=
+                stall.salesQueue[i];
+
+
+            if(
+                !batch ||
+                !batch.recipe ||
+                Number(batch.qty)<=0
+            ){
+
+                continue;
+
+            }
+
+
+            const qty=
+                Math.max(
+                    0,
+                    Math.floor(
+                        Number(batch.qty)||0
+                    )
+                );
+
+
+            const soldUnits=
+                Math.max(
+                    0,
+                    Math.floor(
+                        Number(batch.soldUnits)||0
+                    )
+                );
+
+
+            const listedAt=
+                Number(batch.listedAt)||now;
+
+
+            if(qty<=0){
+
+                continue;
+
+            }
+
+
+            /*
+                這一批真正可以開始販售的時間：
+
+                1. 自己原本的上架時間
+                2. 前一批全部販售完的時間
+
+                兩者取較晚者。
+            */
+
+            const batchStartTime=
+                Math.max(
+                    listedAt,
+                    previousEndTime
+                );
+
+
+            /*
+                每份料理需要 5 分鐘。
+
+                第 1 份：
+                batchStart + 5分鐘
+
+                第 2 份：
+                batchStart + 10分鐘
+
+                ...
+            */
+
+            const theoreticalSales=
+                Math.floor(
+                    Math.max(
+                        0,
+                        now-batchStartTime
+                    ) /
+                    fiveMinutes
+                );
+
+
+            const availableSales=
+                Math.max(
+                    0,
+                    theoreticalSales-soldUnits
+                );
+
+
+            if(availableSales>0){
+
+                const sales=
+                    Math.min(
+                        availableSales,
+                        qty
+                    );
+
+
+                if(sales>0){
+
+                    batch.qty=
+                        Math.max(
+                            0,
+                            qty-sales
+                        );
+
+
+                    batch.soldUnits=
+                        soldUnits+sales;
+
+
+                    /*
+                        餐車收益：
+
+                        1 份料理
+                        =
+                        1 心之鱗片
+                    */
+
+                    heartScales+=sales;
+
+
+                    queueChanged=true;
+                    totalChanged=true;
+
+                }
+
+            }
+
+
+            /*
+                注意：
+
+                不管這次有沒有賣出，
+                都要計算這一批完整結束的時間。
+
+                下一批只能從這個時間之後開始。
+            */
+
+            previousEndTime=
+                batchStartTime+
+                (
+                    qty*
+                    fiveMinutes
+                );
+
+        }
+
+
+        // =========================
+        // 清掉已經完全賣完的批次
+        // =========================
+
+        const oldLength=
+            stall.salesQueue.length;
+
+
+        stall.salesQueue=
+            stall.salesQueue.filter(
+                batch=>
+                    Number(batch?.qty)>0
             );
 
-            if(availableSales<=0) continue;
 
-            const sales=Math.min(
-                availableSales,
-                qty
-            );
+        if(
+            stall.salesQueue.length!==oldLength
+        ){
 
-            if(sales<=0) continue;
-
-            batch.qty=Math.max(
-                0,
-                qty-sales
-            );
-
-            batch.soldUnits=
-                soldUnits+sales;
-
-            // =========================
-            // 餐車唯一收益
-            // 每賣出 1 份料理
-            // → +1 心之鱗片
-            //
-            // 不增加金幣
-            // =========================
-            heartScales+=sales;
-
+            queueChanged=true;
             totalChanged=true;
-            stallChanged=true;
+
         }
 
-        stall.stockBatches=
-            stall.stockBatches.filter(
-                batch=>Number(batch?.qty)>0
-            );
+
+        // =========================
+        // stock 相容欄位
+        // =========================
 
         stall.stock=
-            stall.stockBatches.reduce(
+            stall.salesQueue.reduce(
                 (sum,batch)=>
                     sum+
-                    (Number(batch?.qty)||0),
+                    (
+                        Number(batch?.qty)||0
+                    ),
                 0
             );
 
-        if(stallChanged){
+
+        // =========================
+        // 舊欄位同步
+        // =========================
+
+        stall.stockBatches=
+            stall.salesQueue;
+
+
+        if(queueChanged){
+
             totalChanged=true;
+
         }
+
     }
 
-    coins=Number(mainData.bal)||0;
+
+    // =========================
+    // 更新 UI
+    // =========================
 
     if(totalChanged){
 
         updateUI();
+
 
         if(
             typeof currentStallIndex!=="undefined" &&
@@ -1753,16 +2159,25 @@ async function processFoodTruckSales(){
                 Number(currentStallIndex)
             )
         ){
+
             renderTruck();
+
+            updateSelloutCountdown();
+
         }
+
 
         syncTruckToMain();
 
         await saveMainGameData();
+
     }
 
+
     return totalChanged;
+
 }
+
 
 
 // ====================
@@ -2003,20 +2418,72 @@ function startFoodTruckSalesLoop(){
 // ==================== 店員：只顯示已正式加入 s.pkm 的寶可夢，並依圖鑑號碼排序 ====================
 function getEligibleStaff(){
 
-    /* 
-       餐車店員直接讀取主遊戲：
-       mainData.pkm
+    const currentStall=
+        getCurrentStall();
 
-       這就是秘密花園冒險小隊可使用的
-       寶可夢資料來源
-    */
 
-    const list =
-    Array.isArray(mainData?.pkm)
-        ? mainData.pkm.filter(p => p && p.unlocked !== false)
-        : [];
+    const currentStaffId=
+        currentStall
+            ?Number(currentStall.staffId)
+            :null;
 
-    const seen=new Set();
+
+    // =========================
+    // 找出其他餐車已使用的店員
+    // =========================
+
+    const occupiedStaffIds=
+        new Set();
+
+
+    stalls.forEach(stall=>{
+
+        if(!stall){
+
+            return;
+
+        }
+
+
+        if(
+            stall===currentStall
+        ){
+
+            return;
+
+        }
+
+
+        if(
+            stall.staffId
+        ){
+
+            occupiedStaffIds.add(
+                Number(stall.staffId)
+            );
+
+        }
+
+    });
+
+
+    // =========================
+    // 主遊戲已解鎖寶可夢
+    // =========================
+
+    const list=
+        Array.isArray(mainData?.pkm)
+            ?mainData.pkm.filter(
+                p=>
+                    p &&
+                    p.unlocked!==false
+            )
+            :[];
+
+
+    const seen=
+        new Set();
+
 
     return list
 
@@ -2029,28 +2496,60 @@ function getEligibleStaff(){
 
         })
 
-        /* 
-           相同圖鑑編號只顯示一次
-        */
 
         .filter(p=>{
 
             const id=
                 Number(p.id);
 
+
             if(seen.has(id)){
+
                 return false;
+
             }
 
+
             seen.add(id);
+
 
             return true;
 
         })
 
+
+        .filter(p=>{
+
+            const id=
+                Number(p.id);
+
+
+            /*
+                自己這台餐車目前的店員
+                可以繼續顯示。
+
+                其他餐車的店員
+                完全排除。
+            */
+
+            if(
+                occupiedStaffIds.has(id)
+            ){
+
+                return false;
+
+            }
+
+
+            return true;
+
+        })
+
+
         .map(p=>({
 
-            id:Number(p.id),
+            id:
+                Number(p.id),
 
             name:
                 p.name ||
@@ -2062,21 +2561,21 @@ function getEligibleStaff(){
                 p.uniqueId || "",
 
             color:
-                p.color || ""
+                p.color || "",
+
+            isCurrent:
+                Number(p.id)===currentStaffId
 
         }))
 
-        /*
-           依照圖鑑編號排序
-        */
 
-        .sort((a,b)=>{
-
-            return a.id-b.id;
-
-        });
+        .sort(
+            (a,b)=>
+                a.id-b.id
+        );
 
 }
+
 
 const FALLBACK_NAMES={
 1:"妙蛙種子",4:"小火龍",7:"傑尼龜",25:"皮卡丘",39:"胖丁",94:"耿鬼",143:"卡比獸",150:"超夢",384:"烈空坐",448:"路卡利歐"
@@ -2111,19 +2610,17 @@ function openConfigModal(){
 
     configDraft={
 
-        skinId:
-            stall.skinId||"poke",
+    skinId:
+        stall.skinId||"poke",
 
-        staffId:
-            stall.staffId||null,
+    staffId:
+        stall.staffId||null,
 
-        recipe:
-            stall.recipe||"",
+    recipe:
+        stall.recipe||""
 
-        stock:
-            stall.stock||0
+};
 
-    };
 
     renderConfig();
 
@@ -2139,13 +2636,26 @@ document.getElementById(id).style.display="none";
 }
 
 function renderConfig(){
-const stall=getCurrentStall();
-document.getElementById("config-header").innerText=`🍱 ${stall.name} 設定`;
-renderSkinGrid();
-renderStaffGrid();
-renderRecipeGrid();
-updateStockSummary();
+
+    const stall=getCurrentStall();
+
+    document.getElementById(
+        "config-header"
+    ).innerText=
+        `🍱 ${stall.name} 設定`;
+
+    renderSkinGrid();
+
+    renderStaffGrid();
+
+    renderRecipeGrid();
+
+    updateStockSummary();
+
+    renderSalesQueue();
+
 }
+
 
 // ==================== 球種 ====================
 function isSkinOwned(id){
@@ -2374,8 +2884,13 @@ function renderStaffPicker(){
                 </div>
 
                 <div class="staff-picker-state">
-                    冒險小隊成員
-                </div>
+    ${
+        Number(configDraft.staffId)===Number(pokemon.id)
+            ?"目前是本餐車店員"
+            :"可配置店員"
+    }
+</div>
+
             </div>
         `;
 
@@ -2387,10 +2902,58 @@ function renderStaffPicker(){
           );
 
         row.onclick=()=>{
-            configDraft.staffId=pokemon.id;
-            closeStaffPicker();
-            renderStaffGrid();
-        };
+
+    // =========================
+    // 再次確認店員沒有被其他餐車使用
+    // =========================
+
+    const currentStall=
+        getCurrentStall();
+
+
+    const occupied=
+        stalls.some(stall=>{
+
+            if(
+                !stall ||
+                stall===currentStall
+            ){
+
+                return false;
+
+            }
+
+
+            return Number(
+                stall.staffId
+            )===Number(
+                pokemon.id
+            );
+
+        });
+
+
+    if(occupied){
+
+        alert(
+            `${pokemon.name} 已經是其他餐車的店員，不能重複配置。`
+        );
+
+        return;
+
+    }
+
+
+    configDraft.staffId=
+        pokemon.id;
+
+
+    closeStaffPicker();
+
+    renderStaffGrid();
+
+};
+
 
         container.appendChild(row);
     });
@@ -2416,13 +2979,15 @@ row.className=`recipe-row ${selected?"selected":""}`;
 row.innerHTML=`<div class="recipe-icon">${recipe.icon}</div><div class="recipe-info"><div class="recipe-name">${name}</div><div class="recipe-price">收益 <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/heart-scale.png" class="currency-icon" alt="心之鱗片"> 1 / 份</div>
 <div class="stock-info">主遊戲料理庫存：${count} 份${selected?"｜目前配置中":"｜點擊選擇"}</div></div>`;
 row.onclick=()=>{
-if(configDraft.recipe!==name){
-configDraft.recipe=name;
-configDraft.stock=0;
-}
-renderRecipeGrid();
-updateStockSummary();
+
+    configDraft.recipe=name;
+
+    renderRecipeGrid();
+
+    updateStockSummary();
+
 };
+
 container.appendChild(row);
 });
 
@@ -2446,17 +3011,199 @@ return value;
 }
 
 function updateStockSummary(){
-const box=document.getElementById("stock-summary");
-if(!configDraft.recipe){
-box.innerText="尚未選擇料理。";
-return;
+
+    const box=
+        document.getElementById(
+            "stock-summary"
+        );
+
+
+    if(!box){
+
+        return;
+
+    }
+
+
+    if(!configDraft.recipe){
+
+        box.innerText=
+            "尚未選擇料理。";
+
+        return;
+
+    }
+
+
+    const refill=
+        getRefillAmount();
+
+
+    const mainDishCount=
+        getDishCount(
+            configDraft.recipe
+        );
+
+
+    const stall=
+        getCurrentStall();
+
+
+    const currentStock=
+        stall &&
+        Array.isArray(stall.salesQueue)
+            ?stall.salesQueue.reduce(
+                (sum,batch)=>
+                    sum+
+                    (
+                        Number(batch?.qty)||0
+                    ),
+                0
+            )
+            :0;
+
+
+    box.innerHTML=`
+
+        目前販賣列表剩餘：
+        <strong>${currentStock} 份</strong>
+
+        <br>
+
+        本次補充：
+        <strong>+${refill} 份</strong>
+
+        <br>
+
+        補充後總數：
+        <strong>${currentStock+refill} 份</strong>
+
+        <br>
+
+        主遊戲目前料理庫存：
+        <strong>${mainDishCount} 份</strong>
+
+        <br>
+
+        收益：
+        <img
+            src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/heart-scale.png"
+            class="currency-icon"
+            alt="心之鱗片"
+        >
+        1 / 份
+
+    `;
+
 }
-const refill=getRefillAmount();
-const current=Number(configDraft.stock)||0;
-const total=Math.min(99,current+refill);
-const mainDishCount=getDishCount(configDraft.recipe);
-box.innerHTML=`目前餐車庫存：<strong>${current} 份</strong><br>本次補充：<strong>+${refill} 份</strong><br>確認後餐車庫存：<strong>${total} 份</strong><br>主遊戲目前料理庫存：<strong>${mainDishCount} 份</strong><br>收益：<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/heart-scale.png" class="currency-icon" alt="心之鱗片"> 1 / 份
-`;
+
+
+
+function renderSalesQueue(){
+
+    const container=
+        document.getElementById(
+            "sales-queue-list"
+        );
+
+
+    if(!container){
+
+        return;
+
+    }
+
+
+    container.innerHTML="";
+
+
+    const stall=
+        getCurrentStall();
+
+
+    if(
+        !stall ||
+        !Array.isArray(stall.salesQueue) ||
+        stall.salesQueue.length===0
+    ){
+
+        container.innerHTML=`
+            <div class="sales-queue-empty">
+                目前沒有待販售料理
+            </div>
+        `;
+
+        return;
+
+    }
+
+
+    stall.salesQueue.forEach(
+        (batch,index)=>{
+
+            const recipe=
+                RECIPES[batch.recipe];
+
+
+            if(!recipe){
+
+                return;
+
+            }
+
+
+            const row=
+                document.createElement("div");
+
+
+            row.className=
+                "sales-queue-row";
+
+
+            const isFirst=
+                index===0;
+
+
+            const status=
+                isFirst
+                    ?"🔥 販售中"
+                    :"⏳ 排隊中";
+
+
+            row.innerHTML=`
+
+                <div class="sales-queue-index">
+                    ${index+1}
+                </div>
+
+                <div class="sales-queue-icon">
+                    ${recipe.icon}
+                </div>
+
+                <div class="sales-queue-info">
+
+                    <div class="sales-queue-name">
+                        ${batch.recipe}
+                    </div>
+
+                    <div class="sales-queue-count">
+                        剩餘 ${Number(batch.qty)||0} 份
+                    </div>
+
+                    <div class="sales-queue-status">
+                        ${status}
+                    </div>
+
+                </div>
+
+            `;
+
+
+            container.appendChild(row);
+
+        }
+    );
+
 }
 
 // ==================== 套用設定：補貨時直接扣主遊戲料理 ====================
@@ -2464,10 +3211,15 @@ box.innerHTML=`目前餐車庫存：<strong>${current} 份</strong><br>本次補
 // ==================================================
 // 套用餐車設定
 // ==================================================
-
 async function confirmConfig(){
 
     const stall=getCurrentStall();
+
+    if(!stall){
+
+        return;
+
+    }
 
 
     // =========================
@@ -2478,7 +3230,7 @@ async function confirmConfig(){
 
         if(
             !confirm(
-                "目前沒有選擇料理，餐車將停止販售。確定嗎？"
+                "目前沒有選擇料理，餐車將停止販售。\n目前販賣列表不會被刪除。確定嗎？"
             )
         ){
 
@@ -2489,43 +3241,39 @@ async function confirmConfig(){
     }
 
 
-    const refill =
+    const refill=
         getRefillAmount();
 
 
-    const currentRecipe =
-        stall.recipe||"";
-
-
-    const newRecipe =
+    const newRecipe=
         configDraft.recipe||"";
 
 
     // =========================
-    // 初始化 batches
+    // 初始化販賣列表
     // =========================
 
     if(
         !Array.isArray(
-            stall.stockBatches
+            stall.salesQueue
         )
     ){
 
-        stall.stockBatches=[];
+        stall.salesQueue=[];
 
     }
 
 
     // =========================
-    // 檢查補貨
+    // 檢查補貨數量
     // =========================
 
     if(
-        refill>0&&
+        refill>0 &&
         newRecipe
     ){
 
-        const available =
+        const available=
             getDishCount(
                 newRecipe
             );
@@ -2547,96 +3295,98 @@ async function confirmConfig(){
 
 
     // =========================
-    // 更換料理
+    // 套用外觀
     // =========================
 
-    if(
-        currentRecipe&&
-        currentRecipe!==newRecipe
-    ){
-
-        /*
-           餐車改賣另一種料理。
-
-           原本餐車架上的料理不再繼續販售，
-           因此清除原本 batches。
-
-           注意：
-           這裡不退回主遊戲料理，
-           因為那些料理已經被視為上架。
-        */
-
-        stall.stockBatches=[];
-
-    }
-
-
-    // =========================
-    // 套用基本設定
-    // =========================
-
-    stall.skinId =
+    stall.skinId=
         configDraft.skinId||"poke";
 
 
-    stall.staffId =
+    // =========================
+    // 套用店員
+    //
+    // 注意：
+    // 這裡只改店員
+    // 絕對不碰 salesQueue
+    // =========================
+
+    stall.staffId=
         configDraft.staffId||null;
 
 
-    stall.recipe =
+    // =========================
+    // 料理
+    // =========================
+
+    stall.recipe=
         newRecipe;
 
 
     // =========================
-    // 沒有料理
-    // =========================
-
-    if(!newRecipe){
-
-        stall.stockBatches=[];
-
-        stall.stock=0;
-
-    }
-
-
-    // =========================
     // 補貨
+    //
+    // 每一次補貨：
+    // 新增一個批次到列表尾端
     // =========================
 
     if(
-        newRecipe&&
+        newRecipe &&
         refill>0
     ){
 
-        const available =
+        const available=
             getDishCount(
                 newRecipe
             );
 
 
-        // 扣除主遊戲料理
+        // 扣主遊戲料理
         setDishCount(
             newRecipe,
             available-refill
         );
 
-        stall.stockBatches.push({
-    qty:refill,
-    listedAt:Date.now(),
-    soldUnits:0
-});
 
+        // 推進販賣列表
+        stall.salesQueue.push({
+
+            recipe:
+                newRecipe,
+
+            qty:
+                refill,
+
+            listedAt:
+                Date.now(),
+
+            soldUnits:
+                0
+
+        });
 
     }
 
 
     // =========================
-    // 同步 stock
+    // 如果沒有料理
+    //
+    // 只代表停止營業
+    // 不刪販賣列表
     // =========================
 
-    stall.stock =
-        stall.stockBatches.reduce(
+    if(!newRecipe){
+
+        stall.recipe="";
+
+    }
+
+
+    // =========================
+    // 更新目前總庫存
+    // =========================
+
+    stall.stock=
+        stall.salesQueue.reduce(
             (sum,batch)=>
                 sum+
                 (
@@ -2644,6 +3394,14 @@ async function confirmConfig(){
                 ),
             0
         );
+
+
+    // =========================
+    // 相容舊欄位
+    // =========================
+
+    stall.stockBatches=
+        stall.salesQueue;
 
 
     // =========================
@@ -2655,6 +3413,10 @@ async function confirmConfig(){
 
     renderTruck();
 
+    renderSalesQueue();
+
+    updateSelloutCountdown();
+
     closeModal(
         "config-modal"
     );
@@ -2663,7 +3425,7 @@ async function confirmConfig(){
 
 
     if(
-        stall.recipe&&
+        stall.recipe &&
         stall.staffId
     ){
 
@@ -2674,6 +3436,7 @@ async function confirmConfig(){
     }
 
 }
+
 
 
 // ==================== 餐車商店 ====================
