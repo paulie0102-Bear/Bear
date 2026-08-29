@@ -3189,8 +3189,8 @@ function updateSelloutCountdown(){
         !stall||
         !stall.unlocked||
         !stall.staffId||
-        !Array.isArray(stall.salesQueue)||
-        stall.salesQueue.length===0
+        !Array.isArray(stall.stockBatches)||
+        stall.stockBatches.length===0
     ){
         countdown.innerText="--:--";
         return;
@@ -3199,10 +3199,9 @@ function updateSelloutCountdown(){
     const now=Date.now();
     const fiveMinutes=5*60*1000;
 
-    let previousEndTime=0;
-    let hasBatch=false;
+    let endTime=now;
 
-    for(const batch of stall.salesQueue){
+    for(const batch of stall.stockBatches){
         if(
             !batch||
             !batch.recipe||
@@ -3211,12 +3210,10 @@ function updateSelloutCountdown(){
             continue;
         }
 
-        const remainingQty=Math.max(
+        const qty=Math.max(
             0,
             Math.floor(Number(batch.qty)||0)
         );
-
-        if(remainingQty<=0)continue;
 
         const soldUnits=Math.max(
             0,
@@ -3226,45 +3223,56 @@ function updateSelloutCountdown(){
         const listedAt=Number(batch.listedAt)||now;
 
         /*
-         * 第一批使用原本 listedAt。
-         * 後面的批次從前一批完售時間開始。
+         * 這一批原本總共有幾份
+         */
+        const originalQty=
+            qty+soldUnits;
+
+        /*
+         * 第一批：
+         * 從它原本的 listedAt 開始計算。
+         *
+         * 後面的批次：
+         * 接在上一批結束時間後面。
          */
         const batchStartTime=
-            previousEndTime>0
-                ?Math.max(listedAt,previousEndTime)
+            endTime>now
+                ?endTime
                 :listedAt;
 
         /*
-         * 這一批剩餘的料理還需要多少時間。
-         *
-         * soldUnits 已經賣掉的份數不能再算一次，
-         * 所以只計算目前剩餘 qty。
+         * 如果這是第一批，
+         * 直接按照它的原始上架時間計算完整結束時間。
          */
-        const batchEndTime=
-            Math.max(
-                batchStartTime,
-                now
-            )+
-            remainingQty*fiveMinutes;
-
-        previousEndTime=batchEndTime;
-        hasBatch=true;
+        if(batchStartTime===listedAt){
+            endTime=
+                listedAt+
+                originalQty*fiveMinutes;
+        }else{
+            endTime=
+                batchStartTime+
+                originalQty*fiveMinutes;
+        }
     }
 
-    if(!hasBatch||previousEndTime<=0){
-        countdown.innerText="--:--";
-        return;
-    }
+    const remaining=
+        Math.max(
+            0,
+            endTime-now
+        );
 
-    const remaining=Math.max(
-        0,
-        previousEndTime-now
+    const totalSeconds=Math.ceil(
+        remaining/1000
     );
 
-    const totalSeconds=Math.ceil(remaining/1000);
+    const hours=Math.floor(
+        totalSeconds/3600
+    );
 
-    const hours=Math.floor(totalSeconds/3600);
-    const minutes=Math.floor((totalSeconds%3600)/60);
+    const minutes=Math.floor(
+        (totalSeconds%3600)/60
+    );
+
     const seconds=totalSeconds%60;
 
     if(hours>0){
@@ -3278,6 +3286,7 @@ function updateSelloutCountdown(){
             `${String(seconds).padStart(2,"0")}`;
     }
 }
+
 
 
 
@@ -3322,27 +3331,16 @@ renderTruck();
 
 // ==================== 啟動 ====================
 async function init(){
-
     mainReady=await loadMainGameData();
-
     if(!mainReady)return;
-
     initFoodTruckData();
-
     initFoodTruckStockBatches();
-
     await processFoodTruckSales();
-
     updateUI();
-
     renderTruck();
-
     startCustomerLoop();
-
     startFoodTruckSalesLoop();
-
     await saveMainGameData();
-
 }
 
 init();
