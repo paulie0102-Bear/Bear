@@ -7611,22 +7611,33 @@ async function exportData() {
         catch: catchData
     };
 
+    // ==================================================
+    // 統一所有裝置的存檔格式
+    // .pkms 本質上仍然是 JSON 資料
+    // ==================================================
+
+    const jsonData = JSON.stringify(bundleSave);
+
     const blob = new Blob(
-        [JSON.stringify(bundleSave)],
-        { type: "application/json" }
+        [jsonData],
+        { type: "application/octet-stream" }
     );
 
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
+
+    a.href = url;
     a.download = `PM_Save_${timeStr}.pkms`;
+    a.setAttribute("download", `PM_Save_${timeStr}.pkms`);
+    a.style.display = "none";
 
     document.body.appendChild(a);
     a.click();
 
     setTimeout(() => {
         document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-    }, 100);
+        URL.revokeObjectURL(url);
+    }, 1000);
 }
 
 
