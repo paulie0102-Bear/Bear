@@ -1741,7 +1741,7 @@
         <hr>
         <button onclick="openPage('guidePage')" style="background:var(--accent); color:black; width:100%; padding:12px; border:none; border-radius:5px;">📖 遊戲與記帳規則導引</button>
         <button onclick="resetAll()" style="background:var(--danger); color:white; width:100%; padding:12px; border:none; border-radius:5px; margin-top:20px;">🔥 重置所有數據</button>
-        <button onclick="updateToLatest()" style="background:#3498db;color:white;width:100%;padding:12px;border:none;border-radius:5px;margin-top:10px;">🔄 更新到最新版本</button>
+        <button onclick="updateToLatest()" style="background:#3498db;color:white;width:100%;padding:12px;border:none;border-radius:5px;margin-top:10px;"> ⟳ 更新到最新版本</button>
     </div>
     <button class="btn-back" onclick="back()">✖ 關閉</button>
 </div>
@@ -9597,6 +9597,10 @@ function openPokemonDex() {
 }
 
 function updateToLatest(){
+    if(!confirm("將重新載入最新版本，遊戲存檔不會被刪除。")){
+        return;
+    }
+
     const url =
         window.location.pathname +
         "?v=" + Date.now();
