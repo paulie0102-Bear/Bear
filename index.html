@@ -672,7 +672,989 @@
     }
     @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 </style>
+<style>
+/* =========================================================
+   秘密花園｜聯盟生命之井
+   只負責道館 / 四天王 / 冠軍進度視覺
+   進度完全沿用：
+   s.farm.regionProg.stats[regionId].gymsBeaten
+========================================================= */
 
+.league-water-frame{
+    --region-color:#2ecc71;
+    --water:#69ddd0;
+    --water-light:#c8fff4;
+    --metal:#536467;
+    --dark:#172124;
+
+    position:relative;
+    overflow:visible;
+    padding:0;
+    margin:0;
+    border-radius:0;
+    background:transparent;
+    border:0;
+    box-shadow:none;
+    animation:none;
+}
+
+.league-water-frame::before,
+.league-water-frame::after{
+    display:none;
+}
+
+@keyframes frameWaterRun{
+    to{
+        background-position:86px 0;
+    }
+}
+
+@keyframes frameWaterLight{
+    from{
+        background-position:220% 0;
+    }
+    to{
+        background-position:-220% 0;
+    }
+}
+
+@keyframes leagueFrameBreath{
+    0%,100%{
+        box-shadow:
+            0 3px 12px rgba(0,0,0,.08),
+            inset 0 0 20px rgba(0,0,0,.025);
+    }
+    50%{
+        box-shadow:
+            0 3px 18px rgba(0,0,0,.10),
+            0 0 15px color-mix(in srgb,var(--region-color) 20%,transparent),
+            inset 0 0 20px rgba(0,0,0,.025);
+    }
+}
+
+
+/* =========================================================
+   水井舞台
+========================================================= */
+
+.league-well-stage{
+    position:relative;
+    width:100%;
+    height:315px;
+    margin:0 auto;
+    overflow:hidden;
+    border-radius:15px;
+
+    background:
+        radial-gradient(
+            circle at 50% 50%,
+            color-mix(in srgb,var(--region-color) 8%,white),
+            #fff 62%
+        );
+}
+
+
+/* 背後淡淡的水波 */
+.league-well-stage::before{
+    content:"";
+    position:absolute;
+    width:270px;
+    height:270px;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+
+    border:1px solid color-mix(
+        in srgb,
+        var(--region-color) 18%,
+        transparent
+    );
+
+    box-shadow:
+        0 0 0 18px rgba(100,200,190,.025),
+        0 0 0 38px rgba(100,200,190,.02);
+
+    animation:wellAura 4s ease-in-out infinite;
+}
+
+@keyframes wellAura{
+    0%,100%{
+        transform:translate(-50%,-50%) scale(.96);
+        opacity:.55;
+    }
+    50%{
+        transform:translate(-50%,-50%) scale(1.04);
+        opacity:1;
+    }
+}
+
+
+/* =========================================================
+   八條道館水路
+========================================================= */
+
+.well-gym-pipe{
+    position:absolute;
+    width:5px;
+    height:95px;
+    left:50%;
+    top:50%;
+    margin-left:-2.5px;
+    margin-top:-95px;
+
+    transform-origin:50% 95px;
+    transform:rotate(var(--angle));
+
+    border-radius:10px;
+    background:#dfe5e5;
+
+    overflow:hidden;
+    z-index:3;
+}
+
+.well-gym-pipe::after{
+    content:"";
+    position:absolute;
+    left:0;
+    bottom:0;
+    width:100%;
+    height:0;
+
+    background:
+        linear-gradient(
+            to top,
+            var(--water),
+            var(--water-light)
+        );
+
+    box-shadow:
+        0 0 8px var(--water);
+
+    transition:height .8s cubic-bezier(.2,.8,.2,1);
+}
+
+.well-gym-pipe.active::after{
+    height:100%;
+}
+
+
+/* =========================================================
+   八個道館節點
+========================================================= */
+
+.well-gym-node{
+    position:absolute;
+    width:31px;
+    height:31px;
+
+    left:50%;
+    top:50%;
+    margin:-15.5px;
+
+    transform:
+        rotate(var(--angle))
+        translateY(-119px)
+        rotate(calc(var(--angle) * -1));
+
+    border-radius:50%;
+
+    background:
+        radial-gradient(
+            circle at 35% 30%,
+            #778486 0 15%,
+            #364346 16% 55%,
+            #182124 56% 100%
+        );
+
+    border:3px solid #707d7f;
+
+    box-shadow:
+        inset 0 2px 5px rgba(255,255,255,.18),
+        inset 0 -4px 7px rgba(0,0,0,.5),
+        0 2px 5px rgba(0,0,0,.18);
+
+    z-index:10;
+
+    transition:
+        background .5s,
+        border-color .5s,
+        box-shadow .5s,
+        transform .5s;
+}
+
+.well-gym-node::after{
+    content:"";
+    position:absolute;
+    width:7px;
+    height:7px;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+
+    border-radius:50%;
+    background:#202a2c;
+    transition:.5s;
+}
+
+.well-gym-node.active{
+    background:
+        radial-gradient(
+            circle at 35% 30%,
+            #fff 0 13%,
+            var(--water-light) 14% 35%,
+            var(--water) 36% 65%,
+            color-mix(in srgb,var(--region-color) 65%,#123) 66% 100%
+        );
+
+    border-color:var(--water-light);
+
+    box-shadow:
+        0 0 5px var(--water),
+        0 0 14px var(--water),
+        inset 0 2px 5px rgba(255,255,255,.7);
+
+    animation:gymNodePulse 2.5s ease-in-out infinite;
+}
+
+.well-gym-node.active::after{
+    background:white;
+    box-shadow:
+        0 0 7px white,
+        0 0 12px var(--water-light);
+}
+
+@keyframes gymNodePulse{
+    0%,100%{
+        filter:brightness(1);
+    }
+    50%{
+        filter:brightness(1.18);
+    }
+}
+
+
+/* =========================================================
+   四天王內圈
+========================================================= */
+
+.well-elite-pipe{
+    position:absolute;
+    width:4px;
+    height:51px;
+    left:50%;
+    top:50%;
+    margin-left:-2px;
+    margin-top:-51px;
+
+    transform-origin:50% 51px;
+    transform:rotate(var(--angle));
+
+    border-radius:8px;
+    background:#d8dddd;
+
+    overflow:hidden;
+    z-index:4;
+}
+
+.well-elite-pipe::after{
+    content:"";
+    position:absolute;
+    bottom:0;
+    left:0;
+    width:100%;
+    height:0;
+
+    background:
+        linear-gradient(
+            to top,
+            #9eabb0,
+            #eefaff
+        );
+
+    box-shadow:0 0 7px #d9f7ff;
+
+    transition:height .8s;
+}
+
+.well-elite-pipe.active::after{
+    height:100%;
+}
+
+
+.well-elite-node{
+    position:absolute;
+    width:38px;
+    height:38px;
+
+    left:50%;
+    top:50%;
+    margin:-19px;
+
+    transform:
+        rotate(var(--angle))
+        translateY(-76px)
+        rotate(calc(var(--angle) * -1));
+
+    border-radius:11px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #202b2f,
+            #46555a
+        );
+
+    border:3px solid #718085;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    color:#68767b;
+    font-size:13px;
+    font-weight:bold;
+
+    box-shadow:
+        inset 0 2px 5px rgba(255,255,255,.1),
+        inset 0 -4px 7px rgba(0,0,0,.45),
+        0 2px 5px rgba(0,0,0,.18);
+
+    z-index:12;
+
+    transition:.6s;
+}
+
+.well-elite-node.active{
+    background:
+        linear-gradient(
+            145deg,
+            #d7e6ea,
+            #6f858d
+        );
+
+    border-color:#f3ffff;
+
+    color:#ffffff;
+
+    text-shadow:
+        0 0 6px #ffffff,
+        0 0 10px #9eeaff;
+
+    box-shadow:
+        0 0 8px #bdefff,
+        0 0 17px rgba(150,230,255,.55),
+        inset 0 2px 5px rgba(255,255,255,.8);
+
+    animation:elitePulse 3s ease-in-out infinite;
+}
+
+@keyframes elitePulse{
+    0%,100%{
+        filter:brightness(1);
+    }
+    50%{
+        filter:brightness(1.12);
+    }
+}
+
+
+/* =========================================================
+   中央寶貝球水泵
+========================================================= */
+
+.well-pump{
+    position:absolute;
+
+    width:94px;
+    height:94px;
+
+    left:50%;
+    top:50%;
+
+    transform:translate(-50%,-50%);
+
+    border-radius:50%;
+
+    background:
+        linear-gradient(
+            to bottom,
+            #9da7a8 0 42%,
+            #1c2528 42% 58%,
+            #9da7a8 58% 100%
+        );
+
+    border:7px solid #657174;
+
+    box-shadow:
+        inset 0 0 0 5px #293437,
+        inset 0 0 18px rgba(0,0,0,.8),
+        0 7px 15px rgba(0,0,0,.25);
+
+    z-index:20;
+
+    transition:.8s;
+}
+
+.well-pump::before{
+    content:"";
+
+    position:absolute;
+
+    width:31px;
+    height:31px;
+
+    left:50%;
+    top:50%;
+
+    transform:translate(-50%,-50%);
+
+    border-radius:50%;
+
+    background:#202a2d;
+
+    border:5px solid #a1acad;
+
+    box-shadow:
+        inset 0 0 8px #000;
+}
+
+.well-pump::after{
+    content:"";
+
+    position:absolute;
+
+    width:11px;
+    height:11px;
+
+    left:50%;
+    top:50%;
+
+    transform:translate(-50%,-50%);
+
+    border-radius:50%;
+
+    background:#394548;
+
+    border:2px solid #c5cecf;
+
+    transition:.6s;
+}
+
+
+/* 冠軍完成後中央核心 */
+.well-pump.champion{
+    background:
+        linear-gradient(
+            to bottom,
+            #f1cf58 0 42%,
+            #32290e 42% 58%,
+            #f1cf58 58% 100%
+        );
+
+    border-color:#d5b13e;
+
+    box-shadow:
+        inset 0 0 0 5px #66531c,
+        inset 0 0 18px rgba(0,0,0,.65),
+        0 0 18px rgba(245,208,83,.55),
+        0 0 38px rgba(110,226,205,.3),
+        0 7px 15px rgba(0,0,0,.25);
+
+    animation:championPump 2.8s ease-in-out infinite;
+}
+
+.well-pump.champion::after{
+    background:#d5fff4;
+
+    box-shadow:
+        0 0 8px #c7fff1,
+        0 0 16px #74e4cb;
+}
+
+@keyframes championPump{
+    0%,100%{
+        transform:translate(-50%,-50%) scale(1);
+    }
+    50%{
+        transform:translate(-50%,-50%) scale(1.045);
+    }
+}
+
+
+/* =========================================================
+   中央水流
+========================================================= */
+
+.well-center-water{
+    position:absolute;
+
+    width:8px;
+    height:108px;
+
+    left:50%;
+    top:50%;
+
+    margin-left:-4px;
+    margin-top:47px;
+
+    border-radius:10px;
+
+    background:#dce3e3;
+
+    overflow:hidden;
+
+    z-index:6;
+}
+
+.well-center-water::after{
+    content:"";
+
+    position:absolute;
+
+    left:0;
+    bottom:0;
+
+    width:100%;
+    height:0;
+
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            var(--water-light) 0 8px,
+            var(--water) 8px 16px,
+            #9be9dc 16px 23px
+        );
+
+    background-size:100% 46px;
+
+    box-shadow:0 0 8px var(--water);
+
+    transition:height 1s;
+}
+
+.well-center-water.active::after{
+    height:100%;
+    animation:centerWaterMove .9s linear infinite;
+}
+
+@keyframes centerWaterMove{
+    to{
+        background-position:0 46px;
+    }
+}
+
+
+/* =========================================================
+   完成後的花園水池
+========================================================= */
+
+.garden-water-memory{
+    margin:2px 5px 22px;
+    padding:9px 10px;
+
+    border-radius:12px;
+
+    background:
+        linear-gradient(
+            135deg,
+            color-mix(in srgb,var(--region-color) 7%,white),
+            #f8fffd
+        );
+
+    border:1px solid
+        color-mix(in srgb,var(--region-color) 25%,#ddd);
+
+    color:#5f7771;
+
+    font-size:10px;
+    line-height:1.6;
+
+    position:relative;
+    overflow:hidden;
+}
+
+.garden-water-memory::after{
+    content:"";
+
+    position:absolute;
+
+    left:-30%;
+    top:0;
+
+    width:30%;
+    height:100%;
+
+    background:
+        linear-gradient(
+            90deg,
+            transparent,
+            rgba(255,255,255,.8),
+            transparent
+        );
+
+    animation:memoryWater 3.5s linear infinite;
+}
+
+@keyframes memoryWater{
+    to{
+        left:130%;
+    }
+}
+
+.garden-water-memory strong{
+    color:var(--region-color);
+    font-size:11px;
+}
+
+
+/* =========================================================
+   完成後的四條水渠
+========================================================= */
+
+.garden-final-water{
+    position:absolute;
+    left:50%;
+    bottom:15px;
+
+    width:calc(100% - 55px);
+    height:4px;
+
+    transform:translateX(-50%);
+
+    border-radius:10px;
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            var(--water-light) 0 10px,
+            var(--water) 10px 20px,
+            transparent 20px 32px
+        );
+
+    background-size:64px 100%;
+
+    opacity:0;
+
+    filter:drop-shadow(0 0 5px var(--water));
+
+    transition:opacity .8s;
+
+    z-index:2;
+}
+
+.garden-final-water.active{
+    opacity:1;
+    animation:gardenWaterRun 1.3s linear infinite;
+}
+
+@keyframes gardenWaterRun{
+    to{
+        background-position:64px 0;
+    }
+}
+
+
+/* =========================================================
+   文字
+========================================================= */
+
+.well-title{
+    position:absolute;
+
+    left:0;
+    right:0;
+
+    top:9px;
+
+    text-align:center;
+
+    color:#566b68;
+
+    font-size:13px;
+    font-weight:bold;
+
+    letter-spacing:2px;
+
+    z-index:25;
+}
+
+.well-subtitle{
+    position:absolute;
+
+    left:0;
+    right:0;
+
+    top:29px;
+
+    text-align:center;
+
+    color:#9aa9a6;
+
+    font-size:9px;
+
+    letter-spacing:1px;
+
+    z-index:25;
+}
+
+.well-progress{
+    position:absolute;
+
+    left:35px;
+    right:35px;
+
+    bottom:13px;
+
+    text-align:center;
+
+    font-size:10px;
+
+    color:#788c88;
+
+    z-index:25;
+}
+
+.well-progress strong{
+    color:var(--region-color);
+}
+
+
+/* =========================================================
+   下一位挑戰者區域
+========================================================= */
+
+.well-challenge-info{
+    position:relative;
+    z-index:30;
+
+    padding:7px 5px 3px;
+
+    text-align:center;
+}
+
+.well-status{
+    font-size:10px;
+    color:#9aa5a3;
+    letter-spacing:1px;
+    margin-bottom:4px;
+}
+
+.well-status.complete{
+    color:var(--region-color);
+    font-weight:bold;
+}
+
+.well-challenger{
+    font-size:21px;
+    font-weight:bold;
+    color:#374345;
+}
+
+.well-taunt{
+    color:var(--region-color);
+    font-size:13px;
+    font-style:italic;
+
+    margin-top:6px;
+
+    min-height:38px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    padding:0 10px;
+}
+
+.well-challenge-button{
+    width:100%;
+
+    margin-top:6px;
+
+    padding:14px;
+
+    border:0;
+    border-radius:24px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--region-color),
+            color-mix(in srgb,var(--region-color) 65%,#123)
+        );
+
+    color:white;
+
+    font-weight:bold;
+    font-size:15px;
+
+    cursor:pointer;
+
+    box-shadow:
+        0 4px 0 color-mix(in srgb,var(--region-color) 60%,#000),
+        0 6px 12px rgba(0,0,0,.15);
+
+    transition:.15s;
+}
+
+.well-challenge-button:active{
+    transform:translateY(3px);
+    box-shadow:
+        0 1px 0 color-mix(in srgb,var(--region-color) 60%,#000);
+}
+
+
+/* =========================================================
+   已完成紀念
+========================================================= */
+
+
+.well-complete-memory{
+    margin-top:6px;
+    padding:9px;
+    border-radius:12px;
+    background:
+        linear-gradient(
+            135deg,
+            #fffdf3,
+            #f8fff9
+        );
+    border:1px solid
+        color-mix(in srgb,var(--region-color) 30%,#ddd);
+    color:#71827d;
+    font-size:10px;
+    line-height:1.7;
+}
+
+.well-complete-memory b{
+    color:#b58b19;
+    font-size:12px;
+}
+
+
+/* =========================================================
+   手機微調
+========================================================= */
+
+@media(max-width:380px){
+
+    .league-well-stage{
+        height:295px;
+    }
+
+    .well-gym-node{
+        width:28px;
+        height:28px;
+        margin:-14px;
+
+        transform:
+            rotate(var(--angle))
+            translateY(-110px)
+            rotate(calc(var(--angle) * -1));
+    }
+
+    .well-gym-pipe{
+        height:87px;
+        margin-top:-87px;
+    }
+
+    .well-elite-node{
+        width:35px;
+        height:35px;
+        margin:-17.5px;
+
+        transform:
+            rotate(var(--angle))
+            translateY(-69px)
+            rotate(calc(var(--angle) * -1));
+    }
+
+    .well-elite-pipe{
+        height:47px;
+        margin-top:-47px;
+    }
+
+    .well-pump{
+        width:86px;
+        height:86px;
+    }
+}
+
+
+/* =========================================================
+   生命之井外框
+   與御三家共用同一個原本外框
+========================================================= */
+
+.garden-league-shell{
+    --water:#69ddd0;
+    --water-light:#c8fff4;
+
+    position:relative;
+    overflow:hidden;
+
+    background:white;
+    border-radius:20px;
+    padding:15px;
+    margin-bottom:20px;
+
+    border:2px solid var(--region-color);
+
+    box-shadow:
+        0 4px 15px rgba(0,0,0,.05),
+        0 0 8px rgba(105,221,208,.15);
+
+    transition:box-shadow .5s;
+}
+
+
+/* =========================================================
+   水流沿著原本外框上方流動
+========================================================= */
+
+.garden-league-shell::before{
+    content:"";
+
+    position:absolute;
+    left:0;
+    right:0;
+    top:-2px;
+    height:4px;
+
+    pointer-events:none;
+    z-index:2;
+
+    background:
+        repeating-linear-gradient(
+            90deg,
+            transparent 0 12px,
+            var(--water-light) 12px 20px,
+            var(--water) 20px 29px,
+            transparent 29px 43px
+        );
+
+    background-size:86px 100%;
+
+    animation:gardenShellWaterRun 1.8s linear infinite;
+
+    filter:drop-shadow(0 0 4px var(--water));
+}
+
+
+/* =========================================================
+   水流動畫
+========================================================= */
+
+@keyframes gardenShellWaterRun{
+    to{
+        background-position:86px 0;
+    }
+}
+
+
+
+</style>
 </head>
 <body>
 
@@ -1741,7 +2723,7 @@
         <hr>
         <button onclick="openPage('guidePage')" style="background:var(--accent); color:black; width:100%; padding:12px; border:none; border-radius:5px;">📖 遊戲與記帳規則導引</button>
         <button onclick="resetAll()" style="background:var(--danger); color:white; width:100%; padding:12px; border:none; border-radius:5px; margin-top:20px;">🔥 重置所有數據</button>
-        <button onclick="updateToLatest()" style="background:#3498db;color:white;width:100%;padding:12px;border:none;border-radius:5px;margin-top:10px;"> ⟳ 更新到最新版本</button>
+        <button onclick="updateToLatest()" style="background:#3498db;color:white;width:100%;padding:12px;border:none;border-radius:5px;margin-top:10px;">⟳ 更新到最新版本</button>
     </div>
     <button class="btn-back" onclick="back()">✖ 關閉</button>
 </div>
@@ -2519,15 +3501,15 @@ function renderGarden(){
                 <div style="font-size:13px;color:#666;">⏱️ 下次巡邏：<span style="font-weight:bold;color:#2ecc71;">${getPatrolTimeStr()}</span></div>
             </div>
 
-            <div style="background:white;border-radius:20px;padding:15px;margin-bottom:20px;box-shadow:0 4px 15px rgba(0,0,0,.05);border:2px solid ${curData.color};">
-                ${renderChallengeSection(rid,curStats)}
-                <hr style="border:0;border-top:1px dashed #ddd;margin:15px 0;">
-                <div style="display:flex;justify-content:space-between;">
-                    ${renderWorker(`${rid}_w1`,starterIds[0],['🌾','🥗'],starterNames[0])}
-                    ${renderWorker(`${rid}_w2`,starterIds[1],['🐟','🦐'],starterNames[1])}
-                    ${renderWorker(`${rid}_w3`,starterIds[2],['🥩','🥚'],starterNames[2])}
-                </div>
-            </div>
+            <div class="garden-league-shell" style="--region-color:${curData.color};">
+    ${renderChallengeSection(rid,curStats)}
+    <hr style="border:0;border-top:1px dashed #ddd;margin:15px 0;">
+    <div style="display:flex;justify-content:space-between;">
+        ${renderWorker(`${rid}_w1`,starterIds[0],['🌾','🥗'],starterNames[0])}
+        ${renderWorker(`${rid}_w2`,starterIds[1],['🐟','🦐'],starterNames[1])}
+        ${renderWorker(`${rid}_w3`,starterIds[2],['🥩','🥚'],starterNames[2])}
+    </div>
+</div>
 
             <div style="background:white;border-radius:20px;padding:15px;box-shadow:0 4px 15px rgba(0,0,0,.05);margin-bottom:20px;">
                 <img src="${GARDEN.getGif(25)}" style="width:50px;image-rendering:pixelated;">
@@ -2866,75 +3848,236 @@ function closeButlerSelect(){
     window.butlerMembers=null;
 }
 
-
-    
 function renderChallengeSection(rid, curStats) {
+
     const data = WORLD_DATA[rid];
-    const beaten = curStats.gymsBeaten || 0;
+
+    /* 完全沿用原本存檔 */
+    const beaten = Math.max(
+        0,
+        Math.min(
+            13,
+            Number(curStats?.gymsBeaten || 0)
+        )
+    );
+
     const isCompleted = beaten >= 13;
-    const regionColor = data.color || "#ffcb05";
 
-    // --- 1. 【最上方】質感圓點徽章盒 (4x2) ---
-    let badgesHtml = `
-    <div style="background: #2a2a2a; border: 3px inset #444; border-radius: 12px; padding: 12px; margin-bottom: 15px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">`;
+    const regionColor = data.color || "#2ecc71";
 
-    for (let i = 0; i < 8; i++) {
-        const isWon = beaten > i;
-        badgesHtml += `
-    <div style="
-        width: 32px; height: 32px; border-radius: 50%; 
-        background: ${isWon ? `radial-gradient(circle at 30% 30%, #fff 0%, ${regionColor} 20%, ${regionColor} 50%, #000 55%, ${regionColor} 60%, #000 100%)` : '#1a1a1a'};
-        border: 2px solid ${isWon ? '#fff' : '#444'};
-        box-shadow: ${isWon ? `0 0 8px ${regionColor}, inset -2px -2px 5px rgba(0,0,0,0.5)` : 'inset 2px 2px 5px rgba(0,0,0,0.8)'};
-        display: flex; align-items: center; justify-content: center;">
-    </div>`;
+    /*
+        0~7  = 8 道館
+        8~11 = 4 四天王
+        12   = 冠軍
+
+        注意：
+        不新增任何存檔欄位。
+        舊玩家的 gymsBeaten 會直接轉換成水井狀態。
+    */
+
+    let gymPipes = "";
+    let gymNodes = "";
+
+    for(let i = 0; i < 8; i++){
+
+        const angle = i * 45;
+        const active = beaten > i;
+
+        gymPipes += `
+            <div
+                class="well-gym-pipe ${active ? "active" : ""}"
+                style="--angle:${angle}deg;">
+            </div>
+        `;
+
+        gymNodes += `
+            <div
+                class="well-gym-node ${active ? "active" : ""}"
+                style="--angle:${angle}deg;"
+                title="${data.challengers[i]?.name || "道館"}">
+            </div>
+        `;
     }
-    badgesHtml += '</div>';
 
-    // 天王進度 (5個星星)
-    badgesHtml += `<div style="display: flex; justify-content: center; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #555;">`;
-    for (let i = 8; i < 13; i++) {
-        const isWon = beaten > i;
-        badgesHtml += `<div style="font-size: 16px; color: ${isWon ? '#ffeb3b' : '#444'}; text-shadow: ${isWon ? '0 0 5px #fff' : 'none'};">★</div>`;
+
+    let elitePipes = "";
+    let eliteNodes = "";
+
+    for(let i = 0; i < 4; i++){
+
+        const angle = i * 90;
+        const active = beaten > (8 + i);
+
+        elitePipes += `
+            <div
+                class="well-elite-pipe ${active ? "active" : ""}"
+                style="--angle:${angle}deg;">
+            </div>
+        `;
+
+        eliteNodes += `
+            <div
+                class="well-elite-node ${active ? "active" : ""}"
+                style="--angle:${angle}deg;"
+                title="${data.challengers[8+i]?.name || "四天王"}">
+                ◆
+            </div>
+        `;
     }
-    badgesHtml += '</div></div>';
 
-    // --- 2. 處理通關或挑戰狀態 ---
-    if (isCompleted) {
-        return `
-            <div style="text-align:center;">
-                ${badgesHtml}
-                <h3 style="color:${regionColor}; margin:10px 0 0 0;">🏆 ${data.name} 殿堂元勳</h3>
-            </div>`;
-    }
 
-    const target = data.challengers[beaten];
-    
-    // --- 3. 組合最終 HTML (徽章 -> 名字/語錄 -> 按鈕) ---
-    return `
-        <div style="text-align:center; padding: 5px;">
-            ${badgesHtml}
+    const championActive = beaten >= 13;
 
-            <div style="margin: 10px 0;">
-                <div style="font-size:11px; color:#888; letter-spacing:1px; margin-bottom:4px;">NEXT CHALLENGER (${beaten}/13)</div>
-                <div style="font-size:22px; font-weight:bold; color:#333;">${target.name}</div>
-                <div style="color:${regionColor}; font-size:14px; font-style:italic; margin-top:6px; min-height:40px; display:flex; align-items:center; justify-content:center; padding:0 10px;">
-                    「 ${target.taunt} 」
-                </div>
+    /*
+        完成後：
+        水井不是停止。
+        而是進入「永久運轉」狀態。
+    */
+
+    let memoryHTML = "";
+
+    if(championActive){
+
+        memoryHTML = `
+            <div class="well-complete-memory">
+                <b>🏆 ${data.name}・生命之井已完全甦醒</b><br>
+                這座水井記錄著你完成聯盟之旅的證明。<br>
+                <span style="color:${regionColor};">
+                    💧 生命之水會持續流動。
+                </span>
             </div>
 
-            <button onclick="executeChallenge('${rid}', ${beaten})" style="
-                margin-top:5px; padding:15px; border-radius:25px; border:none; 
-                background:${regionColor}; color:white; font-weight:bold; font-size:16px;
-                cursor:pointer; width:100%; box-shadow:0 4px 0 rgba(0,0,0,0.2);
-                transition: transform 0.1s;
-            " onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
-                進行挑戰：${target.badge}
-            </button>
+            <div class="garden-water-memory"
+                 style="--region-color:${regionColor};">
+                <strong>🌿 永久紀念</strong><br>
+                即使多年後再次回到這座花園，
+                你曾經走過的道路仍然會在這裡流動。
+            </div>
+        `;
+
+    }else{
+
+        const remaining = 13 - beaten;
+
+        memoryHTML = `
+            <div class="garden-water-memory"
+                 style="--region-color:${regionColor};">
+                <strong>💧 生命之井</strong><br>
+                還有 ${remaining} 個聯盟挑戰，
+                等待你把水路全部接通。
+            </div>
+        `;
+    }
+
+
+    let challengeHTML = "";
+
+    if(isCompleted){
+
+        challengeHTML = `
+            <div class="well-challenge-info">
+
+                <div class="well-status complete">
+                    LEAGUE COMPLETE
+                </div>
+
+                <div class="well-challenger"
+                     style="color:${regionColor};">
+                    🏆 ${data.name} 殿堂元勳
+                </div>
+
+                <div class="well-taunt">
+                    「你的聯盟之旅，已經成為花園的一部分。」
+                </div>
+
+            </div>
+        `;
+
+    }else{
+
+        const target = data.challengers[beaten];
+
+        challengeHTML = `
+            <div class="well-challenge-info">
+
+                <div class="well-status">
+                    NEXT CHALLENGER · ${beaten}/13
+                </div>
+
+                <div class="well-challenger">
+                    ${target.name}
+                </div>
+
+                <div class="well-taunt"
+                     style="color:${regionColor};">
+                    「 ${target.taunt} 」
+                </div>
+
+                <button
+                    class="well-challenge-button"
+                    style="
+                        --region-color:${regionColor};
+                    "
+                    onclick="executeChallenge('${rid}', ${beaten})">
+
+                    ⚔️ 進行挑戰：
+                    ${target.badge}
+
+                </button>
+
+            </div>
+        `;
+    }
+
+
+    return `
+        <div
+            class="league-water-frame"
+            style="--region-color:${regionColor};">
+
+            <div
+                class="league-well-stage"
+                style="--region-color:${regionColor};">
+
+                
+                <!-- 八道館 -->
+                ${gymPipes}
+                ${gymNodes}
+
+
+                <!-- 四天王 -->
+                ${elitePipes}
+                ${eliteNodes}
+
+
+                <!-- 中央水泵 -->
+                <div
+                    class="well-center-water ${championActive ? "active" : ""}">
+                </div>
+
+                <div
+                    class="well-pump ${championActive ? "champion" : ""}">
+                </div>
+
+
+                <!-- 完成後延伸到花園的水渠 -->
+                <div
+                    class="garden-final-water ${championActive ? "active" : ""}">
+                </div>
+
+
+            </div>
+
+
+            ${challengeHTML}
+
+            ${memoryHTML}
+
         </div>
     `;
 }
+
+
 
 /* --- 萬用挑戰邏輯：一套公式處理所有地區 --- */
 function executeChallenge(regionId, beatenCount) {
