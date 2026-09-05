@@ -2453,6 +2453,128 @@
     }
 }
 
+
+/* =========================================================
+   生命之井｜手機效能最佳化
+   保留視覺，不改任何挑戰邏輯，原本的先不刪
+========================================================= */
+
+/* 1. 背景呼吸改成非常輕量 */
+.pball-water-stage::before{
+    animation:none !important;
+    opacity:.38;
+}
+
+/* 2. 已完成水道：取消每一條各自的呼吸動畫與 filter */
+.pball-water-body .pball-gym-arc.active{
+    animation:none !important;
+    filter:none !important;
+    opacity:1;
+}
+
+/* 3. 水道流光完全停止
+   水道本身仍然保持亮色，不會消失 */
+.pball-water-body .pball-gym-arc.active::after{
+    animation:none !important;
+    opacity:.18;
+}
+
+/* 4. 道館節點取消持續放大縮小 */
+.pball-water-body .pball-gym-node.active{
+    animation:none !important;
+}
+
+/* 5. 節點中央亮點取消呼吸 */
+.pball-water-body .pball-gym-node.active::before{
+    animation:none !important;
+    opacity:.85;
+    box-shadow:0 0 4px white;
+}
+
+/* 6. 四天王水道取消 brightness 動畫 */
+.pball-elite-segment.active{
+    animation:none !important;
+    filter:none !important;
+}
+
+/* 7. 四天王流光取消
+   保留水道本身的顏色 */
+.pball-elite-segment.active::after{
+    animation:none !important;
+    display:none !important;
+}
+
+/* 8. 粒子保留，但降低發光成本 */
+.garden-life-particle{
+    box-shadow:none !important;
+    opacity:.65;
+}
+
+/* 9. 水滴保留動畫，但取消昂貴的發光 */
+.garden-water-drop{
+    box-shadow:none !important;
+}
+
+/* 10. 冠軍中央寶貝球只保留非常輕微呼吸 */
+.pball-champion-button.active{
+    animation:championLifeLite 4s ease-in-out infinite !important;
+    filter:none !important;
+}
+
+/* 中央寶貝球輕量動畫 */
+@keyframes championLifeLite{
+    0%,100%{
+        transform:translate(-50%,-50%) scale(1);
+    }
+    50%{
+        transform:translate(-50%,-50%) scale(1.025);
+    }
+}
+
+/* 11. 完成後不再對整個舞台做 box-shadow 動畫 */
+.pball-water-stage.league-complete{
+    animation:none !important;
+    box-shadow:none !important;
+}
+
+/* 12. 完成後水波保留，但放慢、縮小 */
+.pball-water-stage.league-complete::after{
+    animation:lifeWaterRippleLite 5.5s ease-out infinite !important;
+}
+
+@keyframes lifeWaterRippleLite{
+    0%{
+        opacity:.45;
+        transform:translate(-50%,-50%) scale(.3);
+    }
+    70%{
+        opacity:.10;
+    }
+    100%{
+        opacity:0;
+        transform:translate(-50%,-50%) scale(2.4);
+    }
+}
+
+/* 13. 外框頂部流動線保留，但降低速度 */
+.garden-league-shell::before{
+    animation:gardenShellWaterRunLite 3s linear infinite !important;
+}
+
+@keyframes gardenShellWaterRunLite{
+    to{
+        background-position:86px 0;
+    }
+}
+
+/* 14. 使用者裝置偏好減少動畫時直接全部停止 */
+@media(prefers-reduced-motion:reduce){
+    .pball-water-stage *,
+    .garden-league-shell::before{
+        animation:none !important;
+        transition:none !important;
+    }
+}
 </style>
 </head>
 <body>
