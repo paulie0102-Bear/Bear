@@ -208,23 +208,30 @@
 
 /* 1. 日期 */
 .csv-date {
-    width: 90px;
+    width: 132px;
     font-weight: bold;
     color: #444;
     flex-shrink: 0;
     font-family: monospace;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 6px 8px;
+    box-sizing: border-box;
+    background: #fafafa;
 }
 
 /* 2. 類別 (給個小標籤感) */
 .csv-cat {
-    width: 70px;
+    width: 80px;
     color: #666;
     font-size: 13px;
     background: #f0f0f0;
     text-align: center;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 6px 4px;
+    border-radius: 6px;
     flex-shrink: 0;
+    border: 1px solid #e0e0e0;
+    box-sizing: border-box;
 }
 
 /* 3. 備註 (自動填滿) */
@@ -232,10 +239,12 @@
     flex: 1;
     min-width: 0;
     font-size: 14px;
-    color: #888;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis; /* 文字過長自動顯示 ... */
+    color: #444;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 6px 8px;
+    box-sizing: border-box;
+    background: #fafafa;
 }
 
 /* 4. 金額 */
@@ -2453,7 +2462,6 @@
     }
 }
 
-
 /* =========================================================
    生命之井｜手機效能最佳化
    保留視覺，不改任何挑戰邏輯，原本的先不刪
@@ -2575,6 +2583,7 @@
         transition:none !important;
     }
 }
+
 </style>
 </head>
 <body>
@@ -3317,43 +3326,174 @@
         <!-- 統計模式 -->
         <div style="
             display:grid;
-            grid-template-columns:repeat(3,1fr);
+            grid-template-columns:repeat(4,1fr);
             gap:5px;
             margin-bottom:10px;
         ">
             <button
-                onclick="switchChart('year')"
+                onclick="switchChart('search')"
                 style="
-                    padding:10px 5px;
+                    padding:10px 3px;
                     border-radius:8px;
                     border:1px solid #ddd;
                     background:#f8f9fa;
                     font-weight:bold;
+                    font-size:12px;
+                    white-space:nowrap;
                 "
-            >📊 年統計</button>
+            >📜 紀錄查詢</button>
 
             <button
                 onclick="switchChart('month')"
                 style="
-                    padding:10px 5px;
+                    padding:10px 3px;
                     border-radius:8px;
                     border:1px solid #ddd;
                     background:#f8f9fa;
                     font-weight:bold;
+                    font-size:12px;
+                    white-space:nowrap;
                 "
             >📅 月統計</button>
 
             <button
                 onclick="switchChart('cat')"
                 style="
-                    padding:10px 5px;
+                    padding:10px 3px;
                     border-radius:8px;
                     border:1px solid #ddd;
                     background:#f8f9fa;
                     font-weight:bold;
+                    font-size:12px;
+                    white-space:nowrap;
                 "
             >🥧 月分類</button>
+
+            <button
+                onclick="switchChart('year')"
+                style="
+                    padding:10px 3px;
+                    border-radius:8px;
+                    border:1px solid #ddd;
+                    background:#f8f9fa;
+                    font-weight:bold;
+                    font-size:12px;
+                    white-space:nowrap;
+                "
+            >📊 年統計</button>
         </div>
+
+        <!-- 📜 紀錄查詢面板 (原「紀錄」頁的手動紀錄查詢功能搬移至此) -->
+        <div id="chartSearchPanel" style="display:none;">
+            <p style="font-size:13px;color:gray;margin-bottom:5px;">手動紀錄查詢</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;">
+                <input type="date" id="hStart" style="padding:8px;border:1px solid #ddd;border-radius:5px;">
+                <input type="date" id="hEnd" style="padding:8px;border:1px solid #ddd;border-radius:5px;">
+            </div>
+            <div style="margin-bottom:8px;">
+                <details id="historyCategoryTree">
+                    <summary style="padding:9px;border:1px solid #ddd;border-radius:5px;background:#fff;cursor:pointer;">
+                        📂 選擇收支分類
+                    </summary>
+
+                    <div style="margin-top:5px;border:1px solid #eee;border-radius:5px;background:#fafafa;padding:5px;">
+
+                        <label style="display:block;padding:8px;">
+                            <input type="radio" name="historyType" value="" checked onclick="closeHistoryCategoryTree()">
+                            📊 全部收支
+                        </label>
+
+                        <details>
+                            <summary style="padding:8px;color:#e67e22;font-weight:bold;cursor:pointer;">
+                                🔴 支出
+                            </summary>
+
+                            <div style="padding-left:18px;">
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="expense" onclick="closeHistoryCategoryTree()">
+                                    🔴 全部支出
+                                </label>
+
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="expense:飲食" onclick="closeHistoryCategoryTree()">
+                                    飲食
+                                </label>
+
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="expense:交通" onclick="closeHistoryCategoryTree()">
+                                    交通
+                                </label>
+
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="expense:娛樂" onclick="closeHistoryCategoryTree()">
+                                    娛樂
+                                </label>
+
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="expense:購物" onclick="closeHistoryCategoryTree()">
+                                    購物
+                                </label>
+
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="expense:居家" onclick="closeHistoryCategoryTree()">
+                                    居家
+                                </label>
+
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="expense:醫療" onclick="closeHistoryCategoryTree()">
+                                    醫療
+                                </label>
+
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="expense:其他" onclick="closeHistoryCategoryTree()">
+                                    其他
+                                </label>
+                            </div>
+                        </details>
+
+                        <details>
+                            <summary style="padding:8px;color:#3498db;font-weight:bold;cursor:pointer;">
+                                🔵 收入
+                            </summary>
+
+                            <div style="padding-left:18px;">
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="income" onclick="closeHistoryCategoryTree()">
+                                    🔵 全部收入
+                                </label>
+
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="income:薪資" onclick="closeHistoryCategoryTree()">
+                                    薪資
+                                </label>
+
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="income:獎金" onclick="closeHistoryCategoryTree()">
+                                    獎金
+                                </label>
+
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="income:投資收益" onclick="closeHistoryCategoryTree()">
+                                    投資收益
+                                </label>
+
+                                <label style="display:block;padding:7px;">
+                                    <input type="radio" name="historyType" value="income:其他收入" onclick="closeHistoryCategoryTree()">
+                                    其他收入
+                                </label>
+                            </div>
+                        </details>
+
+                    </div>
+                </details>
+            </div>
+            <input type="text" id="hKeyword" placeholder="🔎 搜尋分類或備註" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:5px;margin-bottom:8px;">
+            <button onclick="searchHistory()" style="background:var(--dark);color:white;width:100%;padding:10px;border:none;border-radius:5px;">搜尋明細</button>
+            <div id="historyList" style="margin-top:10px;border:1px solid #eee;border-radius:5px;background:#fafafa;"></div>
+        </div>
+
+        <!-- 📊 月統計 / 🥧 月分類 / 📊 年統計 共用面板 -->
+        <div id="chartStatsPanel">
 
         <!-- 年份 / 月份選擇 -->
         <div
@@ -3461,6 +3601,9 @@
 <!-- 分類排行 -->
 <div id="categoryRanking" style="margin-top:12px;"></div>
 
+        </div>
+        <!-- /chartStatsPanel -->
+
     </div>
 
     <button
@@ -3508,120 +3651,13 @@
             <h3>📋 匯入預覽</h3>
             <h4 id="importCount" style="margin: 5px 0; color: var(--p); font-size: 14px;">預覽資料數量: 0</h4>
             <p style="font-size:12px; color:gray;">(在此修改分類後點擊「正式導入」)</p>
-            <div id="previewList" style="max-height:300px; overflow-y:auto; margin-bottom:10px;"></div>
+            <div id="previewList" style="margin-bottom:10px;"></div>
             <div style="display:flex; gap:10px;">
                 <button onclick="confirmImport()" style="flex:1; background:#28a745; color:white; padding:10px; border:none; border-radius:5px;">✅ 正式導入</button>
                 <button onclick="cancelImport()" style="flex:1; background:#6c757d; color:white; padding:10px; border:none; border-radius:5px;">✖ 取消</button>
             </div>
         </div>
 
-        <hr>
-
-        <p style="font-size:13px;color:gray;margin-bottom:5px;">手動紀錄查詢</p>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;">
-    <input type="date" id="hStart" style="padding:8px;border:1px solid #ddd;border-radius:5px;">
-    <input type="date" id="hEnd" style="padding:8px;border:1px solid #ddd;border-radius:5px;">
-</div>
-<div style="margin-bottom:8px;">
-    <details id="historyCategoryTree">
-        <summary style="padding:9px;border:1px solid #ddd;border-radius:5px;background:#fff;cursor:pointer;">
-            📂 選擇收支分類
-        </summary>
-
-        <div style="margin-top:5px;border:1px solid #eee;border-radius:5px;background:#fafafa;padding:5px;">
-
-            <label style="display:block;padding:8px;">
-                <input type="radio" name="historyType" value="" checked onclick="closeHistoryCategoryTree()">
-                📊 全部收支
-            </label>
-
-            <details>
-                <summary style="padding:8px;color:#e67e22;font-weight:bold;cursor:pointer;">
-                    🔴 支出
-                </summary>
-
-                <div style="padding-left:18px;">
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="expense" onclick="closeHistoryCategoryTree()">
-                        🔴 全部支出
-                    </label>
-
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="expense:飲食" onclick="closeHistoryCategoryTree()">
-                        飲食
-                    </label>
-
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="expense:交通" onclick="closeHistoryCategoryTree()">
-                        交通
-                    </label>
-
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="expense:娛樂" onclick="closeHistoryCategoryTree()">
-                        娛樂
-                    </label>
-
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="expense:購物" onclick="closeHistoryCategoryTree()">
-                        購物
-                    </label>
-
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="expense:居家" onclick="closeHistoryCategoryTree()">
-                        居家
-                    </label>
-
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="expense:醫療" onclick="closeHistoryCategoryTree()">
-                        醫療
-                    </label>
-
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="expense:其他" onclick="closeHistoryCategoryTree()">
-                        其他
-                    </label>
-                </div>
-            </details>
-
-            <details>
-                <summary style="padding:8px;color:#3498db;font-weight:bold;cursor:pointer;">
-                    🔵 收入
-                </summary>
-
-                <div style="padding-left:18px;">
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="income" onclick="closeHistoryCategoryTree()">
-                        🔵 全部收入
-                    </label>
-
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="income:薪資" onclick="closeHistoryCategoryTree()">
-                        薪資
-                    </label>
-
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="income:獎金" onclick="closeHistoryCategoryTree()">
-                        獎金
-                    </label>
-
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="income:投資收益" onclick="closeHistoryCategoryTree()">
-                        投資收益
-                    </label>
-
-                    <label style="display:block;padding:7px;">
-                        <input type="radio" name="historyType" value="income:其他收入" onclick="closeHistoryCategoryTree()">
-                        其他收入
-                    </label>
-                </div>
-            </details>
-
-        </div>
-    </details>
-</div>
-<input type="text" id="hKeyword" placeholder="🔎 搜尋分類或備註" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:5px;margin-bottom:8px;">
-<button onclick="searchHistory()" style="background:var(--dark);color:white;width:100%;padding:10px;border:none;border-radius:5px;">搜尋明細</button>
-<div id="historyList" style="margin-top:10px;max-height:200px;overflow-y:auto;border:1px solid #eee;border-radius:5px;background:#fafafa;"></div>
     </div> <button class="btn-back" onclick="back()" 
             style="margin: 15px auto 30px auto; display: block; width: calc(100% - 24px); box-sizing: border-box;">
         ✖ 關閉
@@ -3737,7 +3773,7 @@ let isInBattle = false;  // 戰鬥狀態鎖
 let currentAmount = 0;   // 暫存本次消費金額
 let curE = null;         // 當前寶可夢
 let turn = 0;            // 回合數
-let currentChartType = 'year';
+let currentChartType = 'search';
 
 // --- [ 3. 基礎工具函式 ] ---
 function getPkmnName(id) {
@@ -6853,7 +6889,7 @@ function openPage(id) {
     // 渲染邏輯
     if (id === 'dexPage') renderDex();
     if (id === 'taskPage') renderTasks();
-    if (id === 'chartPage') renderCharts();
+    if (id === 'chartPage') switchChart('search');
     
     if (id === 'guidePage') {
         const lvlEl = document.getElementById('guideLvl');
@@ -7898,6 +7934,23 @@ let categoryChartType = "expense";
 
 function switchChart(type) {
     currentChartType = type;
+
+    const searchPanel = document.getElementById("chartSearchPanel");
+    const statsPanel = document.getElementById("chartStatsPanel");
+
+    // 📜 紀錄查詢分頁：顯示手動查詢面板，隱藏統計圖表面板
+    if(type === "search") {
+        if(searchPanel) searchPanel.style.display = "block";
+        if(statsPanel) statsPanel.style.display = "none";
+
+        if(typeof searchHistory === "function") searchHistory();
+
+        return;
+    }
+
+    // 其餘分頁（月統計 / 月分類 / 年統計）：隱藏查詢面板，顯示統計圖表面板
+    if(searchPanel) searchPanel.style.display = "none";
+    if(statsPanel) statsPanel.style.display = "block";
 
     const controls = document.getElementById("chartControls");
     const yearRow = document.getElementById("yearPickerRow");
@@ -9029,7 +9082,7 @@ function handleCSV(e) {
                 let category = "其他";
                 const note = (cols[7] || "").toLowerCase().trim();
                 if (note.includes("超商")||note.includes("企業社")||note.includes("便利商店")||note.includes("餐飲")||note.includes("商行")||note.includes("食")||note.includes("茶")) category="餐飲";
-                else if (note.includes("捷運")||note.includes("高鐵")||note.includes("台鐵")||note.includes("油品")||note.includes("中油")||note.includes("汽油")) category="交通";
+                else if (note.includes("捷運")||note.includes("高鐵")||note.includes("台鐵")||note.includes("油")||note.includes("汽油")) category="交通";
                 else if (note.includes("藥局")||note.includes("醫")||note.includes("健保")) category="醫療";
                 else if (note.includes("購物")||note.includes("百貨")||note.includes("電子")) category="購物";
                 else if (note.includes("娛樂")||note.includes("影城")) category="娛樂";
@@ -9039,22 +9092,18 @@ function handleCSV(e) {
                 lastImportCount++;
 
                 previewList.innerHTML += `
-                    <div class="csv-item-mobile">
-                        <div class="csv-row">
-                            <input type="date" value="${item.date}" onchange="tempData[${tempData.length-1}].date=this.value" class="csv-date">
-                            <select onchange="tempData[${tempData.length-1}].cat=this.value" class="csv-cat">
-                                <option value="其他" ${item.cat==="其他"?"selected":""}>其他</option>
-                                <option value="餐飲" ${item.cat==="餐飲"?"selected":""}>餐飲</option>
-                                <option value="交通" ${item.cat==="交通"?"selected":""}>交通</option>
-                                <option value="購物" ${item.cat==="購物"?"selected":""}>購物</option>
-                                <option value="娛樂" ${item.cat==="娛樂"?"selected":""}>娛樂</option>
-                                <option value="醫療" ${item.cat==="醫療"?"selected":""}>醫療</option>
-                            </select>
-                        </div>
-                        <div class="csv-row">
-                            <input type="text" value="${item.note}" onchange="tempData[${tempData.length-1}].note=this.value" class="csv-note" placeholder="備註">
-                            <span class="csv-amt">$${item.amt}</span>
-                        </div>
+                    <div class="csv-item">
+                        <input type="date" value="${item.date}" onchange="tempData[${tempData.length-1}].date=this.value" class="csv-date">
+                        <select onchange="tempData[${tempData.length-1}].cat=this.value" class="csv-cat">
+                            <option value="其他" ${item.cat==="其他"?"selected":""}>其他</option>
+                            <option value="餐飲" ${item.cat==="餐飲"?"selected":""}>餐飲</option>
+                            <option value="交通" ${item.cat==="交通"?"selected":""}>交通</option>
+                            <option value="購物" ${item.cat==="購物"?"selected":""}>購物</option>
+                            <option value="娛樂" ${item.cat==="娛樂"?"selected":""}>娛樂</option>
+                            <option value="醫療" ${item.cat==="醫療"?"selected":""}>醫療</option>
+                        </select>
+                        <input type="text" value="${item.note}" onchange="tempData[${tempData.length-1}].note=this.value" class="csv-note" placeholder="備註">
+                        <span class="csv-amt">$${item.amt}</span>
                     </div>`;
             }
         }
