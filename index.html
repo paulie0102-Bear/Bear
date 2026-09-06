@@ -2967,7 +2967,7 @@
     </div>
 
 <!-- 秘密花園 -->
-<button onclick="renderGarden(); GARDEN.processLoot();" 
+<button onclick="openGardenFast();"
     style="
         background:#2ecc71;
         color:white;
@@ -4456,6 +4456,51 @@ function renderRegionTabs() {
     `;
 }
 
+function openGardenFast(){
+
+    if(window._gardenOpening)return;
+    window._gardenOpening=true;
+
+    /*
+     * 先讓目前頁面完成一次畫面更新，
+     * 再建立秘密花園。
+     *
+     * 不使用載入遮罩，避免 renderGarden 發生錯誤時
+     * 整個畫面被遮住。
+     */
+    setTimeout(()=>{
+
+        try{
+            renderGarden();
+        }catch(e){
+            console.error("秘密花園載入錯誤：",e);
+        }
+
+        window._gardenOpening=false;
+
+        /*
+         * 花園畫面建立完成後，
+         * 再處理巡邏獎勵。
+         */
+        setTimeout(()=>{
+
+            try{
+                if(
+                    typeof GARDEN!=="undefined" &&
+                    typeof GARDEN.processLoot==="function"
+                ){
+                    GARDEN.processLoot();
+                }
+            }catch(e){
+                console.error("秘密花園獎勵處理錯誤：",e);
+            }
+
+        },0);
+
+    },0);
+}
+
+
 function renderGarden(){
     initFarmProgress();
     if(typeof initExtendedFarm==='function')initExtendedFarm();
@@ -5391,9 +5436,6 @@ function renderCookingLines(){
     const completedCount=Object.values(s.farm.regionProg.stats).filter(stat=>stat.gymsBeaten>=13).length;
     const f=s.farm;
     const hasButler=!!f.butlerId&&!!f.butlerUniqueId;
-
-    ensureJirachiDaily();
-    processJirachiJobs();
 
     let html='';
 
