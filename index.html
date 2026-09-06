@@ -192,18 +192,22 @@
   .encounter-active .grass-right { transform: translateX(110%); }
 </style>
 <style>
-  /* --- 搜尋明細清單項 (整合版) --- */
+  /* --- 搜尋明細清單項 (整合版，一張卡＝一張發票) --- */
 
 .csv-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    display: block;
     padding: 12px 15px;
     margin-bottom: 10px;
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    transition: transform 0.2s;
+}
+
+/* 卡片頭：日期＋分類＋淨額 */
+.csv-item-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* 1. 日期 */
@@ -234,9 +238,9 @@
     box-sizing: border-box;
 }
 
-/* 3. 備註 (自動填滿) */
+/* 3. 備註 (自動填滿，整張卡只有一個，可自訂店名) */
 .csv-note {
-    flex: 1;
+    width: 100%;
     min-width: 0;
     font-size: 14px;
     color: #444;
@@ -245,44 +249,89 @@
     padding: 6px 8px;
     box-sizing: border-box;
     background: #fafafa;
+    margin-top: 6px;
 }
 
-/* 4. 金額 */
+/* 4. 淨額（整張發票加總後的金額） */
 .csv-amt {
-    width: 80px;
+    min-width: 70px;
     text-align: right;
     font-weight: bold;
     color: #e67e22; /* 暖橘色，醒目但不刺眼 */
     flex-shrink: 0;
 }
 
-/* 📱 手機版調整：自動轉為兩排佈局 */
+/* 賣方登記名稱（可能很長，用省略號截斷，避免撐開版面） */
+.csv-item-seller {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #999;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 明細清單容器 */
+.csv-detail-list {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed #eee;
+}
+
+/* 明細單行：左品名／右金額，靠右對齊維持整齊 */
+.csv-detail-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    padding: 3px 0;
+    font-size: 13px;
+    color: #444;
+}
+
+.csv-detail-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.csv-detail-amt {
+    flex-shrink: 0;
+    min-width: 48px;
+    text-align: right;
+    font-family: monospace;
+}
+
+/* 折扣／優惠行：字體略小、顏色轉淡，但金額仍與正價行對齊 */
+.csv-detail-line.csv-detail-discount {
+    color: #c0392b;
+    font-size: 12px;
+    opacity: 0.85;
+}
+
+/* 展開更多明細的按鈕 */
+.csv-detail-more {
+    margin-top: 4px;
+    padding-top: 4px;
+    text-align: center;
+    font-size: 12px;
+    color: #3498db;
+    cursor: pointer;
+    border-top: 1px dashed #eee;
+}
+
+/* 📱 手機版調整 */
 @media (max-width: 480px) {
-    .csv-item {
+    .csv-item-header {
         flex-wrap: wrap;
-        padding: 10px;
         gap: 5px;
     }
 
-    /* 第一排：日期與類別 */
     .csv-date { width: auto; flex: 1; }
     .csv-cat { width: auto; }
-
-    /* 第二排：備註與金額 */
-    .csv-note { 
-        width: 65%; 
-        flex: none; 
-        order: 3; /* 強制排在後面 */
-        padding-top: 5px;
-        border-top: 1px dashed #eee;
-    }
-    .csv-amt { 
-        width: 30%; 
-        flex: 1; 
-        order: 4; 
-        padding-top: 5px;
-        border-top: 1px dashed #eee;
-    }
+    .csv-amt { width: 100%; order: 3; padding-top: 4px; text-align: right; }
 }
 </style>
 <style>
@@ -8110,23 +8159,6 @@ function renderCategoryRanking(records,type){
             0
         );
 
-    const topEntries = entries.slice(0,5);
-
-    if(entries.length > 5){
-        const otherAmount =
-            entries
-                .slice(5)
-                .reduce(
-                    (sum,item) => sum + item[1],
-                    0
-                );
-
-        topEntries.push([
-            "其他",
-            otherAmount
-        ]);
-    }
-
     const color =
         type === "income"
             ? "#3498db"
@@ -8152,7 +8184,7 @@ function renderCategoryRanking(records,type){
                 ${icon} ${type === "income" ? "收入" : "支出"}分類排行
             </div>
 
-            ${topEntries.map((item,index) => {
+            ${entries.map((item,index) => {
                 const name = item[0];
                 const amount = item[1];
 
@@ -8255,59 +8287,27 @@ function toggleCategoryDetail(encodedName,type){
             type:type
         });
 
-    let detailRecords = records.filter(h => {
-
-        const category =
-            h.cat ||
+    function getCategory(h){
+        return h.cat ||
             (type === "income"
                 ? "其他收入"
                 : "未分類");
-
-        return category === name;
-    });
-
-    // 「其他」代表排行第 6 名以後的所有分類
-    if(name === "其他"){
-        const categoryTotals = {};
-
-        records.forEach(h => {
-            const category =
-                h.cat ||
-                (type === "income"
-                    ? "其他收入"
-                    : "未分類");
-
-            const amount =
-                Number(h.amt) || 0;
-
-            categoryTotals[category] =
-                (categoryTotals[category] || 0) + amount;
-        });
-
-        const topCategories =
-            Object.entries(categoryTotals)
-                .sort((a,b) => b[1] - a[1])
-                .slice(0,5)
-                .map(item => item[0]);
-
-        detailRecords =
-            records.filter(h => {
-
-                const category =
-                    h.cat ||
-                    (type === "income"
-                        ? "其他收入"
-                        : "未分類");
-
-                return !topCategories.includes(category);
-            });
     }
 
-    detailRecords.sort((a,b) =>
-        String(b.date).localeCompare(
-            String(a.date)
-        )
+    // 一律直接依分類名稱篩選（「其他」也是一個實際存在的分類標籤，
+    // 跟「飲食」「居家」等分類用同一套規則處理，不再額外合併）
+    const detailItems =
+        records
+            .filter(h => getCategory(h) === name)
+            .map(h => ({ record:h, category:name }));
+
+    // 金額由大到小排序，最多只顯示前 10 筆
+    detailItems.sort((a,b) =>
+        (Number(b.record.amt) || 0) - (Number(a.record.amt) || 0)
     );
+
+    const totalCount = detailItems.length;
+    const shownItems = detailItems.slice(0,10);
 
     const color =
         type === "income"
@@ -8319,14 +8319,7 @@ function toggleCategoryDetail(encodedName,type){
             ? "🔵"
             : "🔴";
 
-    const total =
-        detailRecords.reduce(
-            (sum,h) =>
-                sum + (Number(h.amt) || 0),
-            0
-        );
-
-    if(!detailRecords.length){
+    if(!shownItems.length){
         box.innerHTML = `
             <div style="
                 padding:10px;
@@ -8354,10 +8347,12 @@ function toggleCategoryDetail(encodedName,type){
                 font-weight:bold;
                 margin-bottom:6px;
             ">
-                ${icon} ${name}明細
+                ${icon} ${name}明細${totalCount > 10 ? `（金額前10筆，共${totalCount}筆）` : ""}
             </div>
 
-            ${detailRecords.map(h => {
+            ${shownItems.map(item => {
+
+                const h = item.record;
 
                 const amount =
                     Number(h.amt) || 0;
@@ -8392,7 +8387,7 @@ function toggleCategoryDetail(encodedName,type){
                             white-space:nowrap;
                             color:#555;
                         ">
-                            ${note || name}
+                            ${note || item.category}
                         </div>
 
                         <div style="
@@ -8404,15 +8399,6 @@ function toggleCategoryDetail(encodedName,type){
                     </div>
                 `;
             }).join("")}
-
-            <div style="
-                text-align:right;
-                padding-top:8px;
-                font-weight:bold;
-                color:${color};
-            ">
-                合計 $${total.toLocaleString()}
-            </div>
         </div>
     `;
 
@@ -8656,6 +8642,15 @@ if(expenseRateEl) {
     let labels = [];
     let datasets = [];
     let chartType = "bar";
+
+    // 分類排行區塊：預設清空，只有 🥧 月分類 會重新填入
+    // （避免切換到 年統計 / 月統計 時殘留舊資料）
+    const categoryRankingBox =
+        document.getElementById("categoryRanking");
+
+    if(categoryRankingBox){
+        categoryRankingBox.innerHTML = "";
+    }
 
     // ==========================================
     // 📊 年統計
@@ -9035,6 +9030,33 @@ if(expenseRateEl) {
 let tempData = []; // 暫存區
 let lastImportCount = 0; // 儲存上次匯入成功筆數
 
+// 依「折扣/優惠」關鍵字或負金額，判斷一行明細是不是折扣行（分類判斷時要排除）
+function isCsvDiscountLine(itemName, amt) {
+    if (amt < 0) return true;
+    return /折扣|折抵|折讓|優惠|省\d|贈品/.test(itemName || "");
+}
+
+// 依賣方名稱＋非折扣品項名稱，套用關鍵字分類（跟原本規則完全一致，只是排除了折扣行文字）
+function classifyCsvGroup(sellerName, nonDiscountItemNames) {
+    const text = [sellerName, ...nonDiscountItemNames].join(' ').toLowerCase();
+    let category = "其他";
+    if (text.includes("超商")||text.includes("飯")||text.includes("便利商店")||text.includes("餐飲")||text.includes("麵")||text.includes("食")||text.includes("茶")) category="飲食";
+    else if (text.includes("捷運")||text.includes("高鐵")||text.includes("台鐵")||text.includes("油")||text.includes("汽油")) category="交通";
+    else if (text.includes("藥局")||text.includes("醫")||text.includes("健保")) category="醫療";
+    else if (text.includes("購物")||text.includes("百貨")||text.includes("全聯")||text.includes("酷澎")||text.includes("電子")) category="購物";
+    else if (text.includes("娛樂")||text.includes("影城")) category="娛樂";
+    return category;
+}
+
+// 明細單行的 HTML（品名靠左省略號截斷，金額靠右等寬字體對齊）
+function renderCsvDetailLine(it) {
+    const sign = it.amt < 0 ? "-" : "";
+    return `<div class="csv-detail-line${it.discount ? ' csv-detail-discount' : ''}">
+        <span class="csv-detail-name">${it.name}</span>
+        <span class="csv-detail-amt">${sign}$${Math.abs(it.amt)}</span>
+    </div>`;
+}
+
 // 注意：這裡不准放任何 <div> 標籤！
 function handleCSV(e) {
     const file = e.target.files[0];
@@ -9057,60 +9079,120 @@ function handleCSV(e) {
         previewList.innerHTML = "";
         lastImportCount = 0;
 
+        // ========================================
+        // 第一步：依「發票號碼＋賣方統編」把同一張發票的
+        // 所有明細行（含折扣行）集中成一組
+        // ========================================
+        const groups = new Map();
+        const groupOrder = [];
+
         for (let i = 1; i < lines.length; i++) {
             const cols = lines[i].split(',').map(c => c.replace(/^["']|["']$/g, '').trim());
             const rawDate = cols[1] || "";
+            const invoiceNo = cols[2] || "";
+            const sellerId = cols[6] || "";
+            const sellerName = (cols[7] || "").trim();
             const rawAmt = parseInt(cols[3]);
+            const itemName = (cols[13] || "").trim();
 
-            if (rawDate && !isNaN(rawAmt)) {
-                let finalDate = "";
-                if (rawDate.length === 8 && !isNaN(rawDate)) {
-                    finalDate = `${rawDate.substring(0,4)}-${rawDate.substring(4,6)}-${rawDate.substring(6,8)}`;
+            if (!rawDate || isNaN(rawAmt)) continue;
+
+            let finalDate = "";
+            if (rawDate.length === 8 && !isNaN(rawDate)) {
+                finalDate = `${rawDate.substring(0,4)}-${rawDate.substring(4,6)}-${rawDate.substring(6,8)}`;
+            } else {
+                let parts = rawDate.replace(/\//g,'-').split('-');
+                if (parts.length===3){
+                    let y = parts[0].padStart(4,'0');
+                    let m = parts[1].padStart(2,'0');
+                    let d = parts[2].padStart(2,'0');
+                    if (parseInt(y)<1000) y = (parseInt(y)+1911).toString();
+                    finalDate = `${y}-${m}-${d}`;
                 } else {
-                    let parts = rawDate.replace(/\//g,'-').split('-');
-                    if (parts.length===3){
-                        let y = parts[0].padStart(4,'0');
-                        let m = parts[1].padStart(2,'0');
-                        let d = parts[2].padStart(2,'0');
-                        if (parseInt(y)<1000) y = (parseInt(y)+1911).toString();
-                        finalDate = `${y}-${m}-${d}`;
-                    } else {
-                        finalDate = new Date().toISOString().split('T')[0];
-                    }
+                    finalDate = new Date().toISOString().split('T')[0];
                 }
+            }
 
-                let category = "其他";
-                const note = (cols[7] || "").toLowerCase().trim();
-                if (note.includes("超商")||note.includes("企業社")||note.includes("便利商店")||note.includes("餐飲")||note.includes("商行")||note.includes("食")||note.includes("茶")) category="餐飲";
-                else if (note.includes("捷運")||note.includes("高鐵")||note.includes("台鐵")||note.includes("油")||note.includes("汽油")) category="交通";
-                else if (note.includes("藥局")||note.includes("醫")||note.includes("健保")) category="醫療";
-                else if (note.includes("購物")||note.includes("百貨")||note.includes("電子")) category="購物";
-                else if (note.includes("娛樂")||note.includes("影城")) category="娛樂";
+            const discount = isCsvDiscountLine(itemName, rawAmt);
+            // 用「發票號碼＋賣方統編」當分組鍵，避免不同店家剛好發票號碼撞號的極端狀況；
+            // 沒有發票號碼時退回單行一組，行為跟原本一致
+            const groupKey = invoiceNo ? `${invoiceNo}__${sellerId}` : `__NOINV_${i}`;
 
-                const item = { date: finalDate, cat: category, note: (cols[7] || "載具消費").trim(), amt: rawAmt };
-                tempData.push(item);
-                lastImportCount++;
+            if (!groups.has(groupKey)) {
+                groups.set(groupKey, {
+                    date: finalDate,
+                    sellerName: sellerName || "載具消費",
+                    items: [],
+                    netAmt: 0
+                });
+                groupOrder.push(groupKey);
+            }
 
-                previewList.innerHTML += `
-                    <div class="csv-item">
-                        <input type="date" value="${item.date}" onchange="tempData[${tempData.length-1}].date=this.value" class="csv-date">
-                        <select onchange="tempData[${tempData.length-1}].cat=this.value" class="csv-cat">
+            const g = groups.get(groupKey);
+            const finalItemName = itemName || (discount ? "折扣/優惠" : "消費項目");
+            g.items.push({ name: finalItemName, amt: rawAmt, discount: discount });
+            g.netAmt += rawAmt;
+        }
+
+        // ========================================
+        // 第二步：每組決定分類、組成 tempData，並畫出卡片
+        // ========================================
+        groupOrder.forEach(key => {
+            const g = groups.get(key);
+            const category = classifyCsvGroup(
+                g.sellerName,
+                g.items.filter(it => !it.discount).map(it => it.name)
+            );
+
+            const item = { date: g.date, cat: category, note: g.sellerName, amt: g.netAmt, items: g.items };
+            tempData.push(item);
+            lastImportCount++;
+
+            const idx = tempData.length - 1;
+
+            // 明細超過 3 行時，其餘收合成「展開更多」，避免手機版被撐爆
+            const visibleItems = g.items.slice(0, 3);
+            const hiddenItems = g.items.slice(3);
+
+            let detailsHTML = visibleItems.map(renderCsvDetailLine).join('');
+            if (hiddenItems.length > 0) {
+                const hiddenId = `csvHidden_${idx}`;
+                detailsHTML += `
+                    <div class="csv-detail-more" onclick="
+                        document.getElementById('${hiddenId}').style.display='block';
+                        this.style.display='none';
+                    ">▾ 展開其餘 ${hiddenItems.length} 項明細</div>
+                    <div id="${hiddenId}" style="display:none;">
+                        ${hiddenItems.map(renderCsvDetailLine).join('')}
+                    </div>`;
+            }
+
+            previewList.innerHTML += `
+                <div class="csv-item">
+                    <div class="csv-item-header">
+                        <input type="date" value="${item.date}" onchange="tempData[${idx}].date=this.value" class="csv-date">
+                        <select onchange="tempData[${idx}].cat=this.value" class="csv-cat">
                             <option value="其他" ${item.cat==="其他"?"selected":""}>其他</option>
-                            <option value="餐飲" ${item.cat==="餐飲"?"selected":""}>餐飲</option>
+                            <option value="飲食" ${item.cat==="飲食"?"selected":""}>飲食</option>
                             <option value="交通" ${item.cat==="交通"?"selected":""}>交通</option>
                             <option value="購物" ${item.cat==="購物"?"selected":""}>購物</option>
                             <option value="娛樂" ${item.cat==="娛樂"?"selected":""}>娛樂</option>
+                            <option value="居家" ${item.cat==="居家"?"selected":""}>居家</option>
                             <option value="醫療" ${item.cat==="醫療"?"selected":""}>醫療</option>
                         </select>
-                        <input type="text" value="${item.note}" onchange="tempData[${tempData.length-1}].note=this.value" class="csv-note" placeholder="備註">
                         <span class="csv-amt">$${item.amt}</span>
-                    </div>`;
-            }
-        }
+                    </div>
+                    <div class="csv-item-seller">${item.note}</div>
+                    <input type="text" value="${item.note}" onchange="tempData[${idx}].note=this.value" class="csv-note" placeholder="備註（可自訂店名）">
+                    <div class="csv-detail-list">
+                        ${detailsHTML}
+                    </div>
+                </div>`;
+        });
 
         if(tempData.length > 0){
             document.getElementById('csvPreviewArea').style.display = "block";
-            document.getElementById('importCount').innerText = `預覽資料數量: ${lastImportCount}`;
+            document.getElementById('importCount').innerText = `預覽資料數量: ${lastImportCount} 張發票`;
         } else {
             document.getElementById('importCount').innerText = `預覽資料數量: 0`;
         }
@@ -9156,7 +9238,8 @@ function confirmImport() {
             cat:item.cat,
             amt:amount,
             note:item.note,
-            reward:reward
+            reward:reward,
+            items:Array.isArray(item.items)?item.items:undefined // 同一張發票的完整明細（含折扣行），供帳本展開查看
         });
 
         // ==========================================
@@ -9196,7 +9279,7 @@ function confirmImport() {
         renderCharts();
     }
 
-    alert(`正式導入成功！共 ${importedCount} 筆資料。`);
+    alert(`正式導入成功！共 ${importedCount} 張發票。`);
 }
 
 function cancelImport(){
@@ -9470,6 +9553,43 @@ function searchHistory(){
         const amount=Number(h.amt)||0;
         const note=h.note||"";
 
+        // 有保留發票明細（items）的紀錄，附上可展開/收合的明細清單
+        const hasItems=Array.isArray(h.items)&&h.items.length>0;
+        const detailId=`histDetail_${String(h.id).replace(/\./g,"_")}`;
+        let detailToggleHTML="";
+        let detailListHTML="";
+
+        if(hasItems){
+            const lines=h.items.map(it=>{
+                const itAmt=Number(it.amt)||0;
+                const itSign=itAmt<0?"-":"";
+                const discountStyle=it.discount
+                    ?"color:#c0392b;font-size:11px;opacity:0.85;"
+                    :"color:#444;font-size:12px;";
+                return `
+                    <div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;${discountStyle}">
+                        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${it.name||""}</span>
+                        <span style="flex-shrink:0;min-width:44px;text-align:right;font-family:monospace;">${itSign}$${Math.abs(itAmt)}</span>
+                    </div>`;
+            }).join("");
+
+            detailListHTML=`
+                <div id="${detailId}" style="display:none;margin-top:6px;padding-top:6px;border-top:1px dashed #ddd;">
+                    ${lines}
+                </div>`;
+
+            detailToggleHTML=`
+                <div
+                    onclick="
+                        const el=document.getElementById('${detailId}');
+                        const shown=el.style.display==='block';
+                        el.style.display=shown?'none':'block';
+                        this.innerText=shown?'▾ 明細（${h.items.length}）':'▴ 收合明細';
+                    "
+                    style="margin-top:4px;font-size:11px;color:#3498db;cursor:pointer;"
+                >▾ 明細（${h.items.length}）</div>`;
+        }
+
         html+=`
             <div style="
                 padding:10px;
@@ -9536,6 +9656,9 @@ function searchHistory(){
                             ${sign}$${amount.toLocaleString()}
                         </span>
                     </div>
+
+                    ${detailToggleHTML}
+                    ${detailListHTML}
                 </div>
 
                 <button
@@ -10234,10 +10357,27 @@ function migrateAccountingData(){
         }
     });
 
+    // ==========================================
+    // 分類名稱統一
+    // CSV 匯入舊版自動分類為「餐飲」，
+    // 手動記帳一律使用「飲食」，
+    // 兩者其實是同一種分類，統一併回「飲食」
+    // 避免統計時被拆成兩筆分開計算
+    // ==========================================
+
+    s.hist.forEach(h=>{
+        if(!h || typeof h!=="object") return;
+
+        if(h.cat==="餐飲"){
+            h.cat="飲食";
+            changed=true;
+        }
+    });
+
     // 記帳資料版本
     if(!Number.isFinite(Number(s.accountingVersion)) ||
-       Number(s.accountingVersion)<2){
-        s.accountingVersion=2;
+       Number(s.accountingVersion)<3){
+        s.accountingVersion=3;
         changed=true;
     }
 
