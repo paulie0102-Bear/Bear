@@ -748,6 +748,7 @@
 
 /* =========================================================
    秘密花園｜聯盟生命之井
+
    只負責：
    道館 / 四天王 / 冠軍 / 生命水道視覺
 
@@ -761,7 +762,6 @@
     --water-light:#c8fff4;
     --metal:#536467;
     --dark:#172124;
-
     position:relative;
     overflow:visible;
     padding:0;
@@ -795,14 +795,12 @@
         var(--region-color) 8%,
         white
     );
-
     position:relative;
     width:100%;
     height:315px;
     margin:0 auto;
     overflow:hidden;
     border-radius:15px;
-
     background:
         radial-gradient(
             ellipse at 50% 48%,
@@ -813,24 +811,19 @@
 
 
 /* =========================================================
-   生命之井環境呼吸
+   生命之井環境光暈
+   一般狀態固定，只有 13/13 完成時恢復緩慢呼吸
 ========================================================= */
 
 .pball-water-stage::before{
     content:"";
-
     position:absolute;
-
     width:260px;
     height:260px;
-
     left:50%;
     top:50%;
-
     transform:translate(-50%,-50%);
-
     border-radius:50%;
-
     background:
         radial-gradient(
             circle,
@@ -841,31 +834,23 @@
             ),
             transparent 68%
         );
-
-    opacity:.45;
-
-    animation:wellLifeBreath 4s ease-in-out infinite;
-
+    opacity:.38;
+    animation:none;
     pointer-events:none;
-
     z-index:1;
 }
 
 @keyframes wellLifeBreath{
-
     0%,100%{
         transform:
             translate(-50%,-50%)
             scale(.92);
-
         opacity:.28;
     }
-
     50%{
         transform:
             translate(-50%,-50%)
             scale(1.08);
-
         opacity:.65;
     }
 }
@@ -877,17 +862,12 @@
 
 .pball-water-body{
     position:absolute;
-
     width:250px;
     height:250px;
-
     left:50%;
     top:50%;
-
     transform:translate(-50%,-50%);
-
     border-radius:50%;
-
     z-index:5;
 }
 
@@ -898,11 +878,8 @@
 
 .pball-outer-shell{
     position:absolute;
-
     inset:0;
-
     border-radius:50%;
-
     background:
         linear-gradient(
             to bottom,
@@ -913,62 +890,57 @@
             ) 0 49%,
             #f7fafa 49% 100%
         );
-
     border:6px solid #30383a;
-
     box-shadow:
         inset 0 0 0 3px rgba(255,255,255,.55),
         inset 0 -12px 22px rgba(0,0,0,.10),
         inset 0 10px 18px rgba(255,255,255,.16),
         0 5px 18px rgba(0,0,0,.15);
-
     overflow:hidden;
-
     z-index:5;
 }
 
 
 /* =========================================================
    生命之井水位
-   代表目前已通關進度累積的「水量」，隨 beaten 逐漸變亮變大，
-   全通關(--fill:1)時會與冠軍區塊的湧出效果一起達到最亮。
-   只有 1 個元素、只用 opacity 動畫，成本與通關進度無關。
 ========================================================= */
 
 .pball-water-level{
     position:absolute;
-
     left:50%;
     top:50%;
-
     width:150px;
     height:150px;
-
     transform:
         translate(-50%,-50%)
         scale(calc(0.35 + var(--fill) * 0.65));
-
     border-radius:50%;
-
     background:
         radial-gradient(
             circle,
-            color-mix(in srgb,var(--region-color) 55%,white) 0%,
-            color-mix(in srgb,var(--region-color) 15%,transparent) 70%,
+            color-mix(
+                in srgb,
+                var(--region-color) 55%,
+                white
+            ) 0%,
+            color-mix(
+                in srgb,
+                var(--region-color) 15%,
+                transparent
+            ) 70%,
             transparent 100%
         );
-
     opacity:calc(0.25 + var(--fill) * 0.55);
-
     z-index:6;
-
     pointer-events:none;
-
     transition:
         transform .6s ease,
         opacity .6s ease;
-
-    animation:waterLevelBreath 4s ease-in-out infinite;
+    animation:
+        waterLevelBreath
+        4s
+        ease-in-out
+        infinite;
 }
 
 @keyframes waterLevelBreath{
@@ -980,58 +952,52 @@
     }
 }
 
-@media(prefers-reduced-motion:reduce){
-    .pball-water-level{
-        animation:none !important;
-    }
-}
-
 
 /* =========================================================
    生命之水流動亮點
-   沿著「已經打通的水道」持續跑一圈／跑一段，
-   讓已完成的部分看起來真的有水在流，而不是死板的靜態色塊。
-   各只有 1 個元素在動 transform/opacity，成本固定，
-   不會隨通關數增加而變重。
 ========================================================= */
 
 .pball-gym-orbit{
     --orbit-radius:112px;
-
     position:absolute;
-
     left:50%;
     top:50%;
-
     width:10px;
     height:10px;
-
     margin:-5px;
-
     border-radius:50%;
-
     background:
         radial-gradient(
             circle,
             #fff 0%,
-            color-mix(in srgb,var(--region-color) 70%,white) 60%,
+            color-mix(
+                in srgb,
+                var(--region-color) 70%,
+                white
+            ) 60%,
             transparent 100%
         );
-
     box-shadow:
         0 0 6px 2px
-        color-mix(in srgb,var(--region-color) 55%,white);
-
+        color-mix(
+            in srgb,
+            var(--region-color) 55%,
+            white
+        );
     z-index:11;
-
     pointer-events:none;
-
-    animation:gymOrbitFlow 2.6s linear infinite;
+    animation:
+        gymOrbitFlow
+        2.6s
+        linear
+        infinite;
 }
 
 @keyframes gymOrbitFlow{
     0%{
-        transform:rotate(-22.5deg) translateY(calc(var(--orbit-radius) * -1));
+        transform:
+            rotate(-22.5deg)
+            translateY(calc(var(--orbit-radius) * -1));
         opacity:0;
     }
     8%{
@@ -1041,43 +1007,47 @@
         opacity:1;
     }
     100%{
-        transform:rotate(calc(var(--filled-deg) - 22.5deg)) translateY(calc(var(--orbit-radius) * -1));
+        transform:
+            rotate(calc(var(--filled-deg) - 22.5deg))
+            translateY(calc(var(--orbit-radius) * -1));
         opacity:0;
     }
 }
 
 .pball-elite-orbit{
     --track-width:188px;
-
     position:absolute;
-
     left:0;
     top:50%;
-
     margin-top:-7px;
-
     width:14px;
     height:14px;
-
     border-radius:50%;
-
     background:
         radial-gradient(
             circle,
             #fff 0%,
-            color-mix(in srgb,var(--region-color) 70%,white) 60%,
+            color-mix(
+                in srgb,
+                var(--region-color) 70%,
+                white
+            ) 60%,
             transparent 100%
         );
-
     box-shadow:
         0 0 6px 2px
-        color-mix(in srgb,var(--region-color) 55%,white);
-
+        color-mix(
+            in srgb,
+            var(--region-color) 55%,
+            white
+        );
     z-index:16;
-
     pointer-events:none;
-
-    animation:eliteOrbitFlow 1.6s linear infinite;
+    animation:
+        eliteOrbitFlow
+        1.6s
+        linear
+        infinite;
 }
 
 @keyframes eliteOrbitFlow{
@@ -1092,25 +1062,13 @@
         opacity:1;
     }
     100%{
-        transform:translateX(calc(var(--filled-frac) * var(--track-width) - 14px));
+        transform:
+            translateX(
+                calc(
+                    var(--filled-frac) * var(--track-width) - 14px
+                )
+            );
         opacity:0;
-    }
-}
-
-@media(max-width:380px){
-    .pball-gym-orbit{
-        --orbit-radius:100px;
-    }
-    .pball-elite-orbit{
-        --track-width:170px;
-    }
-}
-
-@media(prefers-reduced-motion:reduce){
-    .pball-gym-orbit,
-    .pball-elite-orbit{
-        animation:none !important;
-        opacity:.9;
     }
 }
 
@@ -1121,15 +1079,11 @@
 
 .pball-black-line{
     position:absolute;
-
     left:50%;
     top:50%;
-
     width:100%;
     height:16px;
-
     transform:translate(-50%,-50%);
-
     background:
         linear-gradient(
             to bottom,
@@ -1149,7 +1103,6 @@
                 white
             )
         );
-
     border-top:
         1px solid
         color-mix(
@@ -1157,7 +1110,6 @@
             var(--region-color) 18%,
             #c5cdcc
         );
-
     border-bottom:
         1px solid
         color-mix(
@@ -1165,13 +1117,10 @@
             var(--region-color) 18%,
             #b9c1c0
         );
-
     box-shadow:
         inset 0 1px 2px rgba(255,255,255,.7),
         inset 0 -1px 2px rgba(0,0,0,.08);
-
     z-index:7;
-
     overflow:hidden;
 }
 
@@ -1182,66 +1131,41 @@
 
 /* =========================================================
    8 道館｜圓形生命水道
-   重要：
-   所有水道都以 .pball-water-body 為圓心
 ========================================================= */
 
 .pball-water-body .pball-gym-arcs{
     position:absolute;
-
     inset:0;
-
     width:100%;
     height:100%;
-
     z-index:9;
-
     pointer-events:none;
 }
 
-
-/* =========================================================
-   單一道館圓弧
-========================================================= */
-
 .pball-water-body .pball-gym-arc{
     position:absolute;
-
     width:250px;
     height:250px;
-
     left:50%;
     top:50%;
-
     margin:-125px 0 0 -125px;
-
     border-radius:50%;
-
     transform:rotate(var(--angle));
-
     background:
         conic-gradient(
             from -22.5deg,
-
             color-mix(
                 in srgb,
                 var(--region-color) 10%,
                 #aeb8b7
             ) 0deg 44deg,
-
             transparent 44deg 360deg
         );
-
     opacity:.45;
-
     transition:
         opacity .5s ease,
         filter .5s ease;
-
     pointer-events:none;
-
-    /* 水道環半徑對齊節點／水流亮點所在的 112px，
-       厚度 10px，與 .pball-gym-orbit 的圓點同寬 */
     -webkit-mask:
         radial-gradient(
             circle,
@@ -1249,7 +1173,6 @@
             #000 107px 117px,
             transparent 118px
         );
-
     mask:
         radial-gradient(
             circle,
@@ -1262,84 +1185,57 @@
 
 /* =========================================================
    已通關道館水道
+   完成後保持亮色，不持續呼吸
 ========================================================= */
 
 .pball-water-body .pball-gym-arc.active{
     opacity:1;
-
     background:
         conic-gradient(
             from -22.5deg,
-
             var(--region-color) 0deg 44deg,
-
             transparent 44deg 360deg
         );
-
-    filter:
-        drop-shadow(
-            0 0 3px
-            color-mix(
-                in srgb,
-                var(--region-color) 45%,
-                transparent
-            )
-        );
-
-    animation:
-        waterArcBreath 3.2s ease-in-out infinite;
+    filter:none;
+    animation:none;
 }
 
 
 /* =========================================================
    已通關水道流光
+   一般完成狀態停止，只由 is-current-flow 啟動
 ========================================================= */
 
 .pball-water-body .pball-gym-arc.active::after{
     content:"";
-
     position:absolute;
-
     inset:0;
-
     border-radius:50%;
-
     background:
         conic-gradient(
             from -22.5deg,
-
             transparent 0deg 12deg,
-
             rgba(255,255,255,.7) 13deg 17deg,
-
             transparent 18deg 44deg,
-
             transparent 44deg 360deg
         );
-
-    opacity:.7;
-
-    animation:
-        waterHighlight 2.8s linear infinite;
+    opacity:.18;
+    animation:none;
 }
 
 @keyframes waterArcBreath{
-
     0%,100%{
         opacity:.78;
     }
-
     50%{
         opacity:1;
     }
 }
 
 @keyframes waterHighlight{
-
     from{
         transform:rotate(0deg);
     }
-
     to{
         transform:rotate(360deg);
     }
@@ -1352,22 +1248,16 @@
 
 .pball-water-body .pball-gym-node{
     position:absolute;
-
     width:22px;
     height:22px;
-
     left:50%;
     top:50%;
-
     margin:-11px;
-
     transform:
         rotate(var(--angle))
         translateY(-112px)
         rotate(calc(var(--angle) * -1));
-
     border-radius:50%;
-
     background:
         linear-gradient(
             145deg,
@@ -1375,16 +1265,12 @@
             #555f60 55%,
             #343c3e
         );
-
     border:3px solid #9aa4a3;
-
     box-shadow:
         inset 0 2px 3px rgba(255,255,255,.28),
         inset 0 -2px 3px rgba(0,0,0,.20),
         0 2px 5px rgba(0,0,0,.22);
-
     z-index:18;
-
     transition:
         background .5s,
         border-color .5s,
@@ -1394,71 +1280,54 @@
 
 /* =========================================================
    道館完成
+   完成後保持靜態
 ========================================================= */
 
 .pball-water-body .pball-gym-node.active{
     background:
         linear-gradient(
             145deg,
-
             color-mix(
                 in srgb,
                 var(--region-color) 70%,
                 white
             ),
-
             var(--region-color) 58%,
-
             color-mix(
                 in srgb,
                 var(--region-color) 65%,
                 #333
             )
         );
-
     border-color:
         color-mix(
             in srgb,
             var(--region-color) 35%,
             white
         );
-
     box-shadow:
         inset 0 2px 3px rgba(255,255,255,.3),
         inset 0 -2px 3px rgba(0,0,0,.15),
         0 2px 5px rgba(0,0,0,.18);
-
-    animation:
-        pballGateMove 2.8s ease-in-out infinite;
+    animation:none;
 }
 
 .pball-water-body .pball-gym-node.active::before{
     content:"";
-
     position:absolute;
-
     width:5px;
     height:5px;
-
     left:50%;
     top:50%;
-
     transform:translate(-50%,-50%);
-
     border-radius:50%;
-
     background:white;
-
-    box-shadow:
-        0 0 5px white,
-        0 0 10px var(--region-color);
-
-    animation:
-        nodeLifePulse 2.2s ease-in-out infinite;
+    box-shadow:0 0 4px white;
+    animation:none;
+    opacity:.85;
 }
 
 @keyframes pballGateMove{
-
     0%,100%{
         transform:
             rotate(var(--angle))
@@ -1466,7 +1335,6 @@
             rotate(calc(var(--angle) * -1))
             scale(1);
     }
-
     50%{
         transform:
             rotate(var(--angle))
@@ -1477,20 +1345,16 @@
 }
 
 @keyframes nodeLifePulse{
-
     0%,100%{
         transform:
             translate(-50%,-50%)
             scale(.7);
-
         opacity:.55;
     }
-
     50%{
         transform:
             translate(-50%,-50%)
             scale(1.35);
-
         opacity:1;
     }
 }
@@ -1502,19 +1366,13 @@
 
 .pball-elite-ring{
     position:absolute;
-
     width:188px;
     height:32px;
-
     left:50%;
     top:50%;
-
     transform:translate(-50%,-50%);
-
     z-index:13;
-
     pointer-events:none;
-
     display:block;
 }
 
@@ -1525,43 +1383,32 @@
 
 .pball-elite-ring::before{
     content:"";
-
     position:absolute;
-
     left:0;
     right:0;
-
     top:50%;
-
     height:10px;
-
     transform:translateY(-50%);
-
     border-radius:10px;
-
     background:
         linear-gradient(
             to bottom,
-
             color-mix(
                 in srgb,
                 var(--region-color) 7%,
                 white
             ),
-
             color-mix(
                 in srgb,
                 var(--region-color) 16%,
                 #c7cfce
             ),
-
             color-mix(
                 in srgb,
                 var(--region-color) 7%,
                 white
             )
         );
-
     border-top:
         1px solid
         color-mix(
@@ -1569,7 +1416,6 @@
             var(--region-color) 15%,
             #c4cccb
         );
-
     border-bottom:
         1px solid
         color-mix(
@@ -1577,7 +1423,6 @@
             var(--region-color) 15%,
             #b8c0bf
         );
-
     box-shadow:
         inset 0 1px 2px rgba(255,255,255,.65),
         inset 0 -1px 2px rgba(0,0,0,.08);
@@ -1590,46 +1435,34 @@
 
 .pball-elite-water{
     position:absolute;
-
     left:0;
     top:50%;
-
     width:100%;
     height:12px;
-
     transform:translateY(-50%);
-
     z-index:14;
-
     display:flex;
-
     overflow:hidden;
-
     border-radius:12px;
-
     background:
         linear-gradient(
             to bottom,
-
             color-mix(
                 in srgb,
                 var(--region-color) 7%,
                 #d0d7d6
             ),
-
             color-mix(
                 in srgb,
                 var(--region-color) 14%,
                 #c1c9c8
             ),
-
             color-mix(
                 in srgb,
                 var(--region-color) 7%,
                 #d0d7d6
             )
         );
-
     box-shadow:
         inset 0 1px 2px rgba(255,255,255,.8),
         inset 0 -1px 2px rgba(0,0,0,.12);
@@ -1637,30 +1470,21 @@
 
 .pball-elite-segment{
     position:relative;
-
     flex:1;
-
     height:100%;
-
     overflow:hidden;
-
     background:
         linear-gradient(
             to bottom,
-
             transparent,
-
             color-mix(
                 in srgb,
                 var(--region-color) 10%,
                 #c9d0cf
             ),
-
             transparent
         );
-
     opacity:.55;
-
     transition:
         opacity .6s ease,
         background .6s ease;
@@ -1669,45 +1493,37 @@
 
 /* =========================================================
    四天王已完成
+   完成後保持靜態
 ========================================================= */
 
 .pball-elite-segment.active{
     opacity:1;
-
     background:
         linear-gradient(
             to bottom,
-
             color-mix(
                 in srgb,
                 var(--region-color) 65%,
                 white
             ),
-
             var(--region-color),
-
             color-mix(
                 in srgb,
                 var(--region-color) 70%,
                 #333
             )
         );
-
-    animation:
-        eliteWaterBreath 2.5s ease-in-out infinite;
+    animation:none;
+    filter:none;
 }
 
 .pball-elite-segment.active::after{
     content:"";
-
     position:absolute;
-
     left:-40%;
     top:1px;
-
     width:40%;
     height:9px;
-
     background:
         linear-gradient(
             90deg,
@@ -1715,28 +1531,23 @@
             rgba(255,255,255,.7),
             transparent
         );
-
-    animation:
-        eliteWaterRun 2s linear infinite;
+    display:none;
+    animation:none;
 }
 
 @keyframes eliteWaterRun{
-
     from{
         left:-40%;
     }
-
     to{
         left:140%;
     }
 }
 
 @keyframes eliteWaterBreath{
-
     0%,100%{
         filter:brightness(.9);
     }
-
     50%{
         filter:brightness(1.12);
     }
@@ -1749,26 +1560,19 @@
 
 .pball-elite-ring::after{
     content:"";
-
     position:absolute;
-
     left:50%;
     top:50%;
-
     width:12px;
     height:12px;
-
     transform:translate(-50%,-50%);
-
     border-radius:50%;
-
     background:
         linear-gradient(
             145deg,
             #edf1f0,
             #8a9594
         );
-
     border:
         2px solid
         color-mix(
@@ -1776,11 +1580,9 @@
             var(--region-color) 15%,
             #d8dfde
         );
-
     box-shadow:
         inset 0 1px 2px rgba(255,255,255,.65),
         0 2px 4px rgba(0,0,0,.18);
-
     z-index:20;
 }
 
@@ -1791,41 +1593,27 @@
 
 .pball-champion-button{
     position:absolute;
-
     width:62px;
     height:62px;
-
     left:50%;
     top:50%;
-
     transform:translate(-50%,-50%);
-
     border-radius:50%;
-
     background:
         radial-gradient(
             circle at 35% 28%,
-
             #f4f7f7,
-
             #b3bdbc 38%,
-
             #717c7c 63%,
-
             #41494a 82%,
-
             #2b3234 100%
         );
-
     border:5px solid #30383a;
-
     box-shadow:
         inset 0 0 0 4px #c2cccd,
         inset 0 0 10px rgba(0,0,0,.35),
         0 4px 10px rgba(0,0,0,.22);
-
     z-index:25;
-
     transition:
         background .7s,
         border-color .7s,
@@ -1834,30 +1622,20 @@
 
 .pball-champion-core{
     position:absolute;
-
     width:20px;
     height:20px;
-
     left:50%;
     top:50%;
-
     transform:translate(-50%,-50%);
-
     border-radius:50%;
-
     background:
         radial-gradient(
             circle at 35% 30%,
-
             #7b8585,
-
             #424b4c 65%,
-
             #282e30
         );
-
     border:4px solid #d0d9da;
-
     box-shadow:
         inset 0 0 6px rgba(0,0,0,.65);
 }
@@ -1865,35 +1643,31 @@
 
 /* =========================================================
    冠軍完成
+   使用目前的輕量版本
 ========================================================= */
 
 .pball-champion-button.active{
     background:
         radial-gradient(
             circle at 35% 28%,
-
             color-mix(
                 in srgb,
                 var(--region-color) 45%,
                 white
             ),
-
             var(--region-color) 55%,
-
             color-mix(
                 in srgb,
                 var(--region-color) 70%,
                 #333
             ) 100%
         );
-
     border-color:
         color-mix(
             in srgb,
             var(--region-color) 35%,
             white
         );
-
     box-shadow:
         inset 0 0 0 4px
         color-mix(
@@ -1901,51 +1675,41 @@
             var(--region-color) 20%,
             white
         ),
-
         inset 0 0 10px rgba(0,0,0,.18),
-
         0 4px 10px rgba(0,0,0,.18);
-
     animation:
-        championLife 2.8s ease-in-out infinite,
-        championGlow 3s ease-in-out infinite;
+        championLifeLite 4s ease-in-out infinite,
+        championGlowLite 4s ease-in-out infinite;
 }
 
 .pball-champion-button.active .pball-champion-core{
     background:
         radial-gradient(
             circle at 35% 30%,
-
             white,
-
             color-mix(
                 in srgb,
                 var(--region-color) 45%,
                 white
             ),
-
             var(--region-color)
         );
-
     border-color:
         color-mix(
             in srgb,
             var(--region-color) 25%,
             white
         );
-
     box-shadow:
         inset 0 0 4px rgba(0,0,0,.15);
 }
 
 @keyframes championLife{
-
     0%,100%{
         transform:
             translate(-50%,-50%)
             scale(1);
     }
-
     50%{
         transform:
             translate(-50%,-50%)
@@ -1954,11 +1718,9 @@
 }
 
 @keyframes championGlow{
-
     0%,100%{
         filter:none;
     }
-
     50%{
         filter:
             drop-shadow(
@@ -1972,6 +1734,36 @@
     }
 }
 
+@keyframes championLifeLite{
+    0%,100%{
+        transform:
+            translate(-50%,-50%)
+            scale(1);
+    }
+    50%{
+        transform:
+            translate(-50%,-50%)
+            scale(1.025);
+    }
+}
+
+@keyframes championGlowLite{
+    0%,100%{
+        filter:none;
+    }
+    50%{
+        filter:
+            drop-shadow(
+                0 0 5px
+                color-mix(
+                    in srgb,
+                    var(--region-color) 55%,
+                    transparent
+                )
+            );
+    }
+}
+
 
 /* =========================================================
    生命粒子
@@ -1979,71 +1771,48 @@
 
 .garden-life-particles{
     position:absolute;
-
     inset:0;
-
     z-index:20;
-
     pointer-events:none;
-
     overflow:hidden;
 }
 
 .garden-life-particle{
     position:absolute;
-
     width:4px;
     height:4px;
-
     border-radius:50%;
-
     background:
         color-mix(
             in srgb,
             var(--region-color) 45%,
             white
         );
-
-    box-shadow:
-        0 0 7px
-        color-mix(
-            in srgb,
-            var(--region-color) 65%,
-            white
-        );
-
-    opacity:0;
-
+    box-shadow:none;
+    opacity:.65;
     animation:
         gardenParticleFloat
         var(--duration)
         ease-in-out
         infinite;
-
     animation-delay:var(--delay);
 }
 
 @keyframes gardenParticleFloat{
-
     0%{
         opacity:0;
-
         transform:
             translate3d(0,30px,0)
             scale(.4);
     }
-
     20%{
         opacity:.8;
     }
-
     60%{
         opacity:.65;
     }
-
     100%{
         opacity:0;
-
         transform:
             translate3d(
                 var(--move),
@@ -2061,60 +1830,41 @@
 
 .garden-water-drop{
     position:absolute;
-
     width:5px;
     height:9px;
-
     border-radius:
         50% 50% 55% 55%;
-
     background:
         color-mix(
             in srgb,
             var(--region-color) 55%,
             white
         );
-
-    box-shadow:
-        0 0 7px
-        color-mix(
-            in srgb,
-            var(--region-color) 70%,
-            white
-        );
-
+    box-shadow:none;
     opacity:0;
-
     animation:
         gardenDrop
         var(--duration)
         linear
         infinite;
-
     animation-delay:var(--delay);
 }
 
 @keyframes gardenDrop{
-
     0%{
         opacity:0;
-
         transform:
             translateY(-15px)
             scale(.5);
     }
-
     15%{
         opacity:.9;
     }
-
     80%{
         opacity:.65;
     }
-
     100%{
         opacity:0;
-
         transform:
             translateY(75px)
             scale(1);
@@ -2127,19 +1877,52 @@
 ========================================================= */
 
 .pball-water-stage.league-complete{
+    animation:none;
+    box-shadow:none;
+}
+
+.pball-water-stage.league-complete::before{
     animation:
-        stageCompletePulse
-        4s ease-in-out
+        wellLifeBreath
+        5s
+        ease-in-out
+        infinite;
+    opacity:.3;
+}
+
+.pball-water-stage.league-complete::after{
+    content:"";
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:65px;
+    height:65px;
+    border-radius:50%;
+    border:
+        2px solid
+        color-mix(
+            in srgb,
+            var(--region-color) 45%,
+            white
+        );
+    transform:
+        translate(-50%,-50%)
+        scale(.3);
+    opacity:0;
+    pointer-events:none;
+    z-index:12;
+    animation:
+        lifeWaterRippleLite
+        5.5s
+        ease-out
         infinite;
 }
 
 @keyframes stageCompletePulse{
-
     0%,100%{
         box-shadow:
             inset 0 0 0 transparent;
     }
-
     50%{
         box-shadow:
             inset 0 0 30px
@@ -2151,64 +1934,39 @@
     }
 }
 
-.pball-water-stage.league-complete::after{
-    content:"";
-
-    position:absolute;
-
-    left:50%;
-    top:50%;
-
-    width:65px;
-    height:65px;
-
-    border-radius:50%;
-
-    border:
-        2px solid
-        color-mix(
-            in srgb,
-            var(--region-color) 45%,
-            white
-        );
-
-    transform:
-        translate(-50%,-50%)
-        scale(.3);
-
-    opacity:0;
-
-    pointer-events:none;
-
-    z-index:12;
-
-    animation:
-        lifeWaterRipple
-        3.5s
-        ease-out
-        infinite;
-}
-
 @keyframes lifeWaterRipple{
-
     0%{
         opacity:.75;
-
         transform:
             translate(-50%,-50%)
             scale(.3);
     }
-
     70%{
         opacity:.18;
     }
-
     100%{
         opacity:0;
-
         transform:
             translate(-50%,-50%)
             scale(3.2);
+    }
+}
+
+@keyframes lifeWaterRippleLite{
+    0%{
+        opacity:.45;
+        transform:
+            translate(-50%,-50%)
+            scale(.3);
+    }
+    70%{
+        opacity:.10;
+    }
+    100%{
+        opacity:0;
+        transform:
+            translate(-50%,-50%)
+            scale(2.4);
     }
 }
 
@@ -2219,24 +1977,18 @@
 
 .garden-water-memory{
     margin:2px 5px 22px;
-
     padding:9px 10px;
-
     border-radius:12px;
-
     background:
         linear-gradient(
             135deg,
-
             color-mix(
                 in srgb,
                 var(--region-color) 7%,
                 white
             ),
-
             #f8fffd
         );
-
     border:
         1px solid
         color-mix(
@@ -2244,29 +1996,20 @@
             var(--region-color) 25%,
             #ddd
         );
-
     color:#5f7771;
-
     font-size:10px;
-
     line-height:1.6;
-
     position:relative;
-
     overflow:hidden;
 }
 
 .garden-water-memory::after{
     content:"";
-
     position:absolute;
-
     left:-30%;
     top:0;
-
     width:30%;
     height:100%;
-
     background:
         linear-gradient(
             90deg,
@@ -2274,7 +2017,6 @@
             rgba(255,255,255,.55),
             transparent
         );
-
     animation:
         memoryWater
         3.5s
@@ -2283,7 +2025,6 @@
 }
 
 @keyframes memoryWater{
-
     to{
         left:130%;
     }
@@ -2291,7 +2032,6 @@
 
 .garden-water-memory strong{
     color:var(--region-color);
-
     font-size:11px;
 }
 
@@ -2311,58 +2051,37 @@
 
 .well-title{
     position:absolute;
-
     left:0;
     right:0;
-
     top:9px;
-
     text-align:center;
-
     color:#566b68;
-
     font-size:13px;
-
     font-weight:bold;
-
     letter-spacing:2px;
-
     z-index:25;
 }
 
 .well-subtitle{
     position:absolute;
-
     left:0;
     right:0;
-
     top:29px;
-
     text-align:center;
-
     color:#9aa9a6;
-
     font-size:9px;
-
     letter-spacing:1px;
-
     z-index:25;
 }
 
 .well-progress{
     position:absolute;
-
     left:35px;
     right:35px;
-
     bottom:13px;
-
     text-align:center;
-
     font-size:10px;
-
     color:#788c88;
-
     z-index:25;
 }
 
@@ -2377,90 +2096,61 @@
 
 .well-challenge-info{
     position:relative;
-
     z-index:30;
-
     padding:7px 5px 3px;
-
     text-align:center;
 }
 
 .well-status{
     font-size:10px;
-
     color:#9aa5a3;
-
     letter-spacing:1px;
-
     margin-bottom:4px;
 }
 
 .well-status.complete{
     color:var(--region-color);
-
     font-weight:bold;
 }
 
 .well-challenger{
     font-size:21px;
-
     font-weight:bold;
-
     color:#374345;
 }
 
 .well-taunt{
     color:var(--region-color);
-
     font-size:13px;
-
     font-style:italic;
-
     margin-top:6px;
-
     min-height:38px;
-
     display:flex;
-
     align-items:center;
-
     justify-content:center;
-
     padding:0 10px;
 }
 
 .well-challenge-button{
     width:100%;
-
     margin-top:6px;
-
     padding:14px;
-
     border:0;
-
     border-radius:24px;
-
     background:
         linear-gradient(
             135deg,
-
             var(--region-color),
-
             color-mix(
                 in srgb,
                 var(--region-color) 65%,
                 #333
             )
         );
-
     color:white;
-
     font-weight:bold;
-
     font-size:15px;
-
     cursor:pointer;
-
     box-shadow:
         0 4px 0
         color-mix(
@@ -2468,15 +2158,12 @@
             var(--region-color) 60%,
             #333
         ),
-
         0 6px 12px rgba(0,0,0,.15);
-
     transition:.15s;
 }
 
 .well-challenge-button:active{
     transform:translateY(3px);
-
     box-shadow:
         0 1px 0
         color-mix(
@@ -2493,18 +2180,14 @@
 
 .well-complete-memory{
     margin-top:6px;
-
     padding:9px;
-
     border-radius:12px;
-
     background:
         linear-gradient(
             135deg,
             #fffdf3,
             #f8fff9
         );
-
     border:
         1px solid
         color-mix(
@@ -2512,17 +2195,13 @@
             var(--region-color) 30%,
             #ddd
         );
-
     color:#71827d;
-
     font-size:10px;
-
     line-height:1.7;
 }
 
 .well-complete-memory b{
     color:#b58b19;
-
     font-size:12px;
 }
 
@@ -2548,75 +2227,193 @@
 
 .garden-league-shell{
     --water:var(--region-color);
-
     position:relative;
-
     overflow:hidden;
-
     background:white;
-
     border-radius:20px;
-
     padding:15px;
-
     margin-bottom:20px;
-
     border:2px solid var(--region-color);
-
     box-shadow:
         0 4px 15px rgba(0,0,0,.05);
-
     transition:
         box-shadow .5s;
 }
 
 .garden-league-shell::before{
     content:"";
-
     position:absolute;
-
     left:0;
     right:0;
-
     top:-2px;
-
     height:3px;
-
     pointer-events:none;
-
     z-index:2;
-
     background:
         repeating-linear-gradient(
             90deg,
-
             transparent 0 12px,
-
             color-mix(
                 in srgb,
                 var(--region-color) 35%,
                 white
             ) 12px 20px,
-
             var(--region-color) 20px 29px,
-
             transparent 29px 43px
         );
-
     background-size:86px 100%;
-
     animation:
-        gardenShellWaterRun
-        1.8s
+        gardenShellWaterRunLite
+        3s
         linear
         infinite;
 }
 
 @keyframes gardenShellWaterRun{
-
     to{
         background-position:86px 0;
     }
+}
+
+@keyframes gardenShellWaterRunLite{
+    to{
+        background-position:86px 0;
+    }
+}
+
+
+/* =========================================================
+   目前正在前進的水道
+   只有這一段恢復完整動畫
+========================================================= */
+
+.pball-gym-arc.is-current-flow{
+    animation:
+        waterArcBreath
+        3.2s
+        ease-in-out
+        infinite !important;
+    filter:
+        drop-shadow(
+            0 0 3px
+            color-mix(
+                in srgb,
+                var(--region-color) 45%,
+                transparent
+            )
+        ) !important;
+}
+
+.pball-gym-arc.is-current-flow::after{
+    animation:
+        waterHighlight
+        2.8s
+        linear
+        infinite !important;
+    opacity:.7 !important;
+}
+
+.pball-gym-node.is-current-flow{
+    animation:
+        pballGateMove
+        2.8s
+        ease-in-out
+        infinite !important;
+}
+
+.pball-gym-node.is-current-flow::before{
+    animation:
+        nodeLifePulse
+        2.2s
+        ease-in-out
+        infinite !important;
+    opacity:1 !important;
+    box-shadow:
+        0 0 5px white,
+        0 0 10px var(--region-color) !important;
+}
+
+.pball-elite-segment.is-current-flow{
+    animation:
+        eliteWaterBreath
+        2.5s
+        ease-in-out
+        infinite !important;
+    filter:none !important;
+}
+
+.pball-elite-segment.is-current-flow::after{
+    animation:
+        eliteWaterRun
+        2s
+        linear
+        infinite !important;
+    display:block !important;
+}
+
+
+/* =========================================================
+   生命之水｜重新渲染後保持原本動畫時間
+
+   注意：
+   不改變動畫速度，只把重新建立 DOM 後的動畫
+   對齊到原本的時間軸。
+========================================================= */
+
+.league-water-frame .pball-gym-orbit,
+.league-water-frame .pball-elite-orbit{
+    animation-delay:
+        var(--garden-water-sync,0s) !important;
+}
+
+.league-water-frame .garden-life-particle{
+    animation-delay:
+        calc(
+            var(--garden-water-sync,0s) +
+            var(--delay,0s)
+        ) !important;
+}
+
+.league-water-frame .garden-water-drop{
+    animation-delay:
+        calc(
+            var(--garden-water-sync,0s) +
+            var(--delay,0s)
+        ) !important;
+}
+
+.garden-league-shell::before{
+    animation-delay:
+        var(--garden-water-sync,0s) !important;
+}
+
+.pball-water-stage.league-complete::after{
+    animation-delay:
+        var(--garden-water-sync,0s) !important;
+}
+
+.pball-water-stage.league-complete::before{
+    animation-delay:
+        var(--garden-water-sync,0s) !important;
+}
+
+.garden-water-memory::after{
+    animation-delay:
+        var(--garden-water-sync,0s) !important;
+}
+
+
+/* =========================================================
+   秘密花園進場
+   先完成滑入，再啟動生命之井動畫
+========================================================= */
+
+#garden-overlay:not(.garden-motion-ready) .pball-water-stage *,
+#garden-overlay:not(.garden-motion-ready) .pball-water-stage::before,
+#garden-overlay:not(.garden-motion-ready) .pball-water-stage::after,
+#garden-overlay:not(.garden-motion-ready) .garden-league-shell::before,
+#garden-overlay:not(.garden-motion-ready) .garden-water-memory::after{
+    animation-play-state:paused !important;
 }
 
 
@@ -2625,6 +2422,14 @@
 ========================================================= */
 
 @media(max-width:380px){
+
+    .pball-gym-orbit{
+        --orbit-radius:100px;
+    }
+
+    .pball-elite-orbit{
+        --track-width:170px;
+    }
 
     .pball-water-stage{
         height:295px;
@@ -2638,29 +2443,21 @@
     .pball-water-body .pball-gym-arc{
         width:220px;
         height:220px;
-
         margin:-110px 0 0 -110px;
 
-        /* 對齊節點／水流亮點所在的 100px，厚度 10px */
         -webkit-mask:
             radial-gradient(
                 circle,
-
                 transparent 0 94px,
-
                 #000 95px 105px,
-
                 transparent 106px
             );
 
         mask:
             radial-gradient(
                 circle,
-
                 transparent 0 94px,
-
                 #000 95px 105px,
-
                 transparent 106px
             );
     }
@@ -2672,8 +2469,16 @@
             rotate(calc(var(--angle) * -1));
     }
 
-    @keyframes pballGateMove{
+    .pball-elite-ring{
+        width:170px;
+    }
 
+    .pball-champion-button{
+        width:56px;
+        height:56px;
+    }
+
+    @keyframes pballGateMove{
         0%,100%{
             transform:
                 rotate(var(--angle))
@@ -2690,218 +2495,34 @@
                 scale(1.06);
         }
     }
-
-    .pball-elite-ring{
-        width:170px;
-    }
-
-    .pball-champion-button{
-        width:56px;
-        height:56px;
-    }
 }
+
 
 /* =========================================================
-   生命之井｜手機效能最佳化
-   保留視覺，不改任何挑戰邏輯，原本的先不刪
+   使用者裝置偏好減少動畫
 ========================================================= */
 
-/* 1. 背景呼吸改成非常輕量 */
-.pball-water-stage::before{
-    animation:none !important;
-    opacity:.38;
-}
-
-/* 2. 已完成水道：取消每一條各自的呼吸動畫與 filter */
-.pball-water-body .pball-gym-arc.active{
-    animation:none !important;
-    filter:none !important;
-    opacity:1;
-}
-
-/* 3. 水道流光完全停止
-   水道本身仍然保持亮色，不會消失 */
-.pball-water-body .pball-gym-arc.active::after{
-    animation:none !important;
-    opacity:.18;
-}
-
-/* 4. 道館節點取消持續放大縮小 */
-.pball-water-body .pball-gym-node.active{
-    animation:none !important;
-}
-
-/* 5. 節點中央亮點取消呼吸 */
-.pball-water-body .pball-gym-node.active::before{
-    animation:none !important;
-    opacity:.85;
-    box-shadow:0 0 4px white;
-}
-
-/* 6. 四天王水道取消 brightness 動畫 */
-.pball-elite-segment.active{
-    animation:none !important;
-    filter:none !important;
-}
-
-/* 7. 四天王流光取消
-   保留水道本身的顏色 */
-.pball-elite-segment.active::after{
-    animation:none !important;
-    display:none !important;
-}
-
-/* 8. 粒子保留，但降低發光成本 */
-.garden-life-particle{
-    box-shadow:none !important;
-    opacity:.65;
-}
-
-/* 9. 水滴保留動畫，但取消昂貴的發光 */
-.garden-water-drop{
-    box-shadow:none !important;
-}
-
-/* 10. 冠軍中央寶貝球：保留輕量呼吸，
-   並用較省效能的版本把發光加回來（模糊半徑 5px，跟呼吸共用 4s，
-   只多一條動畫時間軸）。這個狀態只會出現在「已 13/13 全通關」的
-   聯盟上，數量必然有限，不會隨列表長度而變重 */
-.pball-champion-button.active{
-    animation:
-        championLifeLite 4s ease-in-out infinite,
-        championGlowLite 4s ease-in-out infinite !important;
-}
-
-/* 中央寶貝球輕量動畫 */
-@keyframes championLifeLite{
-    0%,100%{
-        transform:translate(-50%,-50%) scale(1);
-    }
-    50%{
-        transform:translate(-50%,-50%) scale(1.025);
-    }
-}
-
-/* 中央寶貝球輕量發光 */
-@keyframes championGlowLite{
-    0%,100%{
-        filter:none;
-    }
-    50%{
-        filter:
-            drop-shadow(
-                0 0 5px
-                color-mix(
-                    in srgb,
-                    var(--region-color) 55%,
-                    transparent
-                )
-            );
-    }
-}
-
-/* 11. 完成後不再對整個舞台做 box-shadow 動畫 */
-.pball-water-stage.league-complete{
-    animation:none !important;
-    box-shadow:none !important;
-}
-
-/* 12. 完成後水波保留，但放慢、縮小 */
-.pball-water-stage.league-complete::after{
-    animation:lifeWaterRippleLite 5.5s ease-out infinite !important;
-}
-
-@keyframes lifeWaterRippleLite{
-    0%{
-        opacity:.45;
-        transform:translate(-50%,-50%) scale(.3);
-    }
-    70%{
-        opacity:.10;
-    }
-    100%{
-        opacity:0;
-        transform:translate(-50%,-50%) scale(2.4);
-    }
-}
-
-/* 12b. 全通關的水井：背景光暈恢復緩慢呼吸，疊在水波紋外面，
-   讓「整口井醒過來」更明顯。只有 .league-complete 才會套用，
-   數量等同玩家已全破的聯盟數，天生有限，不會隨列表變長而變重 */
-.pball-water-stage.league-complete::before{
-    animation:wellLifeBreath 5s ease-in-out infinite !important;
-    opacity:.3;
-}
-
-/* 13. 外框頂部流動線保留，但降低速度 */
-.garden-league-shell::before{
-    animation:gardenShellWaterRunLite 3s linear infinite !important;
-}
-
-@keyframes gardenShellWaterRunLite{
-    to{
-        background-position:86px 0;
-    }
-}
-
-/* 14. 使用者裝置偏好減少動畫時直接全部停止 */
 @media(prefers-reduced-motion:reduce){
+
+    .pball-water-level,
+    .pball-gym-orbit,
+    .pball-elite-orbit,
     .pball-water-stage *,
     .pball-water-stage.league-complete::before,
     .pball-water-stage.league-complete::after,
-    .garden-league-shell::before{
-        animation:none !important;
-        transition:none !important;
-    }
-}
-
-/* =========================================================
-   15. 品質不打折的重點：
-   同一時間只有「目前正在前進」的那一段道館/四天王水道
-   保留完整呼吸＋流光動畫，其餘維持上面 1~14 點的靜態版本。
-   這樣視覺效果幾乎不變，但同時運算的動畫數量從最多 8 個
-   降到最多 1 個。
-========================================================= */
-
-.pball-gym-arc.is-current-flow{
-    animation:waterArcBreath 3.2s ease-in-out infinite !important;
-    filter:drop-shadow(0 0 3px color-mix(in srgb,var(--region-color) 45%,transparent)) !important;
-}
-
-.pball-gym-arc.is-current-flow::after{
-    animation:waterHighlight 2.8s linear infinite !important;
-    opacity:.7 !important;
-}
-
-.pball-gym-node.is-current-flow{
-    animation:pballGateMove 2.8s ease-in-out infinite !important;
-}
-
-.pball-gym-node.is-current-flow::before{
-    animation:nodeLifePulse 2.2s ease-in-out infinite !important;
-    opacity:1 !important;
-    box-shadow:0 0 5px white,0 0 10px var(--region-color) !important;
-}
-
-.pball-elite-segment.is-current-flow{
-    animation:eliteWaterBreath 2.5s ease-in-out infinite !important;
-    filter:none !important;
-}
-
-.pball-elite-segment.is-current-flow::after{
-    animation:eliteWaterRun 2s linear infinite !important;
-    display:block !important;
-}
-
-/* 使用者裝置偏好減少動畫時，連「目前流動」的那一段也一併停止 */
-@media(prefers-reduced-motion:reduce){
+    .garden-league-shell::before,
     .is-current-flow,
     .is-current-flow::after,
     .is-current-flow::before{
         animation:none !important;
+        transition:none !important;
+    }
+
+    .pball-gym-orbit,
+    .pball-elite-orbit{
+        opacity:.9;
     }
 }
-
 </style>
 </head>
 <body>
@@ -4730,14 +4351,13 @@ function openGardenFast(){
     if(window._gardenOpening)return;
     window._gardenOpening=true;
 
-    /*
-     * 先讓目前頁面完成一次畫面更新，
-     * 再建立秘密花園。
-     *
-     * 不使用載入遮罩，避免 renderGarden 發生錯誤時
-     * 整個畫面被遮住。
-     */
-    setTimeout(()=>{
+    const overlay=document.getElementById("garden-overlay");
+
+    if(overlay){
+        overlay.classList.remove("garden-motion-ready");
+    }
+
+    requestAnimationFrame(()=>{
 
         try{
             renderGarden();
@@ -4747,11 +4367,18 @@ function openGardenFast(){
 
         window._gardenOpening=false;
 
-        /*
-         * 花園畫面建立完成後，
-         * 再處理巡邏獎勵。
-         */
+        /* 等秘密花園 0.3 秒滑入完成 */
         setTimeout(()=>{
+
+            const garden=document.getElementById("garden-overlay");
+
+            if(garden){
+                garden.classList.add("garden-motion-ready");
+            }
+
+        },320);
+
+        requestAnimationFrame(()=>{
 
             try{
                 if(
@@ -4764,9 +4391,9 @@ function openGardenFast(){
                 console.error("秘密花園獎勵處理錯誤：",e);
             }
 
-        },0);
+        });
 
-    },0);
+    });
 }
 
 
@@ -5168,12 +4795,23 @@ function closeButlerSelect(){
     window.butlerMembers=null;
 }
 
+function getGardenWaterSync(){
+
+    if(!window._gardenWaterEpoch){
+        window._gardenWaterEpoch=performance.now();
+    }
+
+    return -(performance.now()-window._gardenWaterEpoch)/1000;
+}
+
 function renderChallengeSection(rid,curStats){
 
     const data=WORLD_DATA[rid];
     const beaten=Math.max(0,Math.min(13,Number(curStats?.gymsBeaten||0)));
     const regionColor=data.color||"#2ecc71";
     const championActive=beaten>=13;
+
+    const waterSync=getGardenWaterSync();
 
     let gymNodes="";
     let gymPipes="";
@@ -5371,9 +5009,15 @@ function renderChallengeSection(rid,curStats){
         `;
     }
 
-    return`
+    
+        return`
         <div class="league-water-frame"
-            style="--region-color:${regionColor};--water:${regionColor};--water-light:color-mix(in srgb,${regionColor} 35%,white);">
+            style="
+                --region-color:${regionColor};
+                --water:${regionColor};
+                --water-light:color-mix(in srgb,${regionColor} 35%,white);
+                --garden-water-sync:${waterSync}s;
+            ">
 
             <div class="league-well-stage pball-water-stage ${championActive?"league-complete":""}"
                 style="--region-color:${regionColor};--water:${regionColor};--water-light:color-mix(in srgb,${regionColor} 35%,white);">
